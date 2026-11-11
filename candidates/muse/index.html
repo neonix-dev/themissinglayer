@@ -1,1012 +1,736 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="dark" />
-    <link rel="icon" href="data:," />
-    <title>The Missing Layer</title>
-    <style>
-      :root {
-        --bg: #0a0e12;
-        --bg2: #0d1219;
-        --panel: #0e141c;
-        --line: #22303f;
-        --line-soft: #18222d;
-        --ink: #e9e7de;
-        --muted: #9aa7b4;
-        --faint: #63738380;
-        --slate: #94a3b8;
-        --teal: #5eead4;
-        --teal-dim: rgba(94, 234, 212, 0.45);
-        --amber: #f0b64f;
-        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      }
-      * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--ink);
-        font-family: var(--sans);
-        font-size: 17px;
-        line-height: 1.65;
-        -webkit-font-smoothing: antialiased;
-      }
-      ::selection { background: rgba(94,234,212,.25); }
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:," />
+<title>The Missing Layer — A Practitioner's Guide</title>
+<style>
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2rem;}
+  :root{
+    --bg:#0a0e12; --bg2:#0e141a; --panel:#10161d; --panel2:#0c1218;
+    --line:#22303c; --line-soft:#18222b;
+    --ink:#e8e6df; --ink-dim:#b9c0c7; --slate:#7d8b98; --slate-dim:#55636f;
+    --teal:#5eead4; --teal-dim:#2b6f66; --teal-dark:#12332d;
+    --amber:#f5b942; --amber-dim:#7a5c1e; --red:#e07856;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--teal-dim);color:#fff;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px 90px;}
+  .caps{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--slate);}
+  .caps.teal{color:var(--teal);} .caps.amber{color:var(--amber);}
+  a{color:var(--teal);}
 
-      .wrap { max-width: 1060px; margin: 0 auto; padding: 0 22px; }
+  /* nav */
+  nav.top{position:sticky;top:0;z-index:50;background:rgba(10,14,18,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
+  nav.top .inner{max-width:880px;margin:0 auto;padding:10px 22px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  nav.top a{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;padding:9px 11px;border-radius:5px;border:1px solid transparent;min-height:38px;display:inline-flex;align-items:center;}
+  nav.top a:hover{color:var(--ink);border-color:var(--line);}
+  nav.top a.active{color:var(--teal);border-color:var(--teal-dim);background:var(--panel);}
+  nav.top .brand{color:var(--ink);font-weight:700;margin-right:6px;}
 
-      /* ---------- header ---------- */
-      header.top {
-        border-bottom: 1px solid var(--line-soft);
-      }
-      header.top .wrap {
-        display: flex; justify-content: space-between; align-items: baseline;
-        gap: 16px; flex-wrap: wrap;
-        padding-top: 18px; padding-bottom: 18px;
-      }
-      .brand {
-        font-family: var(--mono); font-size: 13px; letter-spacing: .34em;
-        color: var(--ink); white-space: nowrap;
-      }
-      .brand b { color: var(--teal); font-weight: 400; }
-      .domain {
-        font-family: var(--mono); font-size: 12px; letter-spacing: .18em; color: var(--muted);
-      }
+  /* title page */
+  header.titlepage{padding:72px 0 10px;text-align:left;}
+  header.titlepage .ash{font-family:var(--mono);font-size:12px;letter-spacing:.4em;color:var(--amber);text-transform:uppercase;}
+  h1.book{font-family:var(--serif);font-weight:400;font-size:clamp(38px,7vw,62px);line-height:1.08;margin:26px 0 0;letter-spacing:.005em;}
+  h1.book em{font-style:italic;color:var(--teal);}
+  .subtitle{font-family:var(--serif);font-style:italic;font-size:clamp(19px,3.4vw,25px);color:var(--ink-dim);margin:16px 0 0;}
+  .epigraph{margin:44px 0 0;padding:22px 24px;border:1px solid var(--line);border-left:3px solid var(--teal);background:var(--bg2);border-radius:4px;}
+  .epigraph p{font-family:var(--serif);font-size:21px;font-style:italic;margin:0;line-height:1.5;}
+  .epigraph .who{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--slate);margin-top:10px;display:block;font-style:normal;}
+  .preface{margin-top:44px;max-width:44em;}
+  .preface h2{font-family:var(--serif);font-weight:400;font-size:26px;margin:0 0 14px;}
+  .preface p{color:var(--ink-dim);margin:0 0 14px;}
+  .preface p strong{color:var(--ink);}
+  .preface .hands{font-family:var(--serif);font-size:20px;color:var(--ink);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;margin:22px 0;}
+  .howto{margin-top:26px;background:var(--panel);border:1px solid var(--line-soft);border-radius:6px;padding:18px 20px;font-size:15px;color:var(--ink-dim);}
+  .howto b{color:var(--ink);}
 
-      /* ---------- generic section furniture ---------- */
-      section { padding: 74px 0 8px; }
-      .sec-label {
-        font-family: var(--mono); font-size: 11px; letter-spacing: .38em;
-        text-transform: uppercase; color: var(--slate);
-        display: flex; align-items: center; gap: 16px; margin: 0 0 30px;
-      }
-      .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
-      .sec-label .n { color: var(--teal); }
-      h2.sec-title {
-        font-size: clamp(24px, 3.4vw, 34px); font-weight: 600; letter-spacing: -0.01em;
-        margin: 0 0 14px; line-height: 1.2;
-      }
-      p { margin: 0 0 16px; }
-      .muted { color: var(--muted); }
-      .mono { font-family: var(--mono); }
+  /* chapters */
+  section.chapter{margin-top:84px;scroll-margin-top:76px;}
+  .ch-head{border-top:2px solid var(--line);padding-top:30px;}
+  .ch-head .partno{font-family:var(--mono);font-size:12px;letter-spacing:.34em;color:var(--teal);text-transform:uppercase;}
+  .ch-head .partno.amber{color:var(--amber);}
+  .ch-head h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5.4vw,42px);line-height:1.15;margin:12px 0 6px;}
+  .ch-head .ch-sub{font-family:var(--serif);font-style:italic;color:var(--slate);font-size:18px;margin:0;}
+  section.chapter p{color:var(--ink-dim);max-width:46em;}
+  section.chapter p strong, section.chapter li strong{color:var(--ink);}
+  section.chapter h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:34px 0 8px;color:var(--ink);}
+  section.chapter ul{color:var(--ink-dim);max-width:46em;padding-left:22px;}
+  section.chapter li{margin:7px 0;}
+  .law{font-family:var(--mono);font-size:15px;line-height:1.75;color:var(--ink);border-left:2px solid var(--teal-dim);padding:6px 0 6px 18px;margin:24px 0;max-width:46em;}
+  .law.amber{border-left-color:var(--amber-dim);} .law b{color:var(--teal);} .law .a{color:var(--amber);}
+  blockquote.src{margin:24px 0;padding:18px 20px;background:var(--bg2);border:1px solid var(--line-soft);border-radius:6px;max-width:46em;}
+  blockquote.src p{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--ink);margin:0;}
+  blockquote.src .attrib{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--slate);display:block;margin-top:10px;font-style:normal;}
+  .defs{display:grid;grid-template-columns:1fr 1fr;gap:10px 30px;margin:20px 0;}
+  .defs div{border-top:1px solid var(--line-soft);padding-top:10px;}
+  .defs .k{font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:3px;}
+  .defs .k.amber{color:var(--amber);}
+  .defs .v{color:var(--ink-dim);font-size:15px;}
+  .principle{display:flex;gap:18px;background:var(--panel);border:1px solid var(--line-soft);border-radius:6px;padding:18px 20px;margin:14px 0;max-width:46em;}
+  .principle .num{font-family:var(--serif);font-size:32px;color:var(--teal);line-height:1;}
+  .principle .num.amber{color:var(--amber);}
+  .principle h4{margin:0 0 4px;font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);}
+  .principle p{margin:0;font-size:15.5px;}
+  .note{font-size:13.5px;color:var(--slate);font-family:var(--mono);letter-spacing:.02em;}
 
-      /* ---------- hero ---------- */
-      .hero { padding: 84px 0 10px; }
-      .hero .claim {
-        font-size: clamp(30px, 5.6vw, 56px); line-height: 1.12; font-weight: 650;
-        letter-spacing: -0.02em; margin: 0 0 26px; max-width: 15em;
-      }
-      .hero .claim .past { color: var(--teal); }
-      .feynman {
-        border-left: 2px solid var(--teal);
-        padding: 4px 0 4px 22px; margin: 34px 0 30px; max-width: 640px;
-      }
-      .feynman blockquote {
-        margin: 0; font-size: clamp(20px, 3vw, 27px); line-height: 1.35; font-weight: 550;
-      }
-      .feynman cite {
-        display: block; margin-top: 10px; font-style: normal;
-        font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: var(--muted);
-        text-transform: uppercase;
-      }
-      .hero .lede { max-width: 660px; color: var(--ink); }
-      .hero .lede .dim { color: var(--muted); }
-      .hero .repo-line {
-        font-family: var(--mono); font-size: 13px; color: var(--muted);
-        border: 1px solid var(--line-soft); background: var(--bg2);
-        padding: 14px 18px; margin-top: 30px; max-width: 660px; line-height: 1.7;
-      }
-      .hero .repo-line .t { color: var(--teal); }
+  /* REP */
+  .rep{margin-top:36px;border:1px solid var(--teal-dim);background:var(--teal-dark);background:linear-gradient(180deg,#0e201c,#0c1714);border-radius:8px;padding:22px 22px 18px;}
+  .rep.amber{border-color:var(--amber-dim);background:linear-gradient(180deg,#211a0c,#171208);}
+  .rep .rep-tag{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);}
+  .rep.amber .rep-tag{color:var(--amber);}
+  .rep h3{font-family:var(--serif);margin:8px 0 6px;font-size:21px;color:var(--ink);}
+  .rep p{color:var(--ink-dim);font-size:15.5px;margin:0 0 12px;max-width:44em;}
+  .rep textarea{width:100%;min-height:110px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-family:var(--mono);font-size:14px;line-height:1.6;resize:vertical;}
+  .rep textarea:focus{outline:2px solid var(--teal-dim);outline-offset:1px;}
+  .rep .saved{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--slate);margin-top:8px;display:block;text-transform:uppercase;}
 
-      /* ---------- crossing diagram ---------- */
-      .diagram-box {
-        border: 1px solid var(--line-soft); background: var(--bg2);
-        padding: 26px 18px 10px; overflow: hidden;
-      }
-      .diagram-box svg { display: block; width: 100%; height: auto; }
-      .diagram-box figcaption {
-        font-family: var(--mono); font-size: 13px; color: var(--muted);
-        text-align: center; padding: 14px 6px 16px; letter-spacing: .04em;
-      }
-      .diagram-box figcaption b { color: var(--ink); font-weight: 400; }
-      .legend {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 10px 34px;
-        margin: 26px 0 6px; padding: 0; list-style: none;
-        font-size: 15px;
-      }
-      .legend li { display: flex; gap: 12px; align-items: baseline; color: var(--muted); }
-      .legend .k {
-        font-family: var(--mono); font-size: 12px; min-width: 30px; text-align: center;
-        border: 1px solid var(--line); padding: 2px 0; flex: none;
-      }
-      .legend .k.teal { color: var(--teal); border-color: rgba(94,234,212,.4); }
-      .legend .k.amber { color: var(--amber); border-color: rgba(240,182,79,.4); }
-      .legend .k.slate { color: var(--slate); }
-      .legend .k.ink { color: var(--ink); }
-      .legend b { color: var(--ink); font-weight: 550; }
+  /* circuit instrument */
+  .strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;}
+  .tbtn{appearance:none;cursor:pointer;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink-dim);padding:9px 13px 10px;min-height:52px;font-family:var(--mono);transition:border-color .18s,background .18s;flex:1 1 150px;max-width:235px;}
+  .tbtn:hover{border-color:var(--teal-dim);color:var(--ink);}
+  .tbtn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .tbtn .yr{display:block;font-size:11px;letter-spacing:.2em;color:var(--teal);margin-bottom:2px;}
+  .tbtn .nm{display:block;font-size:12.5px;line-height:1.35;}
+  .tbtn[aria-pressed="true"]{background:#122019;border-color:var(--teal);color:var(--ink);}
+  .instrument{margin-top:20px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:20px 18px 16px;}
+  .inst-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .inst-title{font-family:var(--mono);font-size:15px;} .inst-title .yr{color:var(--teal);letter-spacing:.12em;margin-right:10px;}
+  .runline{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #runBtn{appearance:none;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.12em;background:var(--teal);color:#06231e;border:1px solid var(--teal);border-radius:6px;padding:10px 18px;min-height:44px;font-weight:700;text-transform:uppercase;}
+  #runBtn:hover{background:#8ff5e3;} #runBtn:disabled{background:var(--teal-dim);border-color:var(--teal-dim);cursor:default;}
+  #runState{font-family:var(--mono);font-size:12.5px;color:var(--slate);min-height:1.2em;}
+  #runState .ok{color:var(--teal);}
+  svg.circuit{width:100%;height:auto;display:block;margin-top:8px;}
+  .station-label{font-family:var(--mono);font-size:12.5px;fill:var(--ink);}
+  .station-sub{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;fill:var(--slate);}
+  .slot-text{font-family:var(--mono);font-size:10px;fill:var(--ink-dim);}
+  .slot-text .none{fill:var(--slate-dim);} .slot-text .res{fill:var(--teal);}
+  .station-box{fill:var(--panel);stroke:var(--line);stroke-width:1.2;}
+  .station-box.hot{stroke:var(--teal);} .station-box.gatebox.hot{stroke:var(--amber);}
+  .wire{stroke:#33434f;stroke-width:2;fill:none;}
+  .wire-return{stroke:#26333e;stroke-width:1.5;fill:none;stroke-dasharray:5 5;}
+  .return-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;fill:var(--slate-dim);}
+  .pulse{fill:var(--teal);} .pulse.rej{fill:var(--red);}
+  .counter{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--slate);}
+  .counter b{color:var(--ink);}
+  .facts{margin-top:20px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:4px 20px;}
+  .fact{display:grid;grid-template-columns:165px 1fr;gap:6px 20px;padding:13px 0;border-bottom:1px solid var(--line-soft);}
+  .fact:last-child{border-bottom:none;}
+  .fact dt{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--slate);padding-top:4px;}
+  .fact dd{margin:0;color:var(--ink-dim);font-size:15.5px;}
+  .fact dd strong{color:var(--ink);} .fact dd.none{color:var(--slate-dim);font-family:var(--mono);font-size:13px;}
+  .fact dd .result-big{font-family:var(--mono);color:var(--teal);font-size:15px;}
+  .fact dd .verbatim{color:var(--ink);font-style:italic;}
 
-      /* ---------- numbered entries (principles / definitions) ---------- */
-      .entries { border-top: 1px solid var(--line-soft); }
-      .entry {
-        display: grid; grid-template-columns: 64px 1fr; gap: 8px 22px;
-        padding: 28px 0; border-bottom: 1px solid var(--line-soft);
-      }
-      .entry .num {
-        font-family: var(--mono); font-size: 15px; color: var(--teal);
-        border: 1px solid rgba(94,234,212,.35); width: 40px; height: 40px;
-        display: flex; align-items: center; justify-content: center;
-      }
-      .entry h3 { margin: 4px 0 8px; font-size: 21px; font-weight: 600; }
-      .entry h3 .gloss { color: var(--muted); font-weight: 400; }
-      .entry p { color: var(--muted); max-width: 640px; margin-bottom: 10px; }
-      .entry p b, .entry p .w { color: var(--ink); font-weight: 550; }
-      .entry blockquote {
-        margin: 12px 0 4px; padding-left: 18px; border-left: 2px solid var(--amber);
-        color: var(--ink); font-size: 17px; max-width: 620px;
-      }
+  /* matrix */
+  .matrix{margin-top:22px;background:var(--bg2);border:1px solid var(--amber-dim);border-radius:8px;padding:22px 20px;}
+  .matrix label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--slate);display:block;margin-bottom:6px;}
+  .matrix input[type="text"]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:11px 13px;font-size:16px;font-family:var(--sans);min-height:44px;}
+  .sides{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;}
+  .sidebox{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;}
+  .sidebox h4{margin:0 0 12px;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);}
+  .yn{display:flex;gap:8px;margin-bottom:14px;}
+  .yn button{flex:1;appearance:none;cursor:pointer;font-family:var(--mono);font-size:14px;padding:11px 0;min-height:44px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink-dim);}
+  .yn button[aria-pressed="true"]{background:var(--teal-dark);border-color:var(--teal);color:var(--teal);font-weight:700;}
+  .yn button.no[aria-pressed="true"]{background:#2a1408;border-color:var(--red);color:var(--red);}
+  .sidebox input[type="range"]{width:100%;accent-color:var(--teal);min-height:36px;}
+  .confval{font-family:var(--mono);font-size:13px;color:var(--teal);}
+  .scale-ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--slate-dim);letter-spacing:.08em;}
+  .readout{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px;display:flex;gap:22px;flex-wrap:wrap;align-items:center;}
+  .readout .big{font-family:var(--mono);font-size:30px;color:var(--ink);}
+  .readout .big.pass{color:var(--teal);} .readout .big.fail{color:var(--slate);}
+  #askBtn{appearance:none;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.1em;background:var(--amber);color:#241a02;border:1px solid var(--amber);border-radius:6px;padding:11px 18px;min-height:44px;font-weight:700;text-transform:uppercase;}
+  #askBtn:hover{background:#ffc95e;}
+  .verdict{font-family:var(--mono);font-size:13px;color:var(--ink-dim);}
+  .verdict .ok{color:var(--teal);} .verdict .wait{color:var(--amber);}
+  .canon{margin-top:22px;}
+  .canon h4{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);margin:0 0 10px;}
+  .canon-item{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:baseline;}
+  .canon-item .q{color:var(--ink);font-size:15.5px;}
+  .canon-item .meta{font-family:var(--mono);font-size:11.5px;color:var(--slate);letter-spacing:.06em;}
+  .canon-item button{appearance:none;background:none;border:1px solid var(--line);color:var(--slate);border-radius:5px;font-family:var(--mono);font-size:11px;padding:7px 10px;cursor:pointer;min-height:36px;}
+  .canon-empty{font-family:var(--mono);font-size:13px;color:var(--slate-dim);}
 
-      /* ---------- instrument ---------- */
-      .instrument {
-        border: 1px solid var(--line); background: var(--panel);
-        margin-top: 8px;
-      }
-      .inst-head {
-        display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
-        padding: 16px 20px; border-bottom: 1px solid var(--line-soft);
-        font-family: var(--mono); font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--slate);
-      }
-      .inst-head .live { color: var(--teal); }
-      .inst-head .live::before { content: "●"; margin-right: 8px; font-size: 9px; vertical-align: 2px; }
-      .q-block { padding: 22px 20px 6px; }
-      .q-block label {
-        display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
-        text-transform: uppercase; color: var(--slate); margin-bottom: 10px;
-      }
-      #q-input {
-        width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink);
-        font-family: var(--mono); font-size: 16px; padding: 14px 16px; min-height: 52px;
-        outline: none; border-radius: 0;
-      }
-      #q-input:focus { border-color: var(--teal); }
-      #q-input::placeholder { color: #55636f; }
-      .shelf { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; align-items: center; }
-      .shelf .shelf-label {
-        font-family: var(--mono); font-size: 10px; letter-spacing: .26em; color: var(--faint);
-        text-transform: uppercase; margin-right: 2px;
-      }
-      .chip {
-        font-family: var(--mono); font-size: 12.5px; color: var(--muted);
-        background: transparent; border: 1px solid var(--line); padding: 9px 13px;
-        cursor: pointer; min-height: 38px; text-align: left;
-      }
-      .chip:hover { color: var(--ink); border-color: var(--slate); }
-      .chip.active { color: var(--teal); border-color: rgba(94,234,212,.55); }
+  .closing{margin-top:84px;border-top:2px solid var(--line);padding-top:34px;text-align:center;}
+  .closing p.decl{font-family:var(--serif);font-size:clamp(21px,3.6vw,27px);line-height:1.55;color:var(--ink);max-width:34em;margin:0 auto;}
+  .closing p.decl em{color:var(--teal);font-style:italic;}
+  footer{margin-top:70px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line-soft);padding-top:20px;}
+  footer .caps{color:var(--slate-dim);}
 
-      .inst-grid {
-        display: grid; grid-template-columns: 1fr 1.7fr 1fr; gap: 0;
-        border-top: 1px solid var(--line-soft); margin-top: 16px;
-      }
-      .side {
-        padding: 20px; border-right: 1px solid var(--line-soft);
-      }
-      .side:last-child { border-right: none; border-left: 1px solid var(--line-soft); }
-      .side h4 {
-        margin: 0 0 4px; font-family: var(--mono); font-size: 12px; letter-spacing: .3em;
-        text-transform: uppercase; font-weight: 400; color: var(--teal);
-      }
-      .side .who { font-size: 13px; color: var(--muted); margin-bottom: 16px; min-height: 2.6em; }
-      .yn { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); margin-bottom: 20px; }
-      .yn button {
-        background: transparent; border: none; color: var(--muted); cursor: pointer;
-        font-family: var(--mono); font-size: 14px; letter-spacing: .2em; padding: 12px 0; min-height: 46px;
-      }
-      .yn button + button { border-left: 1px solid var(--line); }
-      .yn button.on-yes { background: var(--teal); color: #06231d; font-weight: 700; }
-      .yn button.on-no { background: var(--amber); color: #2a1c02; font-weight: 700; }
-      .conf-label {
-        display: flex; justify-content: space-between; font-family: var(--mono);
-        font-size: 10px; letter-spacing: .18em; color: var(--faint); text-transform: uppercase; margin-bottom: 6px;
-      }
-      .side input[type="range"] {
-        -webkit-appearance: none; appearance: none; width: 100%; height: 38px; background: transparent; cursor: pointer; margin: 0;
-      }
-      .side input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--line); }
-      .side input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none; appearance: none; width: 18px; height: 26px; margin-top: -12px;
-        background: var(--bg); border: 2px solid var(--teal); border-radius: 0;
-      }
-      .side input[type="range"]::-moz-range-track { height: 2px; background: var(--line); }
-      .side input[type="range"]::-moz-range-thumb { width: 14px; height: 22px; background: var(--bg); border: 2px solid var(--teal); border-radius: 0; }
-      .side .val {
-        font-family: var(--mono); font-size: 26px; color: var(--ink); margin-top: 4px;
-      }
-      .side .val small { font-size: 11px; color: var(--muted); letter-spacing: .14em; display: block; margin-top: 2px; }
+  @media (max-width:640px){
+    body{font-size:16px;}
+    header.titlepage{padding-top:44px;}
+    .defs,.sides{grid-template-columns:1fr;}
+    .fact{grid-template-columns:1fr;gap:2px;}
+    .tbtn{flex:1 1 44%;max-width:none;}
+    section.chapter{margin-top:62px;}
+    nav.top a{padding:8px 8px;font-size:10.5px;}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+  @media print{
+    nav.top{display:none;}
+    body{background:#fff;color:#111;font-size:12pt;}
+    .wrap{max-width:none;}
+    .rep,.instrument,.matrix,.facts,.howto,.principle,.canon-item,.sidebox{background:#fff;border-color:#999;}
+    section.chapter p,section.chapter li,.fact dd,.defs .v,.rep p,.howto{color:#222;}
+    h1.book,.ch-head h2,.closing p.decl,.principle h4{color:#111;}
+    #runBtn,#askBtn,.yn button{display:none;}
+    .rep textarea{border:1px solid #999;color:#111;background:#fff;}
+  }
+</style>
+</head>
+<body>
 
-      .stage { padding: 20px; display: flex; flex-direction: column; }
-      .canvas-wrap { position: relative; background: var(--bg); border: 1px solid var(--line-soft); }
-      #waves { display: block; width: 100%; height: 188px; }
-      .canvas-tag {
-        position: absolute; top: 8px; font-family: var(--mono); font-size: 10px;
-        letter-spacing: .24em; color: var(--teal); text-transform: uppercase; pointer-events: none;
-      }
-      .canvas-tag.a { left: 12px; }
-      .canvas-tag.b { right: 12px; color: var(--teal-dim); }
-      .canvas-tag.lock {
-        left: 50%; transform: translateX(-50%); top: auto; bottom: 8px; color: var(--ink);
-        opacity: 0; transition: opacity .4s;
-      }
-      .instrument.locking .canvas-tag.lock { opacity: 1; }
+<nav class="top" aria-label="Chapters">
+  <div class="inner" id="topnav">
+    <a href="#title" class="brand">The Missing Layer</a>
+    <a href="#part1">I · Two Environments</a>
+    <a href="#part2">II · The Layer</a>
+    <a href="#part3">III · The Generator</a>
+    <a href="#part4">IV · The Gate</a>
+    <a href="#part5">V · Instruments</a>
+    <a href="#closing">Close</a>
+  </div>
+</nav>
 
-      .readouts {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line-soft);
-        border: 1px solid var(--line-soft); margin-top: 16px;
-      }
-      .readout { background: var(--bg2); padding: 12px 14px; }
-      .readout .rl {
-        font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; color: var(--faint);
-        text-transform: uppercase; margin-bottom: 4px;
-      }
-      .readout .rv { font-family: var(--mono); font-size: 20px; color: var(--ink); }
-      .readout .rv.teal { color: var(--teal); }
-      .readout .rv.amber { color: var(--amber); }
-      .readout.pulse .rv { animation: pulse .45s ease; }
-      @keyframes pulse { 0% { opacity: .25; } 100% { opacity: 1; } }
+<div class="wrap">
 
-      .meter-block { margin-top: 16px; }
-      .meter-labels {
-        display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px;
-        letter-spacing: .16em; color: var(--faint); text-transform: uppercase; margin-bottom: 6px;
-      }
-      .meter-labels .thr { color: var(--amber); }
-      .meter {
-        position: relative; height: 12px; background: var(--bg); border: 1px solid var(--line-soft);
-      }
-      .meter .fill {
-        position: absolute; top: 0; bottom: 0; left: 50%; width: 0;
-        background: var(--teal); opacity: .85; transition: width .3s ease, left .3s ease, background .3s;
-      }
-      .meter .fill.neg { background: var(--amber); }
-      .meter .center { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--slate); }
-      .meter .thresh { position: absolute; left: 90%; top: -4px; bottom: -4px; width: 2px; background: var(--amber); }
-      .threshold-note { font-size: 13px; color: var(--muted); margin-top: 10px; }
-      .threshold-note b { color: var(--amber); font-weight: 550; }
+<!-- ============ TITLE PAGE ============ -->
+<header class="titlepage" id="title">
+  <div class="ash">Ashwamedh III · A Guidebook</div>
+  <h1 class="book">The Missing Layer<br /><em>A Practitioner's Guide</em></h1>
+  <p class="subtitle">to the Sciences of the Artificial</p>
 
-      .inst-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
-      .btn {
-        font-family: var(--mono); font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
-        padding: 13px 20px; min-height: 48px; cursor: pointer; border-radius: 0;
-      }
-      .btn-ask { background: var(--teal); border: 1px solid var(--teal); color: #06231d; font-weight: 700; }
-      .btn-ask:hover { background: #7df0dc; }
-      .btn-new { background: transparent; border: 1px solid var(--line); color: var(--muted); }
-      .btn-new:hover { color: var(--ink); border-color: var(--slate); }
-      .asks {
-        font-family: var(--mono); font-size: 12px; color: var(--muted); margin-left: auto; letter-spacing: .1em;
-      }
-      .asks b { color: var(--ink); font-weight: 400; }
-      .inst-status { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 14px; min-height: 1.5em; }
-      .inst-status .ok { color: var(--teal); }
-      .inst-status .bad { color: var(--amber); }
-      .instrument.locking .side, .instrument.locking .q-block { opacity: .45; pointer-events: none; }
+  <div class="epigraph">
+    <p>“What I cannot create, I do not understand.”</p>
+    <span class="who">— Feynman · the motto this work runs under</span>
+  </div>
 
-      /* ---------- rules + canon ---------- */
-      .below-inst {
-        display: grid; grid-template-columns: 1fr 1.4fr; gap: 44px; margin-top: 44px;
-      }
-      .rules h3, .canon h3 {
-        font-family: var(--mono); font-size: 11px; letter-spacing: .34em; text-transform: uppercase;
-        color: var(--slate); font-weight: 400; margin: 0 0 18px;
-        display: flex; align-items: center; gap: 14px;
-      }
-      .rules h3::after, .canon h3::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
-      .rules ol { margin: 0; padding: 0; list-style: none; counter-reset: r; }
-      .rules li {
-        counter-increment: r; position: relative; padding: 0 0 14px 34px; color: var(--muted); font-size: 15px;
-      }
-      .rules li::before {
-        content: counter(r, decimal-leading-zero); position: absolute; left: 0; top: 2px;
-        font-family: var(--mono); font-size: 11px; color: var(--teal);
-      }
-      .rules li b { color: var(--ink); font-weight: 550; }
-      .canon-empty {
-        border: 1px dashed var(--line); padding: 20px; color: var(--muted); font-size: 15px;
-      }
-      .canon-list { list-style: none; margin: 0; padding: 0; }
-      .canon-item {
-        border: 1px solid var(--line-soft); background: var(--bg2); padding: 16px 18px; margin-bottom: 10px;
-      }
-      .canon-item.fresh { animation: canonIn .8s ease; border-color: rgba(94,234,212,.55); }
-      @keyframes canonIn { 0% { opacity: 0; transform: translateY(-14px); } 100% { opacity: 1; transform: none; } }
-      .canon-item .cq { font-size: 16px; color: var(--ink); margin-bottom: 8px; }
-      .canon-item .cm {
-        font-family: var(--mono); font-size: 11.5px; color: var(--muted); letter-spacing: .06em; line-height: 1.8;
-      }
-      .canon-item .cm .stamp { color: var(--teal); letter-spacing: .2em; }
-      .canon-item.expired { opacity: .55; }
-      .canon-item.expired .cq { text-decoration: line-through; }
-      .canon-item.expired .cm .stamp { color: var(--amber); }
-      .canon-note { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-top: 14px; letter-spacing: .04em; }
-      .canon-note .t { color: var(--teal); }
-      .ghost {
-        position: fixed; z-index: 50; pointer-events: none; font-family: var(--mono); font-size: 14px;
-        color: var(--teal); background: var(--bg2); border: 1px solid rgba(94,234,212,.6);
-        padding: 10px 14px; max-width: 70vw;
-      }
+  <div class="preface">
+    <h2>Preface</h2>
+    <p>In 1969 Herbert A. Simon wrote <strong><em>The Sciences of the Artificial</em></strong> — the study of artifacts: things made by art, standing between an <strong>inner environment</strong> (their own substance and organization) and an <strong>outer environment</strong> (the surroundings in which they work). Simon gave the sciences their language. This guide is their <strong>practice</strong>, learned from twenty years of one practitioner's builds — from a coin counter in 2005 to a signal-acquisition system in 2026.</p>
+    <p>Everything in this book is one of three things, and it says which: a <strong>trace</strong> from that record — a build, a number, a sentence the practitioner actually said; <strong>Simon's frame</strong>, named as his; or the <strong>guide's synthesis</strong>, labeled as such. Where the record is silent, the book is silent.</p>
+    <p class="hands">A science tells you what is true. A practice tells your hands what to do. This book is for the hands.</p>
+    <div class="howto">
+      <b>How to use this guide.</b> Read in order, or jump — the chapters stand alone and the nav above follows you. Each part ends with a <b>REP</b>: a small exercise you actually perform. The writing boxes keep what you write in this browser only. Two instruments are live inside the book: the crossing in Part II and the triangulation matrix in Part IV. Run them. A guide you only read is a science; a guide you run is a practice.
+    </div>
+  </div>
+</header>
 
-      /* ---------- footer ---------- */
-      footer {
-        margin-top: 96px; border-top: 1px solid var(--line-soft); padding: 30px 0 44px;
-      }
-      footer .wrap { display: flex; flex-direction: column; gap: 8px; }
-      footer .f-line {
-        display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; align-items: baseline;
-      }
-      footer .f-dom { font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: var(--muted); }
-      footer .f-quote { font-size: 16px; color: var(--ink); }
-      footer .f-quote b { color: var(--teal); font-weight: 550; }
-      footer .f-none { font-family: var(--mono); font-size: 11.5px; color: var(--faint); letter-spacing: .06em; }
+<!-- ============ PART I ============ -->
+<section class="chapter" id="part1">
+  <div class="ch-head">
+    <span class="partno">Part I</span>
+    <h2>The Two Environments</h2>
+    <p class="ch-sub">Simon's ground — every artifact stands between two worlds.</p>
+  </div>
 
-      /* ---------- responsive ---------- */
-      @media (max-width: 900px) {
-        .inst-grid { grid-template-columns: 1fr 1fr; }
-        .stage { grid-column: 1 / -1; order: 3; border-top: 1px solid var(--line-soft); }
-        .side.b { border-left: 1px solid var(--line-soft); border-right: none; }
-        .below-inst { grid-template-columns: 1fr; }
-      }
-      @media (max-width: 560px) {
-        section { padding-top: 54px; }
-        .hero { padding-top: 56px; }
-        .inst-grid { grid-template-columns: 1fr; }
-        .side { border-right: none; border-bottom: 1px solid var(--line-soft); }
-        .side.b { border-left: none; }
-        .stage { order: 3; }
-        .legend { grid-template-columns: 1fr; }
-        .entry { grid-template-columns: 48px 1fr; }
-        .readouts { grid-template-columns: 1fr 1fr; }
-        .asks { margin-left: 0; width: 100%; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        html { scroll-behavior: auto; }
-        .canon-item.fresh, .readout.pulse .rv { animation: none; }
-        .meter .fill, .canvas-tag.lock { transition: none; }
-      }
-    </style>
-  </head>
-  <body>
+  <p>An artifact is a <strong>meeting point</strong>. Inside it: an <strong>inner environment</strong> — its own substance and organization, the way it is put together. Outside it: an <strong>outer environment</strong> — the surroundings in which it must work, with goals of their own. The artifact succeeds when the inner environment is <strong>adapted to the outer environment's goals</strong> — without either side pretending to be the other. The inner does not become the weather; the outer does not become the machine. They meet, and the meeting is the artifact.</p>
 
-    <header class="top">
-      <div class="wrap">
-        <div class="brand">THE MISSING <b>LAYER</b></div>
-        <div class="domain">themissinglayer.org</div>
+  <p>One consequence governs everything after this chapter: <strong>neither side sees the other's interior.</strong> Each side knows only its own side; the other exists through its responses. You never hold the other environment in your hand — you hold what crosses back. Design for the crossing, not for an interior you will never see.</p>
+
+  <h3>The First Principles, as the practitioner holds them</h3>
+  <div class="principle">
+    <div class="num">1</div>
+    <div><h4>Environment</h4><p>What does not move. The ground both sides stand on — the part of the situation you do not get to renegotiate mid-build. Name it first; everything else is built in relation to it.</p></div>
+  </div>
+  <div class="principle">
+    <div class="num">2</div>
+    <div><h4>Fields of Interaction</h4><p>What holds across a gap without touching it. Two environments that never touch still act on each other — through a field, through an interface, through responses. The gap is not empty; it is where the work happens.</p></div>
+  </div>
+  <p class="note">First Principles 1–2 and the definitions in Part II are the practitioner's own formulations, kept from his earlier reading of this material and marked there as interpretation. Simon's frame — inner environment, outer environment, adaptation — is the ground they stand on.</p>
+
+  <blockquote class="src">
+    <p>An artifact is a meeting point — an interface — between an inner environment and an outer environment.</p>
+    <span class="attrib">Simon's frame · The Sciences of the Artificial (1969)</span>
+  </blockquote>
+
+  <div class="rep" data-rep="rep1">
+    <span class="rep-tag">Rep 1 · Do it now</span>
+    <h3>Take one artifact apart — on paper</h3>
+    <p>Pick one artifact you use daily. Write its <strong>inner environment</strong> (what it is made of, how it is organized), its <strong>outer environment</strong> (where it works, what that world demands), and <strong>one sentence of adaptation</strong> between them — the sentence that says how the inside fits the outside's goals.</p>
+    <textarea data-store="rep1" placeholder="The artifact: …&#10;Its inner environment: …&#10;Its outer environment: …&#10;The adaptation: …" aria-label="Rep 1 writing box"></textarea>
+    <span class="saved">Kept in this browser only · saves as you type</span>
+  </div>
+</section>
+
+<!-- ============ PART II ============ -->
+<section class="chapter" id="part2">
+  <div class="ch-head">
+    <span class="partno">Part II</span>
+    <h2>The Layer</h2>
+    <p class="ch-sub">The discovery, reconstructed — the crossing everyone looks past.</p>
+  </div>
+
+  <p>Between the two environments there is a layer everyone looks past: <strong>the crossing itself</strong>. Twenty years of one builder's work — payments, search, type systems, sacred text, chat rooms, signal hardware — looks like twelve unrelated territories. Underneath, one circuit runs in all of them, unchanged:</p>
+
+  <p class="law">SIDE · INTERFACE · <b>GENERATOR</b> · <span class="a">GATE</span> · ARTIFACT</p>
+
+  <p>Something stands on one side. It crosses an <strong>interface</strong> — and <strong>only meaning travels</strong>: the interface is the cost of carrying across, plus the component that transcribes meaning from one side's terms into the other's. A <strong>generator</strong> produces the instances — never hand-made one by one. A <strong>gate</strong> judges: a test, a checklist, a human verdict. What passes stands as an <strong>artifact</strong>. What fails returns — as information, along the return path, to the side it came from.</p>
+
+  <h3>Definitions</h3>
+  <div class="defs">
+    <div><span class="k">Artificial</span><span class="v">Produced by art rather than by nature — the decided. Nothing artificial is an accident; someone chose it.</span></div>
+    <div><span class="k">Artifact as Interface</span><span class="v">The meeting point of an inner and an outer environment. Only meaning crosses it.</span></div>
+    <div><span class="k">Practice</span><span class="v">The ongoing verb, not its fruit. The generator itself, running — solving once, and again.</span></div>
+    <div><span class="k">The Layer</span><span class="v">The crossing between the two environments — the circuit above. It was never missing from the work; it was missing from the looking.</span></div>
+  </div>
+
+  <h3>The circuit, running in twelve territories</h3>
+  <p>Select any build. The same diagram loads with that build's real contents in the five stations. Change the build and only the labels and numbers change — <strong>the topology never changes; only the territory does.</strong> Slots the record does not fill say so, rather than inventing one.</p>
+
+  <div class="strip" id="strip" role="group" aria-label="Builds — select one to load it into the circuit"></div>
+
+  <div class="instrument">
+    <div class="inst-top">
+      <div class="inst-title"><span class="yr" id="instYear">2008</span><span id="instName">The Test-Case Generator</span></div>
+      <div class="runline">
+        <span id="runState" aria-live="polite">Loaded. The circuit is ready.</span>
+        <button id="runBtn" type="button">Run the crossing</button>
       </div>
-    </header>
+    </div>
+    <svg class="circuit" viewBox="0 0 1000 348" role="img" aria-label="Circuit diagram: Side, Interface, Generator, Gate, Artifact, with a return path for what fails">
+      <path class="wire" d="M 156 100 H 184 M 356 100 H 384 M 596 100 H 624 M 796 100 H 824" />
+      <path d="M 184 100 l -9 -5 v 10 z" fill="#33434f"/><path d="M 384 100 l -9 -5 v 10 z" fill="#33434f"/>
+      <path d="M 624 100 l -9 -5 v 10 z" fill="#33434f"/><path d="M 824 100 l -9 -5 v 10 z" fill="#33434f"/>
+      <path class="wire-return" d="M 710 176 V 272 H 80 V 180" />
+      <path d="M 80 172 l -5 10 h 10 z" fill="#26333e"/>
+      <text class="return-label" x="395" y="264" text-anchor="middle">WHAT FAILS RETURNS AS INFORMATION</text>
+      <g id="st-side"><rect class="station-box" x="4" y="30" width="152" height="146" rx="6"/><text class="station-label" x="80" y="56" text-anchor="middle">SIDE</text><text class="station-sub" x="80" y="72" text-anchor="middle">WHAT STANDS THERE</text><text class="slot-text" id="slot-side" x="80" y="94" text-anchor="middle"></text></g>
+      <g id="st-interface"><rect class="station-box" x="184" y="30" width="172" height="146" rx="6"/><text class="station-label" x="270" y="56" text-anchor="middle">INTERFACE</text><text class="station-sub" x="270" y="72" text-anchor="middle">ONLY MEANING CROSSES</text><text class="slot-text" id="slot-iface" x="270" y="94" text-anchor="middle"></text></g>
+      <g id="st-generator"><rect class="station-box" x="384" y="30" width="212" height="146" rx="6"/><text class="station-label" x="490" y="56" text-anchor="middle" fill="#5eead4">GENERATOR</text><text class="station-sub" x="490" y="72" text-anchor="middle">MAKES THE INSTANCES</text><text class="slot-text" id="slot-gen" x="490" y="94" text-anchor="middle"></text></g>
+      <g id="st-gate"><rect class="station-box gatebox" x="624" y="30" width="172" height="146" rx="6"/><text class="station-label" x="710" y="56" text-anchor="middle" fill="#f5b942">GATE</text><text class="station-sub" x="710" y="72" text-anchor="middle">THE ACCEPTOR JUDGES</text><text class="slot-text" id="slot-gate" x="710" y="94" text-anchor="middle"></text></g>
+      <g id="st-artifact"><rect class="station-box" x="824" y="30" width="172" height="146" rx="6"/><text class="station-label" x="910" y="56" text-anchor="middle">ARTIFACT</text><text class="station-sub" x="910" y="72" text-anchor="middle">WHAT STANDS AFTER</text><text class="slot-text" id="slot-art" x="910" y="94" text-anchor="middle"></text></g>
+      <g id="pulseLayer"></g>
+      <text id="gateFlash" x="710" y="206" text-anchor="middle" style="font-family:var(--mono);font-size:12px;letter-spacing:.22em;fill:#f5b942;opacity:0;">ACCEPTED</text>
+    </svg>
+    <div class="counter">
+      <span>Topology changes: <b>0</b></span><span>·</span>
+      <span>Territory changes: <b>every time</b></span><span>·</span>
+      <span>Crossings run here: <b id="runCount">0</b></span><span>·</span>
+      <span>Builds run: <b id="buildsRun">0 / 3 for Rep 2</b></span>
+    </div>
+  </div>
 
-    <main class="wrap">
+  <dl class="facts" id="facts" aria-live="polite"></dl>
 
-      <!-- ================= HERO ================= -->
-      <div class="hero">
-        <p class="claim">Everyone asks how you did it. They look <span class="past">past the layer</span> where it happened.</p>
-        <p class="lede">
-          A finished mastery shows only its fruit — the solved problem, the landed jump, the shipped system.
-          The layer where it actually happened is underneath all of that, and it is still running:
-          <span class="w" style="color:var(--ink)">the Practice</span> —
-          <span class="dim">one generator, worked again and again, across every domain it enters.</span>
-        </p>
-        <div class="feynman">
-          <blockquote>&ldquo;What I cannot create, I do not understand.&rdquo;</blockquote>
-          <cite>— Richard Feynman</cite>
+  <div class="rep" data-rep="rep2">
+    <span class="rep-tag">Rep 2 · Do it now</span>
+    <h3>Run three territories, then map your own</h3>
+    <p>Run the crossing on <strong>three different builds</strong> above (the counter tracks your distinct builds). Then take one system of your own and fill the five stations for it: what stands on the side, what crosses and in what form, what generates the instances, what judges, and what stands afterward.</p>
+    <textarea data-store="rep2" placeholder="My system: …&#10;SIDE: …&#10;INTERFACE (only meaning crosses — what meaning?): …&#10;GENERATOR: …&#10;GATE: …&#10;ARTIFACT: …" aria-label="Rep 2 writing box"></textarea>
+    <span class="saved">Kept in this browser only · saves as you type</span>
+  </div>
+</section>
+
+<!-- ============ PART III ============ -->
+<section class="chapter" id="part3">
+  <div class="ch-head">
+    <span class="partno">Part III</span>
+    <h2>The Generator</h2>
+    <p class="ch-sub">The practice itself — build the grammar, not the sentences.</p>
+  </div>
+
+  <p>The practitioner's whole method compresses into one line, in his own words:</p>
+  <blockquote class="src">
+    <p>“Grammar -&gt; I build grammar.”</p>
+    <span class="attrib">The practitioner · verbatim, from the record</span>
+  </blockquote>
+
+  <p>For every domain he enters, he builds the <strong>finite rule-set that generates its valid instances</strong> — Pāṇini's shape, the pattern of the <em>Aṣṭādhyāyī</em>: not the sentences, never the sentences — the grammar that makes them. A payment grammar, a grammar of test cases, of configs, of a type system, of collaboration itself. The instances are then cheap, because the expensive thing — the rule — was built once.</p>
+
+  <h3>Corollaries, from the record</h3>
+  <ul>
+    <li><strong>Never release code; release the generator.</strong> Asked for a “Python Hello World,” his answer (the guide's synthesis of his standing reply) is a playground: a dropdown, a text area, a play button — an instrument the other person runs, not a program they merely read.</li>
+    <li><strong>You don't practice the 10,000 things; you practice the one generator.</strong> Outputs are cache. When the UBS KYC estate needed 10,000 test cases, the hand-made cases were the side — the generator was the work, and coverage went from 65% to 99%.</li>
+    <li><strong>Run first, then setup — bottom up, three levels max.</strong> You must be able to steer it, run it, hold it, before you may configure it. Setup serves the run, never the reverse; a setup deeper than three levels is a sign the run was never held.</li>
+  </ul>
+
+  <p class="law">“Always think simple. If the solution is complex, the problem is wrong. Don't attempt.”<br /><span style="color:var(--slate);font-size:12.5px;">— THE SIMPLE LAW · THE PRACTITIONER, VERBATIM</span></p>
+
+  <h3>The shipping bar</h3>
+  <p>Solve it <strong>once</strong> — for yourself, the judge. Then solve it <strong>again</strong> — as demonstration, for the acceptor. In his parachute form: <em>someone has to try it before putting others in the parachute.</em> The pilot rides his own stack first; the report follows the run. Past solvings bank nothing — <em>can I solve it now</em> is the question, because the generator must run in the present tense.</p>
+  <p>And when words fail — when testimony is discounted on arrival, as it reliably is — <strong>demonstration is the bedrock</strong>. Don't argue the grammar. Run it.</p>
+
+  <div class="rep" data-rep="rep3">
+    <span class="rep-tag">Rep 3 · Do it now</span>
+    <h3>Write a generator, not an instance</h3>
+    <p>Name one thing you make repeatedly by hand — a report, a checklist, a message, a test, a meal plan. Now write <strong>the generator for it</strong>: the finite rules such that any valid instance falls out of them. Rules, not the next instance. If your answer is a single example, start over — you wrote a sentence, not a grammar.</p>
+    <textarea data-store="rep3" placeholder="The thing I make by hand: …&#10;Its generator — the rules:&#10;1. …&#10;2. …&#10;3. …&#10;A valid instance is one where: …" aria-label="Rep 3 writing box"></textarea>
+    <span class="saved">Kept in this browser only · saves as you type</span>
+  </div>
+</section>
+
+<!-- ============ PART IV ============ -->
+<section class="chapter" id="part4">
+  <div class="ch-head">
+    <span class="partno amber">Part IV</span>
+    <h2>The Gate</h2>
+    <p class="ch-sub">Judgment — nothing stands until it passes a gate it did not write.</p>
+  </div>
+
+  <p>Every crossing ends at a gate. The rule is absolute: <strong>nothing stands until it passes a gate it did not write.</strong> The producer of a thing is disqualified from being its judge — not from distrust, but by construction: an updater grading its own output cannot see its own drift, so drift becomes invisible.</p>
+
+  <h3>The triad</h3>
+  <div class="defs">
+    <div><span class="k amber">Operator 1</span><span class="v">The one who runs the crossing. Singular — one pair of hands on the instrument.</span></div>
+    <div><span class="k amber">Acceptor N — bounded</span><span class="v">The judges who say what “good enough” means. Finite, named, and not the operator.</span></div>
+    <div><span class="k amber">Reality M — unbounded</span><span class="v">The final judge, which accepts no arguments: contact with the real world, where the artifact either works or doesn't.</span></div>
+    <div><span class="k amber">Remove the acceptor…</span><span class="v">…and drift becomes invisible by construction. The silent failure is not error; it is error with no witness.</span></div>
+  </div>
+
+  <h3>The constitution, signed before the work</h3>
+  <p>Before a crossing runs, its gate is fixed in a constitution: <strong>C = { Intent, Hypothesis, Konditions, Scenarios }</strong>. The hypothesis <em>is</em> the acceptance — and it is held <strong>blind from the producer</strong> (criterion opacity), so the work cannot quietly bend itself toward the test it can see.</p>
+  <p><strong>Mount</strong> is practice: intent becomes membrane, the artifact is generated under it, still held. <strong>Unmount</strong> is performance: the artifact goes live only when the gate passes. On failure — <strong>revert to the last good artifact and raise new intent. Never patch.</strong> A patch is a crossing that skipped its gate.</p>
+
+  <h3>The triangulation matrix — only for the uncertain</h3>
+  <p>The certain needs no matrix: it is the checklist, and it just runs. The matrix is reserved for the genuinely uncertain, and it works like this. A question is put to <strong>two sides</strong>. Each side answers <strong>yes or no, with a confidence</strong> on one scale: <strong>−1 is “I don't know”</strong> — the floor, not a “no” — and <strong>+1 is full confidence</strong>. Where the two sides agree and their shared confidence passes a set threshold, the answer becomes <strong>canon</strong>. Canon is not forever: it carries a <strong>shelf life of six months</strong>, then it is re-checked. No privileged frame — each side knows only its own side; the other exists through its responses.</p>
+
+  <div class="matrix" id="matrix">
+    <label for="mxQ">The question — one specific question, answerable yes or no</label>
+    <input type="text" id="mxQ" placeholder="e.g. Does the generator cover every valid instance?" autocomplete="off" />
+    <div class="sides">
+      <div class="sidebox" id="sideA">
+        <h4>Side A</h4>
+        <div class="yn">
+          <button type="button" data-side="A" data-val="yes" aria-pressed="false">Yes</button>
+          <button type="button" data-side="A" data-val="no" class="no" aria-pressed="false">No</button>
         </div>
-        <p class="lede">
-          You don&rsquo;t practice the 10,000 things. You practice the one generator.
-          The 10,000 outputs are cache — regenerated fresh in each new field.
-          Past solvings bank nothing: the question is always whether it runs <em>now</em>.
-          The only way to know for sure is to practice — the generator running now is the only knowing there is.
-        </p>
-        <div class="repo-line">
-          <span class="t">&gt;</span> A self-governed, local-first practice for building muscle across domains.<br />
-          <span class="t">&gt;</span> Your reps stay in your browser.
-        </div>
+        <label>Confidence <span class="confval" id="confValA">0.00</span></label>
+        <input type="range" id="confA" min="-1" max="1" step="0.05" value="0" aria-label="Side A confidence" />
+        <div class="scale-ends"><span>−1 · I don't know</span><span>+1 · full</span></div>
       </div>
-
-      <!-- ================= THE CROSSING ================= -->
-      <section id="crossing">
-        <p class="sec-label"><span class="n">01</span> The Crossing</p>
-        <h2 class="sec-title">Two sides. One crossing. Only meaning travels.</h2>
-        <p class="muted" style="max-width:660px">
-          Wherever two sides meet — a person and a system, a maker and a material, one mind and another —
-          each side knows only its own interior. Everything else is a model, a crossing, and a cost.
-          This is the shape of that meeting.
-        </p>
-
-        <figure class="diagram-box" style="margin:26px 0 0">
-          <svg viewBox="0 0 920 460" role="img" aria-label="Diagram of the crossing: six hollow triangles in a chain. Triangles 1 and 5 on the far left and right are the two sides. Triangles 2 and 4 are each side's model of the other. Triangle 3, above center, knows what each side can do. Triangle 6, lower center, forms an hourglass with triangle 3 and is the place that knows what each side does. U-shaped curves beneath the triangles are the interface. A ground line beneath everything is first principles.">
-            <!-- T3 tag -->
-            <text x="460" y="72" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="3" fill="#94a3b8">KNOWS WHAT EACH SIDE CAN DO</text>
-
-            <!-- row tags -->
-            <text x="220" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#5eead4">SIDE A</text>
-            <text x="340" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#f0b64f">A&rsquo;S MODEL OF B</text>
-            <text x="580" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#f0b64f">B&rsquo;S MODEL OF A</text>
-            <text x="700" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#5eead4">SIDE B</text>
-
-            <!-- Triangle 3 (above center, pointing down) -->
-            <polygon points="400,92 520,92 460,196" fill="rgba(148,163,184,0.05)" stroke="#94a3b8" stroke-width="1.5"/>
-            <text x="460" y="118" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9.5" letter-spacing="2" fill="#94a3b8">CAN DO</text>
-            <text x="460" y="156" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#94a3b8">3</text>
-
-            <!-- Row triangles -->
-            <!-- T1 -->
-            <polygon points="160,300 220,196 280,300" fill="rgba(94,234,212,0.05)" stroke="#5eead4" stroke-width="1.5"/>
-            <text x="220" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#5eead4">1</text>
-            <!-- T2 -->
-            <polygon points="280,300 340,196 400,300" fill="rgba(240,182,79,0.05)" stroke="#f0b64f" stroke-width="1.5"/>
-            <text x="340" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#f0b64f">2</text>
-            <!-- T6 (lower center of hourglass) -->
-            <polygon points="400,300 460,196 520,300" fill="rgba(233,231,222,0.06)" stroke="#e9e7de" stroke-width="1.5"/>
-            <text x="460" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#e9e7de">6</text>
-            <text x="460" y="291" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9.5" letter-spacing="2" fill="#e9e7de">DOES</text>
-            <!-- T4 -->
-            <polygon points="520,300 580,196 640,300" fill="rgba(240,182,79,0.05)" stroke="#f0b64f" stroke-width="1.5"/>
-            <text x="580" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#f0b64f">4</text>
-            <!-- T5 -->
-            <polygon points="640,300 700,196 760,300" fill="rgba(94,234,212,0.05)" stroke="#5eead4" stroke-width="1.5"/>
-            <text x="700" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#5eead4">5</text>
-
-            <!-- crossing point -->
-            <circle cx="460" cy="196" r="4" fill="#e9e7de"/>
-            <text x="478" y="191" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="10" letter-spacing="2" fill="#e9e7de">THE CROSSING</text>
-
-            <!-- interface: U curves -->
-            <g fill="none" stroke="#64748b" stroke-width="1.5">
-              <path d="M160,308 Q220,350 280,308"/>
-              <path d="M280,308 Q340,350 400,308"/>
-              <path d="M400,308 Q460,350 520,308"/>
-              <path d="M520,308 Q580,350 640,308"/>
-              <path d="M640,308 Q700,350 760,308"/>
-            </g>
-            <text x="460" y="378" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="3" fill="#94a3b8">THE INTERFACE</text>
-
-            <!-- ground line: first principles -->
-            <line x1="120" y1="402" x2="800" y2="402" stroke="#e9e7de" stroke-width="1" opacity="0.55"/>
-            <text x="460" y="428" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="3" fill="#e9e7de">FIRST PRINCIPLES</text>
-            <text x="460" y="447" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="10" fill="#637383">the common understanding beneath both sides</text>
-          </svg>
-          <figcaption><b>An artifact is an interface.</b> Only meaning crosses.</figcaption>
-        </figure>
-
-        <ul class="legend">
-          <li><span class="k teal">1·5</span><span><b>The two sides.</b> Each knows only its own interior — nothing else on either side is given.</span></li>
-          <li><span class="k amber">2·4</span><span><b>Each side&rsquo;s model of the other.</b> What A believes B can do; what B believes A can do. A model is not the side.</span></li>
-          <li><span class="k slate">3</span><span><b>Knows what each side can do.</b> Capability, held above the crossing — before anything happens.</span></li>
-          <li><span class="k ink">6</span><span><b>The place that knows what each side does.</b> The record of the act itself, where the apexes meet.</span></li>
-          <li><span class="k slate">U</span><span><b>The interface.</b> The curves underneath: the cost of carrying something across, paid on every crossing.</span></li>
-          <li><span class="k ink">—</span><span><b>First principles.</b> The ground line both sides stand on, whether they know it or not.</span></li>
-        </ul>
-      </section>
-
-      <!-- ================= FIRST PRINCIPLES ================= -->
-      <section id="principles">
-        <p class="sec-label"><span class="n">02</span> First Principles</p>
-        <h2 class="sec-title">The ground line, named.</h2>
-        <div class="entries">
-          <div class="entry">
-            <div class="num">1</div>
-            <div>
-              <h3>Environment <span class="gloss">— what does not move.</span></h3>
-              <p>The unmoving frame. It has no oughts; it just is. You do not negotiate with it, model it away, or wait for it to change its mind. You build on it precisely because it will still be there.</p>
-              <blockquote>&ldquo;I don&rsquo;t have to worry if the landing zone will be there after I jump and before I land.&rdquo;</blockquote>
-            </div>
-          </div>
-          <div class="entry">
-            <div class="num">2</div>
-            <div>
-              <h3>Fields of Interaction <span class="gloss">— what holds across a gap without touching it.</span></h3>
-              <p>Interaction across separation, never by contact or merging. Two sides can act on each other across a distance — through a field, through an interface — while remaining exactly what they are. The gap is not a defect. The gap is where the field lives.</p>
-            </div>
-          </div>
+      <div class="sidebox" id="sideB">
+        <h4>Side B</h4>
+        <div class="yn">
+          <button type="button" data-side="B" data-val="yes" aria-pressed="false">Yes</button>
+          <button type="button" data-side="B" data-val="no" class="no" aria-pressed="false">No</button>
         </div>
-      </section>
-
-      <!-- ================= THREE DEFINITIONS ================= -->
-      <section id="definitions">
-        <p class="sec-label"><span class="n">03</span> Three Definitions</p>
-        <h2 class="sec-title">Words, held to their bounds.</h2>
-        <div class="entries">
-          <div class="entry">
-            <div class="num">1</div>
-            <div>
-              <h3>Artificial <span class="gloss">— produced by art rather than by nature.</span></h3>
-              <p><span class="w">The decided.</span> Shared meaning is sometimes found, sometimes made — &ldquo;A&rdquo; is A, but &ldquo;g&rdquo; is whatever value we decide. An artificial system is one held to its oughts and bounds; testing is exactly that holding.</p>
-            </div>
-          </div>
-          <div class="entry">
-            <div class="num">2</div>
-            <div>
-              <h3>Artifact as Interface <span class="gloss">— after Herbert Simon.</span></h3>
-              <p>An artifact is the meeting point between an <span class="w">inner</span> — the substance and organization of the artifact itself — and an <span class="w">outer</span> — the environment it operates in. The interface is the cost of carrying something across, and the component that transcribes meaning across. <span class="w">Only the meaning travels.</span></p>
-            </div>
-          </div>
-          <div class="entry">
-            <div class="num">3</div>
-            <div>
-              <h3>Practice <span class="gloss">— the generator itself, running.</span></h3>
-              <p>Solving once and again; each &ldquo;again&rdquo; deposits confidence. Practice is not preparation for the real thing — run in the present tense, it is the real thing. <span class="w">Mastery is what alignment looks like when the crossing is no longer needed.</span></p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= THE INSTRUMENT ================= -->
-      <section id="instrument">
-        <p class="sec-label"><span class="n">04</span> The Instrument</p>
-        <h2 class="sec-title">Triangulation: do we know what each other knows?</h2>
-        <p class="muted" style="max-width:680px">
-          The matrix exists for one purpose: <span style="color:var(--ink)">to find out if you know what I know and I know what you know.</span>
-          It is only for the uncertain — things both sides are sure of never enter it. They are the checklist; they just run.
-          Bring one uncertain question. Let each side answer, honestly, with its confidence. Watch the waves.
-        </p>
-
-        <div class="instrument" id="instrument-box">
-          <div class="inst-head">
-            <span>Triangulation Matrix</span>
-            <span class="live">In session</span>
-          </div>
-
-          <div class="q-block">
-            <label for="q-input">The uncertain question</label>
-            <input id="q-input" type="text" autocomplete="off" spellcheck="false"
-                   placeholder="Type the question neither side is sure of&hellip;" />
-            <div class="shelf" id="shelf">
-              <span class="shelf-label">From the shelf</span>
-              <!-- preset chips injected by script -->
-            </div>
-          </div>
-
-          <div class="inst-grid">
-            <!-- SIDE A -->
-            <div class="side a">
-              <h4>Side A</h4>
-              <p class="who">This side. It knows only its own interior.</p>
-              <div class="yn" role="group" aria-label="Side A answer">
-                <button type="button" id="a-yes">YES</button>
-                <button type="button" id="a-no">NO</button>
-              </div>
-              <div class="conf-label"><span>&minus;1 · I don&rsquo;t know</span><span>Confidence</span><span>+1 · Full</span></div>
-              <input type="range" id="a-conf" min="-1" max="1" step="0.01" value="0.55" aria-label="Side A confidence, minus 1 (I don't know) to plus 1 (full confidence)" />
-              <div class="val"><span id="a-val">+0.55</span><small>side a value</small></div>
-            </div>
-
-            <!-- STAGE -->
-            <div class="stage">
-              <div class="canvas-wrap">
-                <canvas id="waves" width="640" height="188"></canvas>
-                <span class="canvas-tag a">Wave · A</span>
-                <span class="canvas-tag b">Wave · B</span>
-                <span class="canvas-tag lock">Standing wave — canon</span>
-              </div>
-
-              <div class="readouts">
-                <div class="readout"><div class="rl">Side A</div><div class="rv" id="r-a">+0.55</div></div>
-                <div class="readout"><div class="rl">Side B</div><div class="rv" id="r-b">+0.35</div></div>
-                <div class="readout" id="ro-shared"><div class="rl">Shared confidence</div><div class="rv teal" id="r-shared">+0.45</div></div>
-                <div class="readout" id="ro-gap"><div class="rl">Gap</div><div class="rv amber" id="r-gap">0.10</div></div>
-              </div>
-
-              <div class="meter-block">
-                <div class="meter-labels">
-                  <span>&minus;1 · opposed / unknown</span>
-                  <span class="thr">Set threshold +0.80</span>
-                  <span>+1</span>
-                </div>
-                <div class="meter" aria-hidden="true">
-                  <div class="fill" id="meter-fill"></div>
-                  <div class="center"></div>
-                  <div class="thresh"></div>
-                </div>
-                <p class="threshold-note">Canon forms past the <b>set threshold, +0.80</b> — decided, not found. A bound the system is held to, like &ldquo;g&rdquo;.</p>
-              </div>
-
-              <div class="inst-actions">
-                <button type="button" class="btn btn-ask" id="btn-ask">Ask again</button>
-                <button type="button" class="btn btn-new" id="btn-new">New question</button>
-                <span class="asks">asks this question: <b id="asks-count">0</b></span>
-              </div>
-              <p class="inst-status" id="inst-status">The waves are out of reach of canon. Raise confidence, or ask again — each honest re-asking deposits confidence.</p>
-            </div>
-
-            <!-- SIDE B -->
-            <div class="side b">
-              <h4>Side B</h4>
-              <p class="who">The other side. A knows it only through the crossing.</p>
-              <div class="yn" role="group" aria-label="Side B answer">
-                <button type="button" id="b-yes">YES</button>
-                <button type="button" id="b-no">NO</button>
-              </div>
-              <div class="conf-label"><span>&minus;1 · I don&rsquo;t know</span><span>Confidence</span><span>+1 · Full</span></div>
-              <input type="range" id="b-conf" min="-1" max="1" step="0.01" value="0.35" aria-label="Side B confidence, minus 1 (I don't know) to plus 1 (full confidence)" />
-              <div class="val"><span id="b-val">+0.35</span><small>side b value</small></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="below-inst">
-          <div class="rules">
-            <h3>Rules of the matrix</h3>
-            <ol>
-              <li><b>Only the uncertain enters.</b> What both sides are sure of is the checklist — it just runs, and never takes up the matrix.</li>
-              <li><b>Every question needs a floor and an exit.</b> A floor: it must bottom out in what is. An exit: it resolves, or it graduates to protocol.</li>
-              <li><b>Canon forms past a set threshold.</b> The threshold is decided, not found — held like any other bound of an artificial system.</li>
-              <li><b>At +1 the crossing is eliminated.</b> Fully shared, the question dissolves — or becomes protocol, and runs without being asked.</li>
-              <li><b>Canon has a shelf life.</b> Even +1 expires. A parachute reserve packing is valid six months; then the checklist runs again.</li>
-            </ol>
-          </div>
-
-          <div class="canon">
-            <h3>Canon — this browser</h3>
-            <div id="canon-empty" class="canon-empty">Nothing has graduated yet. Canon is earned past the threshold, never declared.</div>
-            <ul class="canon-list" id="canon-list"></ul>
-            <p class="canon-note"><span class="t">&gt;</span> Your canon stays in your browser. Nothing here phones home.</p>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <footer>
-      <div class="wrap">
-        <div class="f-line">
-          <span class="f-dom">themissinglayer.org</span>
-          <span class="f-quote">The generator is the knowing. <b>Run it again.</b></span>
-        </div>
-        <span class="f-none">No contact form. No newsletter. No analytics. Nothing here phones home.</span>
+        <label>Confidence <span class="confval" id="confValB">0.00</span></label>
+        <input type="range" id="confB" min="-1" max="1" step="0.05" value="0" aria-label="Side B confidence" />
+        <div class="scale-ends"><span>−1 · I don't know</span><span>+1 · full</span></div>
       </div>
-    <p style="margin-top:14px;font-size:11px;letter-spacing:.18em;opacity:.55">CANDIDATES/MUSE · VERSION 1.1 · 2026-11-10</p>
+    </div>
+    <div class="readout">
+      <div>
+        <label style="margin:0;">Shared confidence</label>
+        <div class="big" id="sharedVal">—</div>
+      </div>
+      <div class="verdict" id="mxVerdict">Both sides answer, then ask. Agreement with shared confidence past <b style="color:var(--amber)">+0.80</b> graduates the question to canon.</div>
+      <button id="askBtn" type="button">Ask</button>
+      <span class="verdict" id="askCount"></span>
+    </div>
+    <div class="canon">
+      <h4>Canon — shelf life 180 days, then re-check</h4>
+      <div id="canonList"></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:10px;">Canon is stored only in this browser. An expired entry stays visible, marked — re-ask the question; do not quietly extend it.</p>
+
+  <h3>The stop law</h3>
+  <p class="law amber">Know the stop condition <span class="a">before</span> starting. Figure out <span class="a">Y</span> — the exit — then fill X. The moment X becomes some Y you never figured out, <span class="a">leave</span>.<br /><span style="color:var(--slate);font-size:12.5px;">— THE STOP LAW · FROM THE RECORD</span></p>
+  <p>Judgment runs in <strong>three nested loops</strong>: the <strong>inner loop</strong>, where the work is checked as it is made; the <strong>outer loop</strong>, the human test; and the <strong>outermost loop</strong> — contact with reality itself, the public launch. <strong>Time is the only cost. Reality is the ultimate judge.</strong> Every gate before the outermost is a rehearsal for it.</p>
+
+  <div class="rep amber" data-rep="rep4">
+    <span class="rep-tag">Rep 4 · Do it now</span>
+    <h3>Run one question; write its exit first</h3>
+    <p>Take one open question of yours and run it through the matrix above — with a partner, or against your own recorded earlier answer as Side B. Then, below, write the question's <strong>exit before its answer</strong>: the Y at which you stop, leave, or ship — stated now, while you are still outside it.</p>
+    <textarea data-store="rep4" placeholder="My question: …&#10;Its exit (Y) — I stop / leave / ship when: …&#10;What the matrix said: …" aria-label="Rep 4 writing box"></textarea>
+    <span class="saved">Kept in this browser only · saves as you type</span>
+  </div>
+</section>
+
+<!-- ============ PART V ============ -->
+<section class="chapter" id="part5">
+  <div class="ch-head">
+    <span class="partno">Part V</span>
+    <h2>The Instruments at Hand</h2>
+    <p class="ch-sub">The layer, within reach — where the practitioner runs this today.</p>
+  </div>
+
+  <p>The guide closes not with a theory but with the surfaces on the practitioner's own desk — each one the circuit, wearing work clothes.</p>
+
+  <h3>The pi0 passthrough</h3>
+  <p>A <strong>240×135 display on a separate small computer</strong>, reached through one port: <strong>display out, gamepad in</strong>. The kernel asks <strong>one question at a time</strong> on its corners, and the human answers by button. One port, one question, one answer — the interface kept so small that only meaning can fit through it. That smallness is not a limitation; it is the discipline of Part II, enforced by hardware.</p>
+
+  <h3>The busy board</h3>
+  <p>A box of real controls — knobs, buttons, switches — whose job is to <strong>keep the hands practicing</strong>: “keep yourself busy.” Its controls carry no labels to memorize; their only signal is <em>change</em>. A practicing instrument, not a performing one: mount is practice, and the board is where practice lives between performances.</p>
+
+  <h3>The store</h3>
+  <p>Everything has an <strong>address</strong>; the record is <strong>signed</strong>. What crosses between sessions is the <strong>transcription</strong> — canonical, checked, compressed — never the raw original. Memory, in this practice, is not a warehouse of everything that happened; it is the set of addresses and jumps worth spending on, and forgetting is handled by holding both transcriptions side by side and reading the diff.</p>
+
+  <h3>And this guide</h3>
+  <p>This page is itself an artifact standing between an inner environment and an outer one — and you have been practicing on it since Part I. Its writing boxes are a store with addresses. Its circuit is a generator you ran. Its matrix is a gate you stood at. The layer was under your hands the whole time; that is the only way it is ever learned.</p>
+
+  <div class="rep" data-rep="rep5">
+    <span class="rep-tag">Rep 5 · The last one</span>
+    <h3>Close the guide. Build one crossing.</h3>
+    <p>This rep is not done in the box — it is done this week, in the world. Build <strong>one crossing of your own</strong>: a side, an interface where only meaning travels, a generator, a gate it did not write, and what stands afterward. Then <strong>demo it to one person</strong>. Write here only what you built and who saw it — after it exists.</p>
+    <textarea data-store="rep5" placeholder="The crossing I built: …&#10;I demoed it to: …&#10;What the gate said: …" aria-label="Rep 5 writing box"></textarea>
+    <span class="saved">Kept in this browser only · saves as you type</span>
+  </div>
+</section>
+
+<!-- ============ CLOSING ============ -->
+<div class="closing" id="closing">
+  <div class="caps teal" style="margin-bottom:18px;">The Closing Declaration</div>
+  <p class="decl">The layer was never missing from the work. It was missing from the looking. <em>Practice it once, then again.</em> That is the whole guide.</p>
+</div>
+
+<footer>
+  <span class="caps">Ashwamedh III · The Missing Layer</span>
+  <span class="caps">A Practitioner's Guide to the Sciences of the Artificial</span>
+<p style="text-align:center;margin:28px 0 8px;font-size:11px;letter-spacing:.18em;opacity:.55">CANDIDATES/MUSE · VERSION 2.0 · 2026-11-11</p>
 </footer>
 
-    <script>
-      (function () {
-        "use strict";
-        var $ = function (id) { return document.getElementById(id); };
-        var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        var THRESHOLD = 0.8;
-        var SHELF_DAYS = 180; // a reserve packing is valid six months
+</div>
 
-        var PRESETS = [
-          "Does the interface carry the meaning — or the thing itself?",
-          "Is the reserve packed within the last six months?",
-          "Can each side state what the other side does — not what it says?",
-          "Is this certain enough to leave the matrix and just run?"
-        ];
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        /* ---------------- state ---------------- */
-        var state = {
-          question: "",
-          a: { answer: "yes", conf: 0.55 },
-          b: { answer: "yes", conf: 0.35 },
-          asks: 0,
-          bonus: 0,
-          locked: false
-        };
+/* ---------- persistent writing boxes ---------- */
+var PREFIX="missing-layer-guide:";
+document.querySelectorAll("textarea[data-store]").forEach(function(t){
+  var key=PREFIX+t.getAttribute("data-store");
+  try{var v=localStorage.getItem(key); if(v!==null) t.value=v;}catch(e){}
+  t.addEventListener("input",function(){ try{localStorage.setItem(key,t.value);}catch(e){} });
+});
 
-        /* ---------------- canon storage (browser-local only) ---------------- */
-        var memCanon = [];
-        var KEY = "tml.canon.v1";
-        function loadCanon() {
-          try {
-            var raw = window.localStorage.getItem(KEY);
-            if (raw) { var p = JSON.parse(raw); if (Object.prototype.toString.call(p) === "[object Array]") return p; }
-          } catch (e) { /* storage unavailable: fall through to memory */ }
-          return memCanon;
-        }
-        function saveCanon(list) {
-          memCanon = list;
-          try { window.localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { /* in-memory only */ }
-        }
-        var canon = loadCanon();
+/* ---------- chapter nav highlight ---------- */
+var navLinks={};
+document.querySelectorAll("#topnav a").forEach(function(a){var h=a.getAttribute("href"); if(h&&h.charAt(0)==="#") navLinks[h.slice(1)]=a;});
+if("IntersectionObserver" in window){
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){
+        Object.keys(navLinks).forEach(function(k){navLinks[k].classList.remove("active");});
+        var a=navLinks[en.target.id]; if(a) a.classList.add("active");
+      }
+    });
+  },{rootMargin:"-30% 0px -60% 0px"});
+  ["title","part1","part2","part3","part4","part5","closing"].forEach(function(id){var el=$(id); if(el) obs.observe(el);});
+}
 
-        /* ---------------- helpers ---------------- */
-        function cert(c) { return (c + 1) / 2; }                    // -1..+1 -> 0..1
-        function stance(s) { return (s.answer === "yes" ? 1 : -1) * cert(s.conf); }
-        function agree() { return state.a.answer === state.b.answer; }
-        function shared() {
-          if (agree()) {
-            var v = (state.a.conf + state.b.conf) / 2 + state.bonus;
-            return Math.max(-1, Math.min(1, v));
-          }
-          return -((cert(state.a.conf) + cert(state.b.conf)) / 2);  // opposed: no shared ground
-        }
-        function gap() { return Math.abs(stance(state.a) - stance(state.b)); }
-        function fmt(v) { return (v < 0 ? "\u2212" : "+") + Math.abs(v).toFixed(2); }
-        function fmtDate(ts) {
-          var d = new Date(ts);
-          return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        }
+/* ---------- THE CIRCUIT (data from the record) ---------- */
+var BUILDS=[
+ {year:"2005–06",short:"The Coin Counter",name:"The Coin Counter",with_:"3rd-year engineering · with Parag Joglekar",side:null,crossing:null,generator:"An ARM7 embedded build",gate:null,artifact:"The counter itself",result:null,note:"The first recorded instance of the circuit's topology."},
+ {year:"2006–07",short:"SADAM",name:"SADAM — Stand Alone Data Acquisition Module",with_:"Final-year project, Pune · with Tanay Jadhav and Kunal Waykole",side:"Signals, out in the world",crossing:"From the world into record",generator:null,gate:null,artifact:"The Stand Alone Data Acquisition Module",result:null,note:"Signals crossed from the world into record — acquisition as a crossing."},
+ {year:"2008",short:"The Test-Case Generator",name:"The Test-Case Generator",with_:"UBS KYC, Pune · Oct 2008",side:"10,000 hand-made Excel test cases",crossing:"Hand-made cases, fed to a bench instead of being repeated by hand",generator:"A bench-built generator of test cases",gate:"Coverage — measured, not assumed",artifact:"Automated test-case generation for the KYC estate",result:"Coverage 65% → 99% · cases tripled · all automated · days saved",note:null},
+ {year:"2011",short:"The CA7 Verifier",name:"The CA7 Verifier",with_:"Bank of America · Jun 2011",side:"≈4,500 mainframe jobs",crossing:"Jobs carried into one verification pass",generator:"A verification tool",gate:"The only step that remained human was verification itself",artifact:"CA7 verification, automated",result:"Two weeks of manual checking → 2–3 days",note:null},
+ {year:"2011–17",short:"DPG Config Migration",name:"The Dynamic Payment Generator — Config Migration",with_:"Bank of America · US Patent 8,818,893 B2",side:"A fully real payment setup, tested in UAT",crossing:"“Extract, serialize and ship it” — UAT to production by his auto-deploy",generator:"The Dynamic Payment Generator — it detects what a transaction gives it and prompts for / pre-fills whatever the institutions uniquely require",gate:"Gap-analysis tools",artifact:"Production payment configuration — the entire ISO pain. family, 356 payment types; Brazil Boleto hand-coded by him",result:null,note:"His seat, verbatim: “I hand managed its config migration for years.”"},
+ {year:"2013–16",short:"EFD",name:"EFD",with_:"Bank of America",side:null,crossing:null,generator:"A workflow orchestrator on Activiti / BPMN",gate:null,artifact:"EFD — the workflow system itself",result:"Dec 2016: written feedback from his SVP — the reason the recommendation letter exists",note:"His own ranking, verbatim: “EFD was strongest of my work.”"},
+ {year:"2019",short:"The Search Vision",name:"The Search Vision",with_:"AWS · Data Exchange search, founding team",side:"The load-bearing question: can we index the data the customer is selling without revealing it?",crossing:"The question, carried to the whole team on one page",generator:"One mind map — every question a status-tagged leaf",gate:"The team's verdict, on the map",artifact:"The search vision for Data Exchange",result:"“One map, and everyone collapsed.”",note:null},
+ {year:"2020–23",short:"Workflow Type System",name:"The Workflow Type System",with_:"Meta · DAG-based commerce workflow orchestration",side:"Business schemas, needing to cross into workflows",crossing:"The schema survives the crossing as a runtime value",generator:"final class DataBag< reify T as BusinessSchema >",gate:"A ≈1,000-file migration, run against production",artifact:"The composition grammar of the type system — adopted across 5 verticals, 15+ products",result:"≈1,000-file migration · zero incidents",note:"He saw it in five days; “the two years that followed were not discovery, they were persuasion.”"},
+ {year:"2025–26",short:"Gita Reader",name:"Gita Reader",with_:"open-your-mind.org · free forever",side:"700 verses",crossing:"One verse at a time — never the whole text at once",generator:"Verse-at-a-time presentation: sandhi-viccheda, translation, speaker context",gate:"Translation and editorial validation; feedback from three active practitioners",artifact:"The Gita Reader",result:null,note:"Made in loving memory of his mother — she could recite the Gita from any starting point — and his Guru."},
+ {year:"2026",short:"Chamber",name:"Chamber",with_:"With Viresh and Ashutosh",side:"People, arriving to talk",crossing:"The room itself is the interface",generator:"Local AI, inside the room",gate:"Nothing collected",artifact:"A chat room, empty on purpose — the Empty Fort (Shunya Gadh Sheher)",result:null,note:"The emptiness is the feature."},
+ {year:"2026",short:"Intent Geometry",name:"Intent Geometry",with_:"The circuit, written as law",side:"Intent — X",crossing:"Mount: intent becomes membrane — F = X [C] i·Y",generator:"The artifact, generated under the membrane",gate:"Unmount: the artifact goes live only when the gate passes · on failure, revert — never patch",artifact:"What stands after unmount",result:"Operator 1 · Acceptor N (bounded) · Reality M (unbounded)",note:null},
+ {year:"2026",short:"SASAS",name:"SASAS — Signal Acquisition System",with_:"Open source · the SASAS final build",side:"Signal, buried in noise",crossing:"One small port between machines — display out, gamepad in",generator:"A pipeline to capture signal from the noise",gate:"The kernels and the controller, judging live",artifact:"pi5 and pi0 kernels, a Pico controller, and a 240×135 display on a separate computer",result:null,note:"The circuit, running live between machines."}
+];
+var NONE="— not in the record";
+var current=2, runs=0, running=false, ranBuilds={};
+var strip=$("strip"), facts=$("facts"), instYear=$("instYear"), instName=$("instName"),
+    runBtn=$("runBtn"), runState=$("runState"), runCount=$("runCount"), buildsRun=$("buildsRun"),
+    pulseLayer=$("pulseLayer"), gateFlash=$("gateFlash");
+var boxes={side:document.querySelector("#st-side .station-box"),iface:document.querySelector("#st-interface .station-box"),gen:document.querySelector("#st-generator .station-box"),gate:document.querySelector("#st-gate .station-box"),art:document.querySelector("#st-artifact .station-box")};
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function factRow(label,value){var dd=value===null?'<dd class="none">'+NONE+"</dd>":"<dd>"+value+"</dd>";return '<div class="fact"><dt>'+label+"</dt>"+dd+"</div>";}
+function renderFacts(b){
+  var h="";
+  h+=factRow("Territory","<strong>"+esc(b.name)+"</strong>"+(b.with_?" &nbsp;·&nbsp; "+esc(b.with_):""));
+  h+=factRow("Side — what stood",b.side?esc(b.side):null);
+  h+=factRow("The crossing",b.crossing?esc(b.crossing):null);
+  h+=factRow("The generator",b.generator?esc(b.generator):null);
+  h+=factRow("The gate",b.gate?esc(b.gate):null);
+  h+=factRow("What stood",b.artifact?esc(b.artifact):null);
+  h+=factRow("Measured result",b.result?'<span class="result-big">'+esc(b.result)+"</span>":null);
+  if(b.note) h+=factRow("Trace",'<span class="verbatim">'+esc(b.note)+"</span>");
+  facts.innerHTML=h;
+}
+var SVGNS="http://www.w3.org/2000/svg";
+function wrapText(str,maxChars,maxLines){
+  var words=str.split(/\s+/),lines=[],line="";
+  for(var w=0;w<words.length;w++){var t=line?line+" "+words[w]:words[w]; if(t.length>maxChars&&line){lines.push(line);line=words[w];}else line=t;}
+  if(line)lines.push(line);
+  if(lines.length>maxLines){lines=lines.slice(0,maxLines);var last=lines[maxLines-1];lines[maxLines-1]=(last.length>maxChars-1?last.slice(0,maxChars-1):last)+"…";}
+  return lines;
+}
+function fillSlot(id,segments,maxChars){
+  var el=$(id); while(el.firstChild) el.removeChild(el.firstChild);
+  var y=0;
+  segments.forEach(function(seg){
+    if(seg.text===null){var t0=document.createElementNS(SVGNS,"tspan");t0.setAttribute("x",el.getAttribute("x"));t0.setAttribute("dy",y===0?"0":"13");t0.setAttribute("class","none");t0.textContent="— not in the record";el.appendChild(t0);y++;return;}
+    wrapText(seg.text,maxChars,seg.cls==="res"?3:5).forEach(function(ln,li){
+      var t=document.createElementNS(SVGNS,"tspan");t.setAttribute("x",el.getAttribute("x"));t.setAttribute("dy",y===0?"0":"13");
+      if(seg.cls)t.setAttribute("class",seg.cls); t.textContent=(seg.cls==="res"&&li===0?"▸ ":"")+ln; el.appendChild(t); y++;
+    });
+  });
+}
+function fillSlots(b){
+  fillSlot("slot-side",[{text:b.side}],21);
+  fillSlot("slot-iface",[{text:b.crossing}],24);
+  fillSlot("slot-gen",[{text:b.generator}],30);
+  fillSlot("slot-gate",[{text:b.gate}],24);
+  var art=[{text:b.artifact}]; if(b.result)art.push({text:b.result,cls:"res"});
+  fillSlot("slot-art",art,24);
+}
+function select(i){
+  current=i; var b=BUILDS[i];
+  instYear.textContent=b.year; instName.textContent=b.name;
+  renderFacts(b); fillSlots(b);
+  var btns=strip.querySelectorAll(".tbtn");
+  for(var k=0;k<btns.length;k++) btns[k].setAttribute("aria-pressed",k===i?"true":"false");
+  if(!running) runState.textContent="Loaded. The circuit is ready.";
+}
+BUILDS.forEach(function(b,i){
+  var btn=document.createElement("button"); btn.type="button"; btn.className="tbtn"; btn.setAttribute("aria-pressed","false");
+  btn.innerHTML='<span class="yr">'+esc(b.year)+'</span><span class="nm">'+esc(b.short)+"</span>";
+  btn.addEventListener("click",function(){select(i);});
+  strip.appendChild(btn);
+});
+var X={side:80,ifaceIn:184,genIn:384,gate:710,art:910}, Y=100;
+function makeDot(cls,r){var c=document.createElementNS(SVGNS,"circle");c.setAttribute("class","pulse"+(cls?" "+cls:""));c.setAttribute("r",r||6);c.setAttribute("cy",Y);c.setAttribute("cx",-20);pulseLayer.appendChild(c);return c;}
+function setHot(box,on){if(box)box.classList.toggle("hot",!!on);}
+function allHotOff(){setHot(boxes.side,false);setHot(boxes.iface,false);setHot(boxes.gen,false);setHot(boxes.gate,false);setHot(boxes.art,false);}
+function animate(dur,fn){return new Promise(function(resolve){if(reduced){fn(1);resolve();return;}var t0=null;function step(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/dur);fn(p);if(p<1)requestAnimationFrame(step);else resolve();}requestAnimationFrame(step);});}
+function moveX(dot,from,to,dur){return animate(dur,function(p){dot.setAttribute("cx",from+(to-from)*p);});}
+function delay(ms){return new Promise(function(r){setTimeout(r,reduced?0:ms);});}
+function updateBuildsRun(){var n=Object.keys(ranBuilds).length; buildsRun.textContent=n+" / 3 for Rep 2"+(n>=3?" · done ✓":"");}
+function runCrossing(){
+  if(running)return; running=true; runBtn.disabled=true;
+  runs+=1; runCount.textContent=runs;
+  ranBuilds[current]=true; updateBuildsRun();
+  gateFlash.setAttribute("opacity","0");
+  runState.textContent="Crossing… the side presents itself.";
+  pulseLayer.innerHTML="";
+  var main=makeDot("",6), instances=[];
+  setHot(boxes.side,true);
+  moveX(main,X.side,X.ifaceIn-12,550).then(function(){
+    runState.textContent="At the interface — only meaning crosses.";
+    setHot(boxes.side,false); setHot(boxes.iface,true);
+    return moveX(main,X.ifaceIn-12,X.genIn-12,450);
+  }).then(function(){
+    runState.textContent="The generator runs — instances, not hand-made ones.";
+    setHot(boxes.iface,false); setHot(boxes.gen,true);
+    main.setAttribute("cx",-20);
+    for(var i=0;i<3;i++){var d=makeDot("",5); d.setAttribute("cx",X.genIn+20+i*34); instances.push(d);}
+    return delay(650);
+  }).then(function(){
+    runState.textContent="Emitted. Carrying the instances to the gate…";
+    return Promise.all(instances.map(function(d,i){return moveX(d,parseFloat(d.getAttribute("cx")),X.gate-26+i*18,700);}));
+  }).then(function(){
+    runState.textContent="The gate judges.";
+    setHot(boxes.gen,false); setHot(boxes.gate,true);
+    return delay(600);
+  }).then(function(){
+    var rej=instances[2]; rej.setAttribute("class","pulse rej"); instances=instances.slice(0,2);
+    var drop=animate(500,function(p){rej.setAttribute("cy",Y+(272-Y)*p);}).then(function(){
+      return animate(1100,function(p){
+        if(p<0.52){rej.setAttribute("cx",X.gate+(80-X.gate)*(p/0.52));}
+        else{rej.setAttribute("cx",80); rej.setAttribute("cy",272+(182-272)*((p-0.52)/0.48));}
+      });
+    });
+    gateFlash.textContent="ACCEPTED"; gateFlash.setAttribute("opacity","1");
+    var pass=instances.map(function(d,i){return moveX(d,parseFloat(d.getAttribute("cx")),X.art-24+i*22,650);});
+    return Promise.all(pass.concat([drop]));
+  }).then(function(){
+    setHot(boxes.gate,false); setHot(boxes.art,true);
+    runState.innerHTML='One returned as information. The rest passed — <span class="ok">it stands.</span>';
+    return delay(900);
+  }).then(function(){
+    allHotOff(); gateFlash.setAttribute("opacity","0"); pulseLayer.innerHTML="";
+    running=false; runBtn.disabled=false;
+    runState.innerHTML='Crossing complete. Topology changes: 0. <span class="ok">Run it again — in another territory.</span>';
+  });
+}
+runBtn.addEventListener("click",runCrossing);
+select(current);
 
-        /* ---------------- DOM refs ---------------- */
-        var input = $("q-input"), shelf = $("shelf"), box = $("instrument-box");
-        var aYes = $("a-yes"), aNo = $("a-no"), bYes = $("b-yes"), bNo = $("b-no");
-        var aConf = $("a-conf"), bConf = $("b-conf");
-        var statusEl = $("inst-status");
-
-        /* preset chips */
-        var chips = [];
-        PRESETS.forEach(function (q, i) {
-          var b = document.createElement("button");
-          b.type = "button"; b.className = "chip"; b.textContent = q;
-          b.addEventListener("click", function () {
-            setQuestion(q);
-            chips.forEach(function (c) { c.classList.remove("active"); });
-            b.classList.add("active");
-            input.focus();
-          });
-          shelf.appendChild(b); chips.push(b);
-          if (i === 0) { b.classList.add("active"); }
-        });
-
-        function setQuestion(q) {
-          state.question = q;
-          if (input.value !== q) input.value = q;
-          state.asks = 0; state.bonus = 0;
-          sync(); checkCanon();
-        }
-
-        input.addEventListener("input", function () {
-          state.question = input.value;
-          chips.forEach(function (c) { c.classList.toggle("active", c.textContent === input.value); });
-          checkCanon();
-        });
-
-        /* ---------------- side controls ---------------- */
-        function bindSide(side, yesBtn, noBtn, slider, valEl) {
-          yesBtn.addEventListener("click", function () { state[side].answer = "yes"; sync(); checkCanon(); });
-          noBtn.addEventListener("click", function () { state[side].answer = "no"; sync(); checkCanon(); });
-          slider.addEventListener("input", function () {
-            state[side].conf = parseFloat(slider.value);
-            sync();
-            checkCanon();
-          });
-        }
-        bindSide("a", aYes, aNo, aConf, $("a-val"));
-        bindSide("b", bYes, bNo, bConf, $("b-val"));
-
-        function setToggle(btn, on, cls) {
-          btn.classList.toggle(cls, on);
-        }
-
-        /* ---------------- readouts ---------------- */
-        function sync() {
-          setToggle(aYes, state.a.answer === "yes", "on-yes");
-          setToggle(aNo, state.a.answer === "no", "on-no");
-          setToggle(bYes, state.b.answer === "yes", "on-yes");
-          setToggle(bNo, state.b.answer === "no", "on-no");
-          if (parseFloat(aConf.value) !== state.a.conf) aConf.value = state.a.conf;
-          if (parseFloat(bConf.value) !== state.b.conf) bConf.value = state.b.conf;
-          $("a-val").textContent = fmt(stance(state.a));
-          $("b-val").textContent = fmt(stance(state.b));
-          $("r-a").textContent = fmt(stance(state.a));
-          $("r-b").textContent = fmt(stance(state.b));
-          var sh = shared();
-          $("r-shared").textContent = fmt(sh);
-          $("r-gap").textContent = gap().toFixed(2);
-          $("asks-count").textContent = state.asks;
-          var fill = $("meter-fill");
-          var pct = (sh + 1) / 2 * 100;
-          if (sh >= 0) { fill.style.left = "50%"; fill.style.width = (pct - 50) + "%"; }
-          else { fill.style.left = pct + "%"; fill.style.width = (50 - pct) + "%"; }
-          fill.classList.toggle("neg", sh < 0);
-          if (!state.locked) updateStatus(sh);
-        }
-
-        function updateStatus(sh) {
-          if (!state.question.trim()) {
-            statusEl.innerHTML = "Name the uncertain question first. The certain never enters the matrix.";
-          } else if (!agree()) {
-            statusEl.innerHTML = "<span class=\"bad\">The sides disagree.</span> The waves stay out of phase and the gap is the honest readout. The question stays in the matrix.";
-          } else if (sh >= THRESHOLD) {
-            statusEl.innerHTML = "<span class=\"ok\">Shared confidence past the set threshold.</span> Locking into a standing wave&hellip;";
-          } else {
-            statusEl.innerHTML = "The sides agree, but shared confidence is short of the threshold by " +
-              (THRESHOLD - sh).toFixed(2) + ". Raise confidence, or ask again — each honest re-asking deposits confidence.";
-          }
-        }
-
-        function pulse(id) {
-          var el = $(id);
-          el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
-        }
-
-        /* ---------------- ask again / new question ---------------- */
-        $("btn-ask").addEventListener("click", function () {
-          if (state.locked) return;
-          state.asks += 1;
-          if (agree()) {
-            state.bonus = Math.min(0.45, state.bonus + 0.07);   // re-asking deposits confidence
-            pulse("ro-shared");
-          } else {
-            pulse("ro-gap");                                     // disagreement deposits nothing
-          }
-          sync(); checkCanon();
-        });
-
-        $("btn-new").addEventListener("click", function () {
-          if (state.locked) return;
-          resetMatrix();
-        });
-
-        function resetMatrix() {
-          state.question = ""; input.value = "";
-          state.a = { answer: "yes", conf: 0.2 };
-          state.b = { answer: "no", conf: 0.2 };
-          state.asks = 0; state.bonus = 0;
-          chips.forEach(function (c) { c.classList.remove("active"); });
-          sync();
-        }
-
-        /* ---------------- canon ---------------- */
-        function checkCanon() {
-          if (state.locked) return;
-          if (!state.question.trim()) return;
-          if (agree() && shared() >= THRESHOLD) startLock();
-        }
-
-        function startLock() {
-          state.locked = true;
-          box.classList.add("locking");
-          sync();
-          var delay = reduced ? 150 : 1600;
-          window.setTimeout(graduate, delay);
-        }
-
-        function graduate() {
-          var q = state.question.trim();
-          var item = { q: q, ts: Date.now() };
-          canon.unshift(item);
-          saveCanon(canon);
-          animateOut(q);
-          renderCanon(true);
-          box.classList.remove("locking");
-          state.locked = false;
-          resetMatrix();
-          statusEl.innerHTML = "<span class=\"ok\">Canon.</span> &ldquo;" + escapeHtml(q) + "&rdquo; graduated past the threshold and left the matrix. It will expire — canon has a shelf life.";
-        }
-
-        function animateOut(q) {
-          if (reduced || !input.animate) return;
-          try {
-            var r = input.getBoundingClientRect();
-            var list = $("canon-list").getBoundingClientRect();
-            var g = document.createElement("div");
-            g.className = "ghost"; g.textContent = q;
-            g.style.left = r.left + "px"; g.style.top = r.top + "px"; g.style.width = Math.min(r.width, window.innerWidth * 0.7) + "px";
-            document.body.appendChild(g);
-            var dy = (list.top + 10) - r.top;
-            var anim = g.animate(
-              [{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(" + dy + "px)", opacity: 0.15 }],
-              { duration: 750, easing: "cubic-bezier(.3,.7,.3,1)" }
-            );
-            anim.onfinish = function () { g.remove(); };
-            window.setTimeout(function () { if (g.parentNode) g.remove(); }, 1000);
-          } catch (e) { /* animation is decoration; canon is already saved */ }
-        }
-
-        function escapeHtml(s) {
-          return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
-
-        function renderCanon(freshFirst) {
-          var list = $("canon-list");
-          list.innerHTML = "";
-          $("canon-empty").style.display = canon.length ? "none" : "block";
-          var now = Date.now();
-          canon.forEach(function (item, idx) {
-            var exp = item.ts + SHELF_DAYS * 86400000;
-            var expired = now > exp;
-            var daysLeft = Math.ceil((exp - now) / 86400000);
-            var li = document.createElement("li");
-            li.className = "canon-item" + (expired ? " expired" : "") + (freshFirst && idx === 0 ? " fresh" : "");
-            var shelf = expired
-              ? "EXPIRED " + fmtDate(exp) + " — shelf life spent. The checklist runs again."
-              : "Shelf life: " + daysLeft + (daysLeft === 1 ? " day" : " days") + " left · expires " + fmtDate(exp) + " — then the checklist runs again.";
-            li.innerHTML =
-              "<div class=\"cq\">" + escapeHtml(item.q) + "</div>" +
-              "<div class=\"cm\"><span class=\"stamp\">" + (expired ? "WAS CANON" : "CANON") + "</span> · entered " + fmtDate(item.ts) + "<br />" + shelf + "</div>";
-            list.appendChild(li);
-          });
-        }
-
-        /* ---------------- waves ---------------- */
-        var canvas = $("waves"), ctx = canvas.getContext("2d");
-        var phaseA = 0, phaseB = Math.PI, lockBlend = 0;
-        var t0 = Date.now();
-
-        function fitCanvas() {
-          var r = canvas.getBoundingClientRect();
-          var dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.max(300, Math.round(r.width * dpr));
-          canvas.height = Math.round(188 * dpr);
-        }
-        window.addEventListener("resize", fitCanvas);
-        fitCanvas();
-
-        function wavePath(w, h, t, phase, amp, wob, seed) {
-          var mid = h / 2, k = (Math.PI * 2) / (w / 2.6);
-          ctx.beginPath();
-          for (var x = 0; x <= w; x += 3) {
-            var y = mid
-              + Math.sin(x * k + phase - t * 1.7) * amp
-              + Math.sin(x * 0.045 + t * 2.4 + seed) * wob
-              + Math.sin(x * 0.011 - t * 0.9 + seed * 2.1) * wob * 0.6;
-            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-        }
-
-        function draw() {
-          var w = canvas.width, h = canvas.height;
-          var t = (Date.now() - t0) / 1000;
-          ctx.clearRect(0, 0, w, h);
-          var dpr = window.devicePixelRatio || 1;
-
-          /* center line */
-          ctx.strokeStyle = "rgba(148,163,184,0.18)"; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
-
-          var targetA = state.a.answer === "yes" ? 0 : Math.PI;
-          var targetB = state.b.answer === "yes" ? 0 : Math.PI;
-          if (state.locked) { targetB = targetA; }
-          phaseA += (targetA - phaseA) * 0.05;
-          phaseB += (targetB - phaseB) * 0.05;
-          lockBlend += ((state.locked ? 1 : 0) - lockBlend) * 0.04;
-
-          var ampA = (6 + cert(state.a.conf) * 30) * dpr;
-          var ampB = (6 + cert(state.b.conf) * 30) * dpr;
-          var wobA = (1 - cert(state.a.conf)) * 8 * dpr;
-          var wobB = (1 - cert(state.b.conf)) * 8 * dpr;
-          var compAlpha = 1 - lockBlend * 0.72;
-
-          ctx.lineWidth = 2 * dpr;
-          ctx.strokeStyle = "rgba(94,234,212," + (0.95 * compAlpha) + ")";
-          wavePath(w, h, t, phaseA, ampA, wobA * (1 - lockBlend), 0);
-          ctx.strokeStyle = "rgba(94,234,212," + (0.42 * compAlpha) + ")";
-          wavePath(w, h, t, phaseB, ampB, wobB * (1 - lockBlend), 17);
-
-          if (lockBlend > 0.02) {
-            var mid = h / 2, k = (Math.PI * 2) / (w / 2.6);
-            var ampAvg = (ampA + ampB) / 2;
-            /* envelope */
-            ctx.strokeStyle = "rgba(233,231,222," + (0.30 * lockBlend) + ")";
-            ctx.lineWidth = 1 * dpr;
-            ctx.setLineDash([5 * dpr, 5 * dpr]);
-            [-1, 1].forEach(function (s) {
-              ctx.beginPath();
-              for (var x = 0; x <= w; x += 4) {
-                var y = mid + s * Math.abs(Math.cos((x - w / 2) * k)) * 2 * ampAvg * 0.92;
-                if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-              }
-              ctx.stroke();
-            });
-            ctx.setLineDash([]);
-            /* standing wave */
-            ctx.strokeStyle = "rgba(233,231,222," + (0.95 * lockBlend) + ")";
-            ctx.lineWidth = 2.4 * dpr;
-            ctx.beginPath();
-            for (var x2 = 0; x2 <= w; x2 += 3) {
-              var y2 = mid + 2 * ampAvg * 0.92 * Math.cos((x2 - w / 2) * k) * Math.sin(t * 1.7);
-              if (x2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
-            }
-            ctx.stroke();
-          }
-          window.requestAnimationFrame(draw);
-        }
-
-        /* ---------------- init ---------------- */
-        setQuestion(PRESETS[0]);
-        renderCanon(false);
-        window.requestAnimationFrame(draw);
-      })();
-    </script>
-  </body>
+/* ---------- THE TRIANGULATION MATRIX ---------- */
+var ans={A:null,B:null}, asks=0;
+var confA=$("confA"), confB=$("confB"), confValA=$("confValA"), confValB=$("confValB"),
+    sharedVal=$("sharedVal"), mxVerdict=$("mxVerdict"), askCount=$("askCount"),
+    mxQ=$("mxQ"), canonList=$("canonList");
+var CANON_KEY=PREFIX+"canon";
+function fmt(n){return (n>0?"+":"")+n.toFixed(2);}
+function shared(){
+  if(ans.A===null||ans.B===null) return null;
+  var a=parseFloat(confA.value), b=parseFloat(confB.value);
+  if(ans.A!==ans.B) return -Math.max(Math.abs(a),Math.abs(b))*0.5 - 0.25; /* disagreement drives shared confidence below zero */
+  return (a+b)/2;
+}
+function refreshMatrix(){
+  confValA.textContent=fmt(parseFloat(confA.value));
+  confValB.textContent=fmt(parseFloat(confB.value));
+  var s=shared();
+  if(s===null){sharedVal.textContent="—"; sharedVal.className="big"; return;}
+  sharedVal.textContent=fmt(s);
+  sharedVal.className="big "+(s>0.80&&ans.A===ans.B?"pass":"fail");
+}
+document.querySelectorAll(".yn button").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    var side=btn.getAttribute("data-side");
+    ans[side]=btn.getAttribute("data-val");
+    document.querySelectorAll('.yn button[data-side="'+side+'"]').forEach(function(b){b.setAttribute("aria-pressed",b===btn?"true":"false");});
+    refreshMatrix();
+  });
+});
+confA.addEventListener("input",refreshMatrix);
+confB.addEventListener("input",refreshMatrix);
+function loadCanon(){ try{return JSON.parse(localStorage.getItem(CANON_KEY)||"[]");}catch(e){return [];} }
+function saveCanon(list){ try{localStorage.setItem(CANON_KEY,JSON.stringify(list));}catch(e){} }
+function renderCanon(){
+  var list=loadCanon(), now=Date.now();
+  if(!list.length){canonList.innerHTML='<span class="canon-empty">Nothing in canon yet. A question graduates when both sides agree past +0.80.</span>'; return;}
+  canonList.innerHTML="";
+  list.forEach(function(item,idx){
+    var expired=now>item.expires;
+    var div=document.createElement("div"); div.className="canon-item";
+    var left=document.createElement("span"); left.className="q"; left.textContent=item.q;
+    var meta=document.createElement("span"); meta.className="meta";
+    var d=new Date(item.expires);
+    meta.textContent="answer: "+item.answer.toUpperCase()+" · shared "+fmt(item.shared)+" · asked "+item.asks+"× · "+(expired?"EXPIRED "+d.toISOString().slice(0,10)+" — re-ask it":"expires "+d.toISOString().slice(0,10));
+    if(expired){meta.style.color="var(--red)";}
+    var del=document.createElement("button"); del.type="button"; del.textContent="Remove";
+    del.addEventListener("click",function(){var l=loadCanon(); l.splice(idx,1); saveCanon(l); renderCanon();});
+    div.appendChild(left); div.appendChild(meta); div.appendChild(del);
+    canonList.appendChild(div);
+  });
+}
+$("askBtn").addEventListener("click",function(){
+  var q=mxQ.value.trim();
+  if(!q){mxVerdict.innerHTML='<span class="wait">Write the question first — one specific question.</span>'; mxQ.focus(); return;}
+  if(ans.A===null||ans.B===null){mxVerdict.innerHTML='<span class="wait">Both sides must answer — yes or no, each with a confidence. An unanswered side is a broken interface.</span>'; return;}
+  asks+=1; askCount.textContent="Asked "+asks+"× this session";
+  var s=shared();
+  if(ans.A!==ans.B){
+    mxVerdict.innerHTML='The sides <b>disagree</b> ('+ans.A.toUpperCase()+' vs '+ans.B.toUpperCase()+'). Shared confidence '+fmt(s)+' — no canon. Ask again: the disagreement itself is the information.';
+    return;
+  }
+  if(s>0.80){
+    var list=loadCanon();
+    list=list.filter(function(it){return it.q.toLowerCase()!==q.toLowerCase();});
+    list.push({q:q,answer:ans.A,shared:Math.round(s*100)/100,asks:asks,expires:Date.now()+180*24*60*60*1000});
+    saveCanon(list); renderCanon();
+    mxVerdict.innerHTML='<span class="ok">Graduated to canon.</span> Both sides said '+ans.A.toUpperCase()+' at shared '+fmt(s)+'. Shelf life: 180 days — then re-check, never assume.';
+  } else if(s<0){
+    mxVerdict.innerHTML='Shared confidence is <b>below the floor</b> ('+fmt(s)+'). At −1 a side is saying “I don\'t know” — an unanswerable question expires. Sharpen the question, then ask again.';
+  } else {
+    mxVerdict.innerHTML='Agreement at shared '+fmt(s)+' — below the +0.80 threshold. Not canon. <span class="wait">Ask again</span> — repetition against a recorded answer is how confidence is earned.';
+  }
+});
+refreshMatrix(); renderCanon();
+})();
+</script>
+</body>
 </html>
