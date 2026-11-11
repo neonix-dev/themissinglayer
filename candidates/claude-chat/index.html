@@ -4,45 +4,76 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Missing Layer</title>
-<meta name="description" content="What I cannot create, I do not understand. A self-governed, local-first practice for building muscle across domains. Your reps stay in your browser.">
+<meta name="description" content="A Practitioner's Guide to the Sciences of the Artificial. When I'm in the middle of a problem, surrounded by systems that already exist, what is the least I need to do to get it resolved?">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=Noto+Sans+Devanagari:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-/* Layout idea: V0 as it was ruled. A top bar, then two panes that trade places: Run (site wide, store glanceable) and Setup (store wide, site a rail). */
+/* Layout idea: one root page, read outside in. Claim, the six principles, then a card you punch and carry. Drafting film, a 2x4 card at true proportion. */
 :root{
   --paper:#e6ecee; --sheet:#f5f8f8; --ink:#13273a; --ink-soft:#4b6071; --line:#b4c3cb;
-  --grid:rgba(19,39,58,.055); --led:#b96a00; --led-glow:rgba(185,106,0,.25); --stamp:#a3261d;
+  --grid:rgba(19,39,58,.055); --led:#b96a00; --led-glow:rgba(185,106,0,.22); --stamp:#a3261d; --card:#fbf8ef;
   --display:"IBM Plex Serif", Georgia, serif; --body:"IBM Plex Serif", Georgia, serif;
   --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-  --deva:"Noto Sans Devanagari", "Kohinoor Devanagari", sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --paper:#0d1b2a; --sheet:#12253a; --ink:#dce7ef; --ink-soft:#8ea5b7; --line:#2a435b;
-    --grid:rgba(220,231,239,.045); --led:#f2a93b; --led-glow:rgba(242,169,59,.3); --stamp:#ef7b70; color-scheme:dark;
+    --grid:rgba(220,231,239,.045); --led:#f2a93b; --led-glow:rgba(242,169,59,.28); --stamp:#ef7b70; --card:#182e45; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --paper:#0d1b2a; --sheet:#12253a; --ink:#dce7ef; --ink-soft:#8ea5b7; --line:#2a435b;
-  --grid:rgba(220,231,239,.045); --led:#f2a93b; --led-glow:rgba(242,169,59,.3); --stamp:#ef7b70; color-scheme:dark;
+  --grid:rgba(220,231,239,.045); --led:#f2a93b; --led-glow:rgba(242,169,59,.28); --stamp:#ef7b70; --card:#182e45; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.55;
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:18px; line-height:1.6;
   background-image:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size:24px 24px}
-.sheet{max-width:1120px; margin:0 auto; padding:20px 20px 40px; display:flex; flex-direction:column; gap:20px}
-p{margin:0; max-width:66ch}
+.sheet{max-width:880px; margin:0 auto; padding:56px 22px 40px; display:flex; flex-direction:column; gap:76px}
+p{margin:0; max-width:64ch}
 a{color:inherit; text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--led); outline-offset:2px}
-.mono{font-family:var(--mono); font-size:13px}
-.soft{color:var(--ink-soft)}
-.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); margin:0}
-h1{font-family:var(--mono); font-weight:500; font-size:14px; letter-spacing:.26em; text-transform:uppercase; margin:0}
-h2{font-family:var(--display); font-weight:600; font-size:26px; line-height:1.2; margin:0; text-wrap:balance}
+section{display:flex; flex-direction:column; gap:20px}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft); margin:0}
+h2{font-family:var(--display); font-weight:600; font-size:30px; line-height:1.2; margin:0; text-wrap:balance}
 h3{font-family:var(--mono); font-weight:500; font-size:13px; letter-spacing:.12em; text-transform:uppercase; margin:0}
-.stack{display:flex; flex-direction:column; gap:14px}
+.soft{color:var(--ink-soft)}
+.mono{font-family:var(--mono); font-size:13px}
+
+/* title */
+header{display:flex; flex-direction:column; gap:30px}
+.title h1{font-family:var(--mono); font-weight:500; font-size:15px; letter-spacing:.32em; text-transform:uppercase; margin:0}
+.title .sub{font-family:var(--display); font-style:italic; font-size:clamp(22px,3.4vw,28px); line-height:1.25; margin:8px 0 0}
+.question{font-family:var(--display); font-size:clamp(28px,5vw,42px); line-height:1.2; margin:0; max-width:23ch; text-wrap:balance}
+.bar{display:flex; flex-direction:column; gap:4px; border-left:2px solid var(--led); padding-left:14px}
+.bar q{quotes:none; font-style:italic}
+.bar span{font-family:var(--mono); font-size:13px; color:var(--ink-soft)}
+
+/* figure */
+figure{margin:0; display:flex; flex-direction:column; gap:10px}
+.fig{width:100%; height:auto; display:block; overflow:visible}
+.fig text{font-family:var(--mono); fill:var(--ink)}
+.fig .s{fill:var(--ink-soft)}
+.fig .box{fill:var(--sheet); stroke:var(--ink); stroke-width:1.2}
+.fig .seam{fill:var(--card); stroke:var(--led); stroke-width:1.6}
+.fig .ar{stroke:var(--ink); stroke-width:1.2; fill:none}
+.fig .ar2{stroke:var(--ink-soft); stroke-width:1.2; fill:none; stroke-dasharray:4 4}
+figcaption{font-family:var(--mono); font-size:12.5px; color:var(--ink-soft)}
+
+/* principles */
+ol.fp{list-style:none; margin:0; padding:0; counter-reset:f}
+ol.fp > li{counter-increment:f; display:grid; grid-template-columns:44px minmax(0,1fr); gap:4px 14px; padding:18px 0; border-top:1px solid var(--line)}
+ol.fp > li::before{content:counter(f); font-family:var(--mono); font-size:22px; line-height:1.2; color:var(--ink-soft)}
+ol.fp b{display:block; font-family:var(--display); font-size:21px; font-weight:600; margin-bottom:4px}
+ol.fp .more{display:block; margin-top:8px; font-size:16.5px; color:var(--ink-soft)}
+.note{font-size:16px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:14px}
+
+/* the bench */
+.panel{background:var(--sheet); border:1px solid var(--line); border-radius:4px; padding:18px; display:flex; flex-direction:column; gap:18px}
+.gate{border:1px solid var(--led); border-radius:3px; padding:12px 14px; display:flex; flex-direction:column; gap:10px; font-size:16px}
+.gate.done{border-color:var(--line)}
 .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
 button{font-family:var(--mono); font-size:13px; color:var(--ink); background:transparent; border:1px solid var(--ink); border-radius:3px; padding:7px 11px; cursor:pointer; line-height:1.2}
 button:hover{background:var(--ink); color:var(--sheet)}
@@ -50,83 +81,59 @@ button.primary{background:var(--ink); color:var(--sheet)}
 button.primary:hover{opacity:.85}
 button.quiet{border-color:var(--line); color:var(--ink-soft)}
 button.quiet:hover{background:transparent; color:var(--ink); border-color:var(--ink)}
+button[aria-pressed="true"]{background:var(--ink); color:var(--sheet)}
 button[disabled]{opacity:.35; cursor:not-allowed}
 button[disabled]:hover{background:transparent; color:var(--ink)}
-button[aria-pressed="true"], button[aria-selected="true"]{background:var(--ink); color:var(--sheet)}
-
-/* top bar */
-.bar{display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center; justify-content:space-between; border-bottom:1px solid var(--ink); padding-bottom:12px}
-.bar .id{display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline}
-.addr{font-family:var(--mono); font-size:13px; color:var(--ink-soft)}
-.seg{display:inline-flex}
-.seg button{border-radius:0}
-.seg button:first-child{border-radius:3px 0 0 3px}
-.seg button + button{border-left:0; border-radius:0 3px 3px 0}
-
-/* panes */
-.app{display:grid; gap:20px; align-items:start; grid-template-columns:minmax(0,1fr) 270px}
-.app.setup{grid-template-columns:190px minmax(0,1fr)}
-@media (max-width:820px){.app, .app.setup{grid-template-columns:1fr}}
-.pane{background:var(--sheet); border:1px solid var(--line); border-radius:4px; padding:18px; display:flex; flex-direction:column; gap:18px; min-width:0}
-.rail{font-family:var(--mono); font-size:13px; gap:12px; padding:14px}
-.rail pre, pre.json{margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:var(--mono); font-size:12.5px; line-height:1.5}
-.led{display:inline-block; width:10px; height:10px; border-radius:50%; border:1px solid var(--ink-soft); vertical-align:baseline; margin-right:8px}
-.led.on{background:var(--led); border-color:var(--led); box-shadow:0 0 0 3px var(--led-glow)}
-dl.kv{display:grid; grid-template-columns:auto 1fr; gap:3px 12px; margin:0}
-dl.kv dt{color:var(--ink-soft)} dl.kv dd{margin:0; text-align:right; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
-.navlist{display:flex; flex-direction:column; gap:6px}
-.navlist button{text-align:left}
-
-/* head of the site */
-.frame{font-family:var(--display); font-size:clamp(24px,3.6vw,34px); line-height:1.2; margin:0; text-wrap:balance}
-.frame span{display:block; font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin-top:6px}
-.gate{border:1px solid var(--led); border-radius:3px; padding:12px 14px; display:flex; flex-direction:column; gap:10px}
-.tabs{display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line); padding-bottom:12px}
-.tabs .wip{border-style:dashed}
-
-/* reps */
-.rep{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center}
-.rep .n{font-family:var(--mono); font-size:56px; line-height:1; min-width:2ch; text-align:center; font-variant-numeric:tabular-nums}
-.rep .pm button{font-size:20px; width:44px; height:44px; padding:0}
-table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12.5px}
-th, td{text-align:left; padding:6px 10px 6px 0; border-top:1px solid var(--line); vertical-align:top}
-th{color:var(--ink-soft); font-weight:400; border-top:0}
-.tablewrap{overflow-x:auto}
-tr.live td:first-child::before{content:"● "; color:var(--led)}
-
-/* swaras */
-.swaras{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px}
-@media (max-width:520px){.swaras{grid-template-columns:repeat(4, minmax(0,1fr))}}
-.swaras button{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px}
-.swaras b{font-family:var(--deva); font-weight:500; font-size:19px; line-height:1.3}
-.swaras small{font-family:var(--mono); font-size:11px; opacity:.75}
-
-/* trail */
-.legend{display:flex; flex-wrap:wrap; gap:6px 18px; font-family:var(--mono); font-size:12px; color:var(--ink-soft)}
-.mk{font-family:var(--mono); font-size:12px; flex:none; width:1.3em; display:inline-block}
-.mk.k{color:var(--ink)} .mk.r{color:var(--led)} .mk.s{color:var(--ink-soft)}
-ol.trail{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
-ol.trail > li{display:grid; grid-template-columns:104px minmax(0,1fr); gap:6px 16px; padding:14px 0; border-top:1px solid var(--line)}
-@media (max-width:560px){ol.trail > li{grid-template-columns:1fr}}
-.when{font-family:var(--mono); font-size:12.5px; color:var(--ink-soft); padding-top:3px}
-.called{font-family:var(--display); font-weight:600; font-size:19px; line-height:1.25}
-.lines{display:flex; flex-direction:column; gap:5px; margin-top:6px}
-.ln{display:flex; gap:4px; align-items:baseline}
-.ln q{quotes:none; font-family:var(--mono); font-size:13.5px; line-height:1.5}
-.ln.s q, .ln.s span.t{color:var(--ink-soft)}
-.ln span.t{font-size:15.5px}
-.site{font-size:15px; color:var(--ink-soft); margin-top:6px}
-ul.plain{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
-ul.plain li{display:grid; grid-template-columns:54px minmax(0,1fr); gap:10px; font-size:15.5px}
-ul.plain .sc{font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums; text-align:right; padding-top:2px}
-ul.plain .ag{display:block; color:var(--ink-soft); font-size:14.5px}
-ul.dash{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px; font-size:15.5px}
-
-/* setup */
-textarea{font-family:var(--mono); font-size:12.5px; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:3px; padding:8px 10px; width:100%; resize:vertical}
+label{display:flex; flex-direction:column; gap:4px; font-family:var(--mono); font-size:12px; color:var(--ink-soft); letter-spacing:.03em}
+input[type=text], input[type=number], textarea{font-family:var(--mono); font-size:14px; color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:3px; padding:7px 9px; width:100%}
+textarea{resize:vertical}
+input:focus, textarea:focus{border-color:var(--ink)}
+fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; min-width:0}
+legend{font-family:var(--mono); font-size:12px; color:var(--ink-soft); padding:0; margin-bottom:4px}
 .msg{font-family:var(--mono); font-size:12px; color:var(--ink-soft); min-height:1.3em}
-.block{border-top:1px solid var(--line); padding-top:14px; display:flex; flex-direction:column; gap:10px}
 
+/* the 2x4 card */
+.card{background:var(--card); border:1px solid var(--ink); border-radius:3px; padding:14px 16px 14px 40px; position:relative; display:flex; flex-direction:column; gap:10px; font-family:var(--mono); font-size:13.5px}
+.card.blank{max-width:620px; width:100%; min-height:280px}
+.card .holes{position:absolute; left:12px; top:14px; bottom:14px; display:flex; flex-direction:column; gap:6px}
+.hole{width:14px; height:14px; border-radius:50%; border:1px dashed var(--line); flex:none}
+.hole.y{background:var(--led); border:1px solid var(--led)}
+.hole.n{border:1.5px solid var(--stamp); background:transparent}
+.hole.w{border:1.5px solid var(--ink-soft)}
+.card .ask{font-family:var(--display); font-size:20px; line-height:1.3; overflow-wrap:anywhere}
+.card .meta{display:flex; flex-wrap:wrap; gap:4px 16px; color:var(--ink-soft); font-size:12.5px}
+.card .meta b{color:var(--ink); font-weight:500}
+.stamp{position:absolute; right:12px; top:12px; border:1.5px solid var(--led); color:var(--led); padding:1px 7px; font-size:11px; letter-spacing:.14em; transform:rotate(3deg); border-radius:2px}
+.stamp.x{border-color:var(--stamp); color:var(--stamp)}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chips button{font-size:12.5px; padding:5px 9px}
+ol.rows{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; border-top:1px solid var(--line)}
+ol.rows li{display:grid; grid-template-columns:22px 70px minmax(0,1fr); gap:8px; padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px; align-items:start}
+ol.rows li .t{color:var(--ink-soft); font-variant-numeric:tabular-nums}
+.cross{display:grid; grid-template-columns:110px minmax(0,1fr); gap:10px; align-items:end}
+@media (max-width:520px){.cross{grid-template-columns:1fr}}
+.cards{display:flex; flex-direction:column; gap:16px}
+.tally{display:flex; flex-wrap:wrap; gap:6px 22px; font-family:var(--mono); font-size:13px; color:var(--ink-soft)}
+.tally b{color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums}
+details{font-family:var(--mono); font-size:13px}
+details summary{cursor:pointer; color:var(--ink-soft)}
+details .inner{margin-top:12px; display:flex; flex-direction:column; gap:10px}
+
+/* oughts */
+ol.oughts{margin:0; padding:0; list-style:none; counter-reset:o; display:grid; grid-template-columns:1fr 1fr; gap:0 32px}
+ol.oughts li{counter-increment:o; display:grid; grid-template-columns:26px 1fr; gap:8px; padding:11px 0; border-top:1px solid var(--line); font-size:17px}
+ol.oughts li::before{content:counter(o); font-family:var(--mono); font-size:13px; color:var(--ink-soft); padding-top:3px}
+@media (max-width:640px){ol.oughts{grid-template-columns:1fr}}
+
+/* notebook */
+.notebook{display:flex; flex-direction:column; gap:14px}
+.page{background:var(--card); border:1px solid var(--line); border-radius:2px; padding:16px 18px; display:grid; grid-template-columns:44px minmax(0,1fr); gap:12px}
+.page .pg{font-family:var(--mono); font-size:12px; color:var(--ink-soft)}
+.page p{font-family:var(--display); font-style:italic; font-size:18px; line-height:1.5}
+.page p b{font-style:normal; font-family:var(--mono); font-weight:500; font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; display:block; margin-bottom:4px; color:var(--ink-soft)}
+
+/* sources */
+ul.src{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; font-size:16px}
 .titleblock{display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--ink); font-family:var(--mono); font-size:12px}
 .titleblock div{padding:8px 10px; border-right:1px solid var(--ink); display:flex; flex-direction:column; gap:2px; min-width:0; overflow-wrap:anywhere}
 .titleblock div:last-child{border-right:0}
@@ -136,26 +143,112 @@ textarea{font-family:var(--mono); font-size:12.5px; color:var(--ink); background
 </head>
 <body>
 <div class="sheet">
-  <header class="bar">
-    <div class="id"><h1>The Missing Layer</h1><span class="eyebrow">Self Governance</span><span class="addr" id="addr"></span></div>
-    <div class="seg" role="group" aria-label="Mode">
-      <button type="button" id="m-run" aria-pressed="true">Run</button><button type="button" id="m-setup" aria-pressed="false">Setup</button>
-    </div>
-  </header>
 
-  <div class="app" id="app">
-    <div class="pane" id="left"></div>
-    <div class="pane" id="right"></div>
+<header>
+  <div class="title">
+    <h1>The Missing Layer</h1>
+    <p class="sub">A Practitioner’s Guide to the Sciences of the Artificial</p>
   </div>
+  <p class="question">When I’m in the middle of a problem, surrounded by systems that already exist, what is the least I need to do to get it resolved?</p>
+  <div class="bar">
+    <q>What I cannot create, I do not understand.</q>
+    <span>Richard Feynman. If a mind like that can write it and leave it behind, I will take it as the bar.</span>
+  </div>
+</header>
 
+<section aria-labelledby="h-art">
+  <p class="eyebrow">Where the words come from</p>
+  <h2 id="h-art">An artifact is where two sides meet</h2>
+  <p>Herbert A. Simon, in <i>The Sciences of the Artificial</i> (1969), describes an artifact as a meeting point: an inner environment, the stuff and organization of the thing itself, and an outer environment, the surroundings it works in. Natural science asks how things are. The sciences of the artificial ask how things ought to be, to reach a goal. The vocabulary is Simon’s. The practice is this guide’s.</p>
+  <figure>
+    <svg class="fig" viewBox="0 0 760 250" role="img" aria-labelledby="fig-t">
+      <title id="fig-t">Outer, interface, inner, and the two directions of travel across them</title>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect class="box" x="10" y="40" width="240" height="120" rx="3"/>
+      <rect class="seam" x="268" y="40" width="224" height="120" rx="3"/>
+      <rect class="box" x="510" y="40" width="240" height="120" rx="3"/>
+      <text x="130" y="92" text-anchor="middle" font-size="15">OUTER</text>
+      <text class="s" x="130" y="116" text-anchor="middle" font-size="12">what it faces</text>
+      <text x="380" y="92" text-anchor="middle" font-size="15">INTERFACE</text>
+      <text class="s" x="380" y="116" text-anchor="middle" font-size="12">the crossing · cost = time</text>
+      <text x="630" y="92" text-anchor="middle" font-size="15">INNER</text>
+      <text class="s" x="630" y="116" text-anchor="middle" font-size="12">what is behind it</text>
+      <g style="color:var(--ink)"><path class="ar" d="M40 190 H720" marker-end="url(#ah)"/></g>
+      <text x="40" y="212" font-size="12">understanding: outer → interface → inner</text>
+      <g style="color:var(--ink-soft)"><path class="ar2" d="M720 22 H40" marker-end="url(#ah)"/></g>
+      <text class="s" x="720" y="14" text-anchor="end" font-size="12">implementation: inner → interface → outer</text>
+      <text class="s" x="40" y="240" font-size="12">study the outer first. the interface once the outer is understood. the inner, usually never.</text>
+    </svg>
+    <figcaption>Fig. 1. The two directions. Understanding runs from the outside in; building runs from the inside out.</figcaption>
+  </figure>
+</section>
+
+<section aria-labelledby="h-fp">
+  <p class="eyebrow">First principles</p>
+  <h2 id="h-fp">Six words, in the order a reader needs them</h2>
+  <ol class="fp">
+    <li><div><b>Environment</b>What doesn’t move. What everything is measured against and no one stands on.</div></li>
+    <li><div><b>Fields of interaction</b>What holds across a gap without touching. Present only while something sustains it: iron by memory, a wire by current. Seen only by what moves toward it. One field, one interface.</div></li>
+    <li><div><b>Artificial system</b>Anything with an ought in it. Nature has none.</div></li>
+    <li><div><b>Artifact</b>An artificial system, held together to its oughts and bounds by standing on a side, confidence built by practicing the interface.<span class="more">A side is where you stand. Outside, you see what the artifact faces. Inside, you see what is behind it. From either side you see the interface, never the other side. Stand on the edge and see both, and nothing has to cross; the artifact then collapses from disuse, not error.</span></div></li>
+    <li><div><b>Interface</b>The component that transcribes: it carries something from one side to the other in a form the other side can use. Every crossing costs time, paid by whoever stands there.<span class="more">When you want something, all you give is wall time.</span></div></li>
+    <li><div><b>Practice</b>The interface has to pulse. Confidence is measured by practicing: bring the iron near and see whether it moves. Every crossing is a row, and the rows add up.</div></li>
+  </ol>
+  <p class="note">No confidence score is printed beside these six. Confidence is not stated; it is built, one crossing at a time, below.</p>
+</section>
+
+<section aria-labelledby="h-pr">
+  <p class="eyebrow">The practice</p>
+  <h2 id="h-pr">Punch a card. Cross it. Spin the wheel.</h2>
+  <p>Write the ask on a 2×4 card, as short as it can be said. Name what already exists around it and where you stand. Pick the least intervention. Then cross: do it, note the wall time, and check it against reality. Did the problem get resolved? If not, ask first what you said, gave or did. Every crossing punches a hole. Nothing is erased.</p>
+  <div class="panel" id="bench"></div>
+</section>
+
+<section aria-labelledby="h-ou">
+  <p class="eyebrow">Oughts</p>
+  <h2 id="h-ou">Understand the nature of the problem. Work around it.</h2>
+  <ol class="oughts">
+    <li><span><b>Understand the nature</b> of the problem, the human, and the systems involved.</span></li>
+    <li><span><b>Work with what exists</b> before introducing something new.</span></li>
+    <li><span><b>Keep concerns orthogonal.</b> Compose capabilities without recreating their internals.</span></li>
+    <li><span><b>Make the desired action playable</b>, rather than merely possible.</span></li>
+    <li><span><b>Constrain dangerous operations structurally</b>, rather than depending on perfect human judgment.</span></li>
+    <li><span><b>Eliminate unnecessary human intervention</b>, including repeated explanation.</span></li>
+    <li><span><b>Test behavior in reality.</b> An explanation is not a demonstration.</span></li>
+    <li><span><b>Measure the outcome.</b> Does the problem get resolved?</span></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-nb">
+  <p class="eyebrow">From the notebook · handwritten, 2026-10-20 · as written</p>
+  <h2 id="h-nb">Nineteen years, one spec</h2>
+  <div class="notebook">
+    <div class="page"><span class="pg">p. 2</span><p><b>Claim</b>If you setup your application or an Experiment using this system. It will remember the setup and assist you next time. Even broken you are anyways going to configure the setup cold.</p></div>
+    <div class="page"><span class="pg">p. 10</span><p>“configure once, any input to any output, salvageable from cold start” was a spec in 2007 and thats what ran today</p></div>
+    <div class="page"><span class="pg">p. 12</span><p>The only downside, start cold and no way of reaching the same level without back &amp; forth. Kind of Dejavu. Untill I figured out all I needed was a file system. Thats it, a file system. All I need to remember is how to address it.</p></div>
+    <div class="page"><span class="pg">p. 13</span><p>What I observed during the build was that the 90% failures were attributed to what I had said, given or did, causing delay or outright failure to launch effectively. The less &amp; less I spoke faster &amp; better all artifacts turned out to be.</p></div>
+    <div class="page"><span class="pg">p. 8</span><p><b>Stance</b>The question is not what AI will do to the world. The question is what you are doing with it. It is here. Use it, and show how it is making your world easier. If you can not change today, it was never about AI. Focus on what you can control.</p></div>
+  </div>
+</section>
+
+<footer class="stack" style="display:flex; flex-direction:column; gap:28px">
+  <section aria-labelledby="h-src" style="gap:12px">
+    <h3 id="h-src">Sources</h3>
+    <ul class="src">
+      <li>Herbert A. Simon, <i>The Sciences of the Artificial</i>, MIT Press, 1969. Artifact, inner, outer, interface.</li>
+      <li>Richard Feynman, the line left on his blackboard at Caltech, 1988.</li>
+      <li>Stand Alone Data Acquisition Module, final-year project, Electronics &amp; Telecommunication, P.E.S. Modern College of Engineering, University of Pune, 2006–07.</li>
+    </ul>
+  </section>
   <div class="titleblock">
-    <div><span>this page</span>V0, rebuilt from its rulings</div>
-    <div><span>rebuilt by</span>a seat, claude.chat, from the traces</div>
-    <div><span>data</span>stays in this browser</div>
+    <div><span>sheet</span>1 of 1 · the root</div>
+    <div><span>branches</span>grow outside in</div>
+    <div><span>your cards</span>stay in this browser</div>
     <div><span>source · MIT</span><a href="https://github.com/neonix-dev/themissinglayer">neonix-dev/themissinglayer</a></div>
   </div>
-</div>
+</footer>
 
+</div>
 <script>
 (function(){
 "use strict";
@@ -163,372 +256,172 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, text){ var n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; }
 function btn(label, cls, fn){ var b = el("button", cls, label); b.type = "button"; b.addEventListener("click", fn); return b; }
 function add(p){ for(var i = 1; i < arguments.length; i++){ if(arguments[i]) p.appendChild(arguments[i]); } return p; }
+function clean(s, n){ return String(s == null ? "" : s).trim().slice(0, n); }
 
-/* ============ the store, as ruled on 2026-06-17 ============
-   memory is truth · localStorage is read once, on landing, on a yes · after that it is write-only
-   tml.backup = volatile mirror of memory · a snapshot is a new key, never an overwrite, and points at its parent */
-var DOMAINS = [
-  { k:"guide",    label:"Guide" },
-  { k:"music",    label:"Music",    rep:true, link:"https://ekalavya.studio",    host:"ekalavya.studio" },
-  { k:"sanskrit", label:"Sanskrit", rep:true, link:"https://open-your-mind.org", host:"open-your-mind.org" },
-  { k:"golf",     label:"Golf",     wip:true },
-  { k:"ifly",     label:"iFLY",     wip:true }
-];
-var REPS = DOMAINS.filter(function(d){ return d.rep; });
-var mem = { session:null, vals:{}, live:{}, nodes:{}, lastWrite:null, writeOk:null, note:"" };
-REPS.forEach(function(d){ mem.vals[d.k] = 0; mem.live[d.k] = null; mem.nodes[d.k] = []; });
-var ui = { mode:"run", tab:"guide", io:"" };
+/* Store, as ruled for this site: read once on landing, only on a yes; after that, write only.
+   One self-describing JSON, stamped with the schema of the code that wrote it. Cards and crossings append; nothing is erased. */
+var KEY = "tml.practice", SCHEMA = "tml.practice.1";
+var STAND = ["outside", "inside", "on the interface"];
+var LEAST = ["code", "a decision", "a connection", "a changed boundary", "no action at all"];
+var ASK_MAX = 90;
+var mem = { session:null, cards:[], note:"", wrote:null };
+var draft = { ask:"", outer:"", stand:null, least:null, how:"" };
+var open = {}; /* per card: crossing form state */
 
-function put(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)); mem.lastWrite = new Date(); mem.writeOk = true; }catch(e){ mem.writeOk = false; } }
-function writeThrough(){ put("tml.backup", mem.vals); put("tml.live", mem.live); }
-function validN(n){ return typeof n === "number" && isFinite(n) && n >= 0 && Math.floor(n) === n; }
-
-function continueCold(){ mem.session = "cold"; mem.note = "Nothing was read."; render(); }
-function loadLocal(){
-  var found = 0;
-  try{
-    var b = JSON.parse(localStorage.getItem("tml.backup") || "null");
-    var l = JSON.parse(localStorage.getItem("tml.live") || "null");
-    REPS.forEach(function(d){
-      if(b && validN(b[d.k])) mem.vals[d.k] = b[d.k];
-      if(l && typeof l[d.k] === "string") mem.live[d.k] = l[d.k];
-    });
-    for(var i = 0; i < localStorage.length; i++){
-      var key = localStorage.key(i);
-      if(key && key.indexOf("tml.node.") === 0){
-        var node = JSON.parse(localStorage.getItem(key));
-        var dk = key.split(".")[2];
-        if(node && mem.nodes[dk] && node.data && validN(node.data.n)){ mem.nodes[dk].push(node); found++; }
-      }
-    }
-    REPS.forEach(function(d){ mem.nodes[d.k].sort(function(a, b2){ return a.at < b2.at ? -1 : 1; }); });
-    mem.session = "local"; mem.note = "Read once: " + found + " kept node" + (found === 1 ? "" : "s") + ". From here, write only.";
-  }catch(e){ mem.session = "cold"; mem.note = "This browser gave nothing to read. Continuing cold."; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ schema:SCHEMA, written_at:new Date().toISOString(), cards:mem.cards })); mem.wrote = true; }catch(e){ mem.wrote = false; } }
+function validCard(c){ return c && typeof c.id === "string" && typeof c.ask === "string" && Array.isArray(c.rows); }
+function take(j){
+  if(!j || j.schema !== SCHEMA || !Array.isArray(j.cards)) throw new Error("shape");
+  return j.cards.filter(validCard).map(function(c){
+    return { id:c.id, at:String(c.at || ""), ask:clean(c.ask, ASK_MAX), outer:clean(c.outer, 240), stand:STAND.indexOf(c.stand) >= 0 ? c.stand : null,
+      least:LEAST.indexOf(c.least) >= 0 ? c.least : null, how:clean(c.how, 240), dropped:!!c.dropped,
+      rows:c.rows.filter(function(r){ return r && ["y","n","w"].indexOf(r.r) >= 0; }).map(function(r){ return { at:String(r.at || ""), min:Math.max(0, Math.min(100000, Math.round(+r.min || 0))), r:r.r, said:clean(r.said, 240) }; }) };
+  });
+}
+function cold(){ mem.session = "cold"; mem.note = "Nothing was read."; render(); }
+function local(){
+  try{ var raw = localStorage.getItem(KEY); mem.cards = raw ? take(JSON.parse(raw)) : []; mem.session = "local";
+    mem.note = "Read once: " + mem.cards.length + " card" + (mem.cards.length === 1 ? "" : "s") + ". From here, write only."; }
+  catch(e){ mem.session = "cold"; mem.cards = []; mem.note = "This browser gave nothing readable. Continuing cold."; }
   render();
 }
-function bump(dk, by){ mem.vals[dk] = Math.max(0, mem.vals[dk] + by); writeThrough(); render(); }
-function snapshot(dk){
-  var node = { id: Date.now().toString(36), parent: mem.live[dk], schema: dk + ".1.0", at: new Date().toISOString(), data: { n: mem.vals[dk] } };
-  mem.nodes[dk].push(node); mem.live[dk] = node.id;
-  put("tml.node." + dk + "." + node.id, node); writeThrough(); render();
+function resolved(c){ return c.rows.some(function(r){ return r.r === "y"; }); }
+function minutes(c){ return c.rows.reduce(function(s, r){ return s + r.min; }, 0); }
+function hm(m){ return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min"; }
+
+var EXAMPLE = { id:"example", ask:"write hello world", outer:"a laptop, and a language model on it", stand:"outside", least:"a decision", how:"say what I want, not what I can say",
+  dropped:false, rows:[
+    { min:1, r:"n", said:"I said hello world. I wanted a page: a picker on the left, a place to write in the middle, click, it runs." },
+    { min:2, r:"y", said:"" }] };
+
+function holes(c, n){
+  var h = el("div", "holes"); h.setAttribute("aria-hidden", "true");
+  var total = Math.max(n || 6, c.rows.length);
+  for(var i = 0; i < Math.min(total, 9); i++){ var r = c.rows[i]; h.appendChild(el("span", "hole" + (r ? " " + r.r : ""))); }
+  return h;
 }
-function makeLive(dk, id){
-  var node = mem.nodes[dk].filter(function(n){ return n.id === id; })[0]; if(!node) return;
-  mem.vals[dk] = node.data.n; mem.live[dk] = id; writeThrough(); render();
-}
-function exportAll(){ return JSON.stringify({ schema:"tml.export.1", exported_at:new Date().toISOString(), backup:mem.vals, live:mem.live, nodes:mem.nodes }, null, 2); }
-function importAll(text){
-  var j = JSON.parse(text); if(!j || j.schema !== "tml.export.1" || !j.nodes) throw new Error("shape");
-  var added = 0;
-  REPS.forEach(function(d){
-    (j.nodes[d.k] || []).forEach(function(n){
-      if(!n || typeof n.id !== "string" || !n.data || !validN(n.data.n)) return;
-      if(mem.nodes[d.k].some(function(x){ return x.id === n.id; })) return;
-      var node = { id:n.id, parent:(typeof n.parent === "string" ? n.parent : null), schema:String(n.schema || d.k + ".1.0"), at:String(n.at || ""), data:{ n:n.data.n } };
-      mem.nodes[d.k].push(node); put("tml.node." + d.k + "." + node.id, node); added++;
+function cardView(c, isExample){
+  var card = el("article", "card"), o = open[c.id] || (open[c.id] = { min:"", r:null, said:"" });
+  card.appendChild(holes(c));
+  if(resolved(c)) card.appendChild(el("span", "stamp", "RESOLVED"));
+  else if(c.dropped) card.appendChild(el("span", "stamp x", "DROPPED"));
+  if(isExample) add(card, el("span", "soft", "example · from “Hello World and the reset”"));
+  add(card, el("div", "ask", c.ask));
+  var meta = el("div", "meta");
+  [["faces", c.outer], ["stands", c.stand], ["least", c.least ? c.least + (c.how ? ": " + c.how : "") : c.how]].forEach(function(p){
+    if(p[1]){ var s = el("span"); add(s, document.createTextNode(p[0] + " "), el("b", "", p[1])); meta.appendChild(s); }
+  });
+  var tot = el("span"); add(tot, document.createTextNode("wall time "), el("b", "", hm(minutes(c)))); meta.appendChild(tot);
+  add(card, meta);
+  if(c.rows.length){
+    var ol = el("ol", "rows");
+    c.rows.forEach(function(r, i){
+      var li = el("li"), mk = el("span", "hole " + r.r); mk.style.width = "12px"; mk.style.height = "12px"; mk.style.marginTop = "3px";
+      mk.setAttribute("aria-label", r.r === "y" ? "resolved" : r.r === "n" ? "not resolved" : "not yet");
+      add(li, mk, el("span", "t", "#" + (i + 1) + " · " + r.min + "m"), el("span", "", r.r === "y" ? "resolved" + (r.said ? ". " + r.said : "") : r.r === "w" ? "not yet" + (r.said ? ". " + r.said : "") : "not resolved. " + (r.said || "nothing named")));
+      ol.appendChild(li);
     });
-    if(j.backup && validN(j.backup[d.k])) mem.vals[d.k] = j.backup[d.k];
-    if(j.live && typeof j.live[d.k] === "string") mem.live[d.k] = j.live[d.k];
-  });
-  if(!mem.session) mem.session = "local";
-  writeThrough(); return added;
-}
-
-/* ============ sound: the April storyline for /music ============ */
-var SA = 277.18; /* C#, as on the map */
-var SWARAS = [["सा","1/1",1],["रे॒","16/15",16/15],["रे","9/8",9/8],["ग॒","6/5",6/5],["ग","5/4",5/4],["म","4/3",4/3],
-              ["म॑","45/32",45/32],["प","3/2",3/2],["ध॒","8/5",8/5],["ध","5/3",5/3],["नि॒","9/5",9/5],["नि","15/8",15/8]];
-var audio = { ctx:null, drone:null };
-function ctx(){ if(!audio.ctx){ var C = window.AudioContext || window.webkitAudioContext; if(!C) return null; audio.ctx = new C(); } if(audio.ctx.state === "suspended") audio.ctx.resume(); return audio.ctx; }
-function toggleDrone(){
-  var c = ctx(); if(!c) return;
-  if(audio.drone){ var g0 = audio.drone.g; g0.gain.setTargetAtTime(0, c.currentTime, 0.15); var os = audio.drone.os; setTimeout(function(){ os.forEach(function(o){ try{ o.stop(); }catch(e){} }); }, 700); audio.drone = null; render(); return; }
-  var g = c.createGain(); g.gain.value = 0; g.gain.setTargetAtTime(0.07, c.currentTime, 0.4);
-  var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1400; f.connect(g); g.connect(c.destination);
-  var oss = [SA / 2, SA].map(function(hz, i){ var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = hz; var og = c.createGain(); og.gain.value = i ? 0.45 : 1; o.connect(og); og.connect(f); o.start(); return o; });
-  audio.drone = { g:g, os:oss }; render();
-}
-function playSwara(ratio){
-  var c = ctx(); if(!c) return;
-  var o = c.createOscillator(); o.type = "triangle"; o.frequency.value = SA * ratio;
-  var g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(0.18, c.currentTime + 0.03); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.6);
-  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 1.7);
-}
-
-/* ============ the trail ============
-   k = typed by the one who travelled, as typed · r = kept by a seat as a record of what he said · s = a seat's own words */
-var TRAIL = [
-  { when:"2026-03-09", called:"A thought experiment", lines:[
-      ["k","Just claim is not theorem but thought experiment"],
-      ["k","Missing layer across 5-6 domains and visible gap I felt while using AI."],
-      ["r","Every time you open a new conversation with an AI — you start over."]],
-    site:"The site then: the missing layers drawn across domains, and one experiment. One fixed opening, thirty subjects, one fixed output form, every run cold." },
-  { when:"2026-03-12", called:"A repo of experiments", lines:[
-      ["r","Not a blog. Not opinions. Lab notebooks that prove the missing layer exists."],
-      ["r","A stranger with zero context can clone, run, and reproduce the result."]] },
-  { when:"2026-03-15", called:"Bridges between domains", lines:[
-      ["s","Music ↔ Architecture across four levels: raw material, grammar, rhythm, composition. A build prompt was written for it."]] },
-  { when:"2026-04-07", called:"The constraint geometry", lines:[
-      ["k","Z always wakes up cold. Every time. Zero memory, zero rapport."],
-      ["k","Laws and First Principles are not designed upfront. They emerge organically as the architect works with the system."],
-      ["k","The architect builds everything except the LLMs and the application."]] },
-  { when:"2026-04-12", called:"A shell", lines:[
-      ["k","So all I need is shell"],
-      ["k","A shell on top of cli"]] },
-  { when:"2026-04-16", called:"The ? in the equation", lines:[
-      ["k","f(t) = X(t) ? i.Y"],
-      ["k","? -> the missing layer"],
-      ["k","X -> what you can control"],
-      ["k","Y -> what you cannot control"],
-      ["k","it is how I think"]],
-    site:"The site then: the equation and nothing else, and one page behind it, /music. Sa always sounding, twelve swaras to press. That storyline is under Music here." },
-  { when:"2026-05-19", called:"The interface", lines:[
-      ["s","A seat reports the question was asked: is interface the missing layer? Its three verbs then: unmount, mount, chat view."]] },
-  { when:"2026-06-17", called:"A practice", lines:[
-      ["k","\"What I cannot create, I do not understand.\" good start. A self-governed, local-first practice for building muscle across domains."],
-      ["k","local storage, 1 json per domain. contains schema of the generator who made it at the time."],
-      ["k","localstorage is write only. js always keeps local version. only reads on landing with user permissions. continue cold or load local."],
-      ["k","local storage also has versions so its not a single storage. phylogeny"],
-      ["k","Nice! V0 is up."]],
-    site:"The site then: V0. Setup and Run, the gate, the store, the domain switch. This page is that, rebuilt." },
-  { when:"2026-06-17", called:"Understanding", lines:[
-      ["k","the missing layer thesis is solved by him years ago."],
-      ["k","Practitioner Guide how to build understanding with your AI companion."],
-      ["k","only thing missing is schema, permissions and ability for me to take control"]] },
-  { when:"2026-09-13", called:"The layer nobody is standing", lines:[
-      ["k","Missing layer is the layer nobody is standing"],
-      ["k","Building it is never the hard part"],
-      ["k","Standing"],
-      ["k","Not stood"],
-      ["k","Missing layer is about starting with the verb"],
-      ["r","The ability to use a workflow engine effectively. He built such engines several times and was never given the seat that uses one."]],
-    site:"The site then, typed: “no branches nothing single page” · “its the root node. tree builds outside in” · “website gets first principles first”." },
-  { when:"2026-09-25", called:"How to talk", lines:[
-      ["r","F = X ¿ iY. The plus was the mistake. The model asks; he answers yes or no."]] },
-  { when:"2026-10-20", called:"Practice", lines:[
-      ["r","Three sites kept alive as a heartbeat. Creator, Neonix, Practice. Practice is themissinglayer.org."],
-      ["s","A scout, 2026-11-09: the domain answers nothing; the repo holds a licence only."]] },
-  { when:"2026-11-06", called:"The instrument", lines:[
-      ["r","interface is studied; instrument is played."],
-      ["r","it has to be discovered. if he knew it, he could have said it."]] },
-  { when:"2026-11-10", called:"The least", lines:[
-      ["r","What already exists? What is missing? Where is the smallest intervention that changes the outcome?"],
-      ["r","Does the problem get resolved?"]] }
-];
-/* this seat's reading, scored on -30…+30 for how sure the seat is; each with what speaks against it */
-var HELD = [
-  [28, "It starts cold.", "March: you start over. April: wakes up cold. June: continue cold. Nothing found against it."],
-  [26, "It is something done, kept up by doing.", "Against: a page of quotations is description. On this page only the counters and the swaras are done."],
-  [24, "What carries forward sits outside the engine, in the person's hands.", "Against: in April the person builds a shell around the engine; by September the person stands on a seat. These may be two things."],
-  [22, "Nothing goes out, and nothing is read without a yes.", "Against: witnessed only from June on."],
-  [20, "It was found, not made.", "Against: the name says something is missing. “Solved by him years ago” says it is not."]
-];
-var NOT_HIS = [
-  "“told / did / result” is a seat's phrase, 2026-06-19. The reply to it was the About line.",
-  "“Your reps stay in your browser.” A seat offered it on 2026-06-17. It was kept.",
-  "“The site is itself an instance of the layer it describes.” A seat's summary.",
-  "The prose of the 2026-11-10 pages is polished beyond the typed lines above. Who shaped it was not witnessed.",
-  "This seat's first candidate, 2026-11-10: the reset bench, folding after two same answers, the practice cards. Invented. Withdrawn here."
-];
-var NOT_SEEN = [
-  "V0's own code. It ran in a design studio; only its rulings and one description of its screen were found.",
-  "The hand-drawn Setup/Run wireframe, and the other hand-drawn pages.",
-  "The build held on the Linux box.",
-  "The thirty cold runs of March.",
-  "The live domain. It refused this seat's reader.",
-  "What stands behind the Guide door.",
-  "The other three candidates. Not opened, by rule."
-];
-var MARK = { k:["●","k"], r:["◐","r"], s:["○","s"] };
-
-/* ============ views ============ */
-function gateView(){
-  var g = el("div", "gate");
-  if(!mem.session){
-    add(g, el("p", "", "Your reps may already be in this browser. They are read once, here, only if you say so. After that the site only writes."),
-      add(el("div", "row"), btn("Continue cold", "", continueCold), btn("Load local", "primary", loadLocal)));
-  } else {
-    add(g, add(el("p", "mono"), document.createTextNode("session: " + mem.session + ". " + mem.note)));
-    g.style.borderColor = "var(--line)";
+    card.appendChild(ol);
   }
-  return g;
-}
-function repView(d){
-  var open = !!mem.session, box = el("div", "stack");
-  var rep = el("div", "rep");
-  var pm = add(el("div", "row pm"), btn("−", "", function(){ bump(d.k, -1); }), btn("+", "primary", function(){ bump(d.k, 1); }));
-  var n = el("div", "n", String(mem.vals[d.k])); n.setAttribute("aria-live", "polite"); n.setAttribute("aria-label", d.label + " reps");
-  var snap = btn("Snapshot", "", function(){ snapshot(d.k); });
-  add(rep, n, pm, snap, el("span", "mono soft", "schema " + d.k + ".1.0 · one integer"));
-  if(!open){ Array.prototype.forEach.call(rep.querySelectorAll("button"), function(b){ b.disabled = true; }); }
-  add(box, rep);
-  if(!open) add(box, el("p", "mono soft", "Choose cold or local above to begin."));
-  add(box, lineage(d.k));
-  return box;
-}
-function lineage(dk){
-  var wrap = el("div", "tablewrap"), nodes = mem.nodes[dk];
-  if(!nodes.length){ wrap.appendChild(el("p", "mono soft", "No snapshots. A snapshot is kept, stamped, and points at its parent.")); return wrap; }
-  var t = el("table"), h = el("tr");
-  ["node","parent","schema","n","kept at",""].forEach(function(x){ h.appendChild(el("th", "", x)); });
-  t.appendChild(h);
-  nodes.slice().reverse().forEach(function(n){
-    var r = el("tr", n.id === mem.live[dk] ? "live" : "");
-    [n.id, n.parent || "none", n.schema, String(n.data.n), n.at.replace("T", " ").slice(0, 16)].forEach(function(x){ r.appendChild(el("td", "", x)); });
-    var td = el("td"); if(n.id !== mem.live[dk]) td.appendChild(btn("Make live", "quiet", function(){ makeLive(dk, n.id); })); r.appendChild(td);
-    t.appendChild(r);
+  if(isExample || resolved(c) || c.dropped) return card;
+  if(!mem.session) return card;
+  var f = el("div", "cross");
+  var lm = el("label", "", "wall time, min"), im = el("input"); im.type = "number"; im.min = "0"; im.inputMode = "numeric"; im.id = "min-" + c.id; im.value = o.min; lm.htmlFor = im.id;
+  im.addEventListener("input", function(){ o.min = im.value; }); lm.appendChild(im);
+  var fs = el("fieldset"), lg = el("legend", "", "spin the wheel: did it resolve?"), ch = el("div", "chips");
+  [["y","resolved"],["n","not resolved"],["w","not yet"]].forEach(function(x){
+    var b = btn(x[1], "", function(){ o.r = x[0]; render(); }); b.setAttribute("aria-pressed", String(o.r === x[0])); ch.appendChild(b);
   });
-  wrap.appendChild(t); return wrap;
+  add(fs, lg, ch); add(f, lm, fs); card.appendChild(f);
+  var ls = el("label", "", o.r === "n" ? "what did I say, give or do?" : "note (optional)"), ts = el("input"); ts.type = "text"; ts.maxLength = 240; ts.id = "said-" + c.id; ts.value = o.said; ls.htmlFor = ts.id;
+  ts.addEventListener("input", function(){ o.said = ts.value; }); ls.appendChild(ts); card.appendChild(ls);
+  var m = el("span", "msg"); m.setAttribute("role", "status");
+  add(card, add(el("div", "row"),
+    btn("Punch the crossing", "primary", function(){
+      if(!o.r){ m.textContent = "Say whether it resolved."; return; }
+      c.rows.push({ at:new Date().toISOString(), min:Math.max(0, Math.min(100000, Math.round(+o.min || 0))), r:o.r, said:clean(o.said, 240) });
+      open[c.id] = { min:"", r:null, said:"" }; save(); render();
+    }),
+    btn("Drop the card", "quiet", function(){ c.dropped = true; save(); render(); }), m));
+  return card;
 }
-function line(kind, text){
-  var l = el("div", "ln " + kind), m = el("span", "mk " + MARK[kind][1], MARK[kind][0]);
-  m.setAttribute("aria-label", kind === "k" ? "typed" : kind === "r" ? "kept record" : "a seat's words");
-  l.appendChild(m);
-  if(kind === "s"){ l.appendChild(el("span", "t", text)); } else { l.appendChild(el("q", "", text)); }
-  return l;
-}
-function guideView(){
-  var v = el("div", "stack");
-  add(v, el("h2", "", "Practitioner Guide"),
-    add(el("div", "lines"), line("k", "Practitioner Guide how to build understanding with your AI companion.")),
-    el("p", "", "In V0 this was the door: Intent Geometry, how to build alignment with AI, sealed until 2026-08-03. What stands behind it today was not witnessed. What was witnessed is the path that led to it, in the order it was walked. Placing the path here is this seat's choice."));
-  var lg = el("div", "legend");
-  [["k","typed by the one who travelled, as typed"],["r","kept by a seat as a record of what he said"],["s","a seat's own words"]].forEach(function(x){
-    add(lg, add(el("span"), el("span", "mk " + x[0], MARK[x[0]][0]), document.createTextNode(x[1])));
+function newCardView(){
+  var c = el("form", "card blank"); c.setAttribute("aria-label", "New 2 by 4 card"); c.autocomplete = "off";
+  c.appendChild(holes({ rows:[] }, 6));
+  var la = el("label", "", "the ask · as short as it can be said"), ia = el("input"); ia.type = "text"; ia.maxLength = ASK_MAX; ia.id = "f-ask"; ia.value = draft.ask; la.htmlFor = ia.id;
+  var cnt = el("span", "soft", (ASK_MAX - draft.ask.length) + " left on the card"); cnt.style.fontSize = "11px";
+  ia.addEventListener("input", function(){ draft.ask = ia.value; cnt.textContent = (ASK_MAX - ia.value.length) + " left on the card"; });
+  add(la, ia, cnt);
+  var lo = el("label", "", "outer · what already exists around it"), io = el("input"); io.type = "text"; io.maxLength = 240; io.id = "f-outer"; io.value = draft.outer; lo.htmlFor = io.id;
+  io.addEventListener("input", function(){ draft.outer = io.value; }); lo.appendChild(io);
+  function chooser(legend, opts, keyName){
+    var fs = el("fieldset"), ch = el("div", "chips"); fs.appendChild(el("legend", "", legend));
+    opts.forEach(function(x){ var b = btn(x, "", function(){ draft[keyName] = draft[keyName] === x ? null : x; render(); }); b.setAttribute("aria-pressed", String(draft[keyName] === x)); ch.appendChild(b); });
+    fs.appendChild(ch); return fs;
+  }
+  var lh = el("label", "", "how, in a line (optional)"), ih = el("input"); ih.type = "text"; ih.maxLength = 240; ih.id = "f-how"; ih.value = draft.how; lh.htmlFor = ih.id;
+  ih.addEventListener("input", function(){ draft.how = ih.value; }); lh.appendChild(ih);
+  var m = el("span", "msg"); m.setAttribute("role", "status");
+  var go = el("button", "primary", "Punch the card"); go.type = "submit";
+  add(c, la, lo, chooser("where I stand", STAND, "stand"), chooser("the least intervention", LEAST, "least"), lh, add(el("div", "row"), go, m));
+  c.addEventListener("submit", function(e){
+    e.preventDefault();
+    var a = clean(draft.ask, ASK_MAX); if(!a){ m.textContent = "The ask is the one thing the card needs."; ia.focus(); return; }
+    mem.cards.unshift({ id:Date.now().toString(36), at:new Date().toISOString(), ask:a, outer:clean(draft.outer, 240), stand:draft.stand, least:draft.least, how:clean(draft.how, 240), dropped:false, rows:[] });
+    draft = { ask:"", outer:"", stand:null, least:null, how:"" }; save(); render();
   });
-  add(v, lg);
-  var ol = el("ol", "trail");
-  TRAIL.forEach(function(s){
-    var li = el("li"), body = el("div");
-    add(body, el("div", "called", s.called));
-    var ls = el("div", "lines"); s.lines.forEach(function(x){ ls.appendChild(line(x[0], x[1])); }); body.appendChild(ls);
-    if(s.site) body.appendChild(el("p", "site", s.site));
-    add(li, el("div", "when", s.when), body); ol.appendChild(li);
-  });
-  add(v, ol);
-
-  var held = el("ul", "plain");
-  HELD.forEach(function(h){
-    var li = el("li"), b = el("div");
-    add(b, document.createTextNode(h[1]), el("span", "ag", h[2]));
-    add(li, el("span", "sc", "+" + h[0]), b); held.appendChild(li);
-  });
-  add(v, add(el("div", "block"), el("h3", "", "What held at every station"), el("p", "soft", "A reading by this seat, not the territory. The number is how sure the seat is, on −30 to +30."), held));
-  var a = el("ul", "dash"); NOT_HIS.forEach(function(x){ a.appendChild(el("li", "", x)); });
-  add(v, add(el("div", "block"), el("h3", "", "Read as his, and not his"), a));
-  var c = el("ul", "dash"); NOT_SEEN.forEach(function(x){ c.appendChild(el("li", "", x)); });
-  add(v, add(el("div", "block"), el("h3", "", "Not witnessed on this path"), c));
-  return v;
+  return c;
 }
-function musicView(d){
-  var v = el("div", "stack");
-  add(v, el("h2", "", "Music"), outLink(d), repView(d));
-  var blk = add(el("div", "block"), el("h3", "", "Sa, and twelve"),
-    el("p", "", "The storyline for /music, 2026-04-18: Sa sounding underneath, twelve swaras, press one and hear it against Sa. Sa here is C♯, 277.18 Hz, as on the map."));
-  var dr = btn(audio.drone ? "Stop Sa" : "Sound Sa", audio.drone ? "primary" : "", toggleDrone); dr.setAttribute("aria-pressed", String(!!audio.drone));
-  add(blk, add(el("div", "row"), dr));
-  var grid = el("div", "swaras");
-  SWARAS.forEach(function(s){
-    var b = btn("", "", function(){ playSwara(s[2]); }); b.setAttribute("aria-label", "swara " + s[1]);
-    add(b, el("b", "", s[0]), el("small", "", s[1])); grid.appendChild(b);
-  });
-  add(blk, grid, el("p", "mono soft", "16/15 and 5/4 were seen in the record. The other ratios are the usual just ones, filled in by this seat."));
-  add(v, blk); return v;
-}
-function outLink(d){
-  var p = el("p", "mono"); var a = el("a", "", d.host + " ↗"); a.href = d.link; a.rel = "noopener";
-  add(p, document.createTextNode("the practice itself lives at "), a); return p;
-}
-function domainView(d){
-  if(d.k === "guide") return guideView();
-  if(d.k === "music") return musicView(d);
-  var v = el("div", "stack");
-  if(d.wip){ add(v, el("h2", "", d.k === "ifly" ? "iFLY indoor skydiving" : "Golf"), el("p", "", "Under construction in V0. No counter was ruled for it. None is added here.")); return v; }
-  add(v, el("h2", "", "Learning Sanskrit verses"), outLink(d), el("p", "mono soft", "A scout found no site answering there on 2026-11-09."), repView(d));
-  return v;
-}
-function tabsView(vertical){
-  var t = el("div", vertical ? "navlist" : "tabs"); if(!vertical) t.setAttribute("role", "tablist");
-  DOMAINS.forEach(function(d){
-    var b = btn(d.label, d.wip ? "wip" : "", function(){ ui.tab = d.k; render(); });
-    b.setAttribute(vertical ? "aria-pressed" : "aria-selected", String(ui.tab === d.k)); if(!vertical) b.setAttribute("role", "tab");
-    t.appendChild(b);
+function tallyView(){
+  var cs = mem.cards, rows = [].concat.apply([], cs.map(function(c){ return c.rows; }));
+  var res = cs.filter(resolved).length, drop = cs.filter(function(c){ return c.dropped && !resolved(c); }).length;
+  var no = rows.filter(function(r){ return r.r === "n"; }), named = no.filter(function(r){ return r.said; }).length;
+  var t = el("div", "tally");
+  [["cards open", cs.length - res - drop], ["resolved", res], ["dropped", drop], ["crossings", rows.length],
+   ["wall time", hm(rows.reduce(function(s, r){ return s + r.min; }, 0))], ["misses with a named cause", named + " of " + no.length]].forEach(function(p){
+    var s = el("span", "", p[0] + " "); s.appendChild(el("b", "", String(p[1]))); t.appendChild(s);
   });
   return t;
 }
-function siteView(){
-  var v = el("div", "stack"); v.style.gap = "18px";
-  var f = el("p", "frame", "What I cannot create, I do not understand.");
-  f.appendChild(el("span", "", "Richard Feynman · A self-governed, local-first practice for building muscle across domains. Your reps stay in your browser."));
-  var cur = DOMAINS.filter(function(d){ return d.k === ui.tab; })[0];
-  add(v, f, gateView(), tabsView(false), domainView(cur));
-  return v;
-}
-function glanceView(){
-  var v = el("div", "stack"); v.style.gap = "12px";
-  var led = el("span", "led" + (mem.writeOk ? " on" : ""));
-  add(v, el("h3", "", "Store"), add(el("div"), led, document.createTextNode(mem.session ? "session: " + mem.session : "nothing read yet")));
-  add(v, el("p", "soft", "memory (truth)"), el("pre", "", JSON.stringify(mem.vals)));
-  var dl = el("dl", "kv");
-  REPS.forEach(function(d){ add(dl, el("dt", "", d.k + " nodes"), el("dd", "", String(mem.nodes[d.k].length))); });
-  add(dl, el("dt", "", "last write"), el("dd", "", mem.lastWrite ? mem.lastWrite.toTimeString().slice(0, 8) : (mem.writeOk === false ? "refused" : "none")));
-  add(v, dl, el("p", "soft", "Browsers forget. Open Setup and copy your store out to keep it."));
-  return v;
-}
-function setupView(){
-  var v = el("div", "stack"); v.style.gap = "18px";
-  add(v, el("h2", "", "The store"), el("p", "", "Everything this site holds about you, laid open. Look into it, change it, take it away."), gateView());
-  REPS.forEach(function(d){
-    var b = add(el("div", "block"), el("h3", "", d.label));
-    var ta = el("textarea"); ta.rows = 2; ta.id = "edit-" + d.k; ta.value = JSON.stringify({ n: mem.vals[d.k] }); ta.setAttribute("aria-label", d.label + " live data"); ta.spellcheck = false;
-    var msg = el("span", "msg"); msg.setAttribute("role", "status");
-    var ap = btn("Apply to memory", "", function(){
-      try{ var j = JSON.parse(ta.value); if(!validN(j.n)) throw 0; mem.vals[d.k] = j.n; writeThrough(); render(); }
-      catch(e){ msg.textContent = "Needs the shape {\"n\": whole number, 0 or more}."; }
-    });
-    var sn = btn("Snapshot", "quiet", function(){ snapshot(d.k); });
-    if(!mem.session){ ap.disabled = true; sn.disabled = true; ta.disabled = true; }
-    add(b, ta, add(el("div", "row"), ap, sn, msg), lineage(d.k)); v.appendChild(b);
-  });
-  var io = add(el("div", "block"), el("h3", "", "Take it with you"));
-  var box = el("textarea"); box.rows = 7; box.id = "io"; box.value = ui.io; box.setAttribute("aria-label", "Store as JSON"); box.spellcheck = false;
-  box.addEventListener("input", function(){ ui.io = box.value; });
-  var m2 = el("span", "msg"); m2.setAttribute("role", "status");
-  var file = el("input"); file.type = "file"; file.accept = ".json,application/json"; file.id = "file"; file.className = "mono"; file.setAttribute("aria-label", "Load a store file");
-  file.addEventListener("change", function(){
-    var f = file.files && file.files[0]; if(!f) return;
-    var rd = new FileReader(); rd.onload = function(){ ui.io = String(rd.result); box.value = ui.io; m2.textContent = "File is in the box. Press Load."; }; rd.readAsText(f);
-  });
-  add(io, box, add(el("div", "row"),
-    btn("Copy store out", "", function(){
-      ui.io = exportAll(); box.value = ui.io; box.select();
-      try{ navigator.clipboard.writeText(ui.io).then(function(){ m2.textContent = "Copied."; }, function(){ m2.textContent = "In the box. Copy it from there."; }); }catch(e){ m2.textContent = "In the box. Copy it from there."; }
+function ioView(){
+  var d = el("details"); d.appendChild(el("summary", "", "Take your cards with you"));
+  var inner = el("div", "inner");
+  var ta = el("textarea"); ta.rows = 6; ta.id = "io"; ta.spellcheck = false; ta.setAttribute("aria-label", "Cards as JSON");
+  var m = el("span", "msg"); m.setAttribute("role", "status");
+  add(inner, el("p", "", "Browsers forget. Copy your cards out to keep them; paste them into another browser to carry them."), ta, add(el("div", "row"),
+    btn("Copy cards out", "", function(){
+      ta.value = JSON.stringify({ schema:SCHEMA, exported_at:new Date().toISOString(), cards:mem.cards }, null, 2); ta.select();
+      try{ navigator.clipboard.writeText(ta.value).then(function(){ m.textContent = "Copied."; }, function(){ m.textContent = "In the box. Copy it from there."; }); }catch(e){ m.textContent = "In the box. Copy it from there."; }
     }),
     btn("Load from the box", "", function(){
-      try{ var n = importAll(box.value); ui.io = ""; render(); }
-      catch(e){ m2.textContent = "That is not a store. Paste what Copy gave you."; }
-    }), file, m2));
-  v.appendChild(io);
-  return v;
+      try{ var got = take(JSON.parse(ta.value)), have = {}, n = 0; mem.cards.forEach(function(c){ have[c.id] = 1; });
+        got.forEach(function(c){ if(!have[c.id]){ mem.cards.push(c); n++; } });
+        if(!mem.session){ mem.session = "local"; mem.note = "Loaded from a file."; }
+        save(); render(); }
+      catch(e){ m.textContent = "That is not a set of cards. Paste what Copy gave you."; }
+    }), m));
+  d.appendChild(inner); return d;
 }
 function render(){
-  var app = $("app"), L = $("left"), R = $("right");
-  app.className = "app" + (ui.mode === "setup" ? " setup" : "");
-  $("m-run").setAttribute("aria-pressed", String(ui.mode === "run"));
-  $("m-setup").setAttribute("aria-pressed", String(ui.mode === "setup"));
-  $("addr").textContent = "tml › " + ui.mode + " › " + (ui.mode === "run" ? ui.tab : "store");
-  L.textContent = ""; R.textContent = "";
-  if(ui.mode === "run"){
-    L.className = "pane"; R.className = "pane rail";
-    L.appendChild(siteView()); R.appendChild(glanceView());
+  var b = $("bench"), keepOpen = b.querySelector("details") && b.querySelector("details").open;
+  var focusId = document.activeElement && document.activeElement.id;
+  b.textContent = "";
+  var g = el("div", "gate" + (mem.session ? " done" : ""));
+  if(!mem.session){
+    add(g, el("p", "", "Your cards may already be in this browser. They are read once, here, only if you say so. After that this page only writes."),
+      add(el("div", "row"), btn("Continue cold", "", cold), btn("Load local", "primary", local)));
   } else {
-    L.className = "pane rail"; R.className = "pane";
-    add(L, el("h3", "", "Site"), tabsView(true), el("p", "soft", "Pick a domain, then Run."));
-    R.appendChild(setupView());
+    add(g, el("p", "mono", "session: " + mem.session + ". " + mem.note + (mem.wrote === false ? " This browser refuses to keep anything; copy your cards out." : "")));
   }
+  b.appendChild(g);
+  if(mem.session){ add(b, newCardView(), tallyView()); }
+  var list = el("div", "cards");
+  mem.cards.forEach(function(c){ list.appendChild(cardView(c, false)); });
+  if(!mem.cards.length) list.appendChild(cardView(EXAMPLE, true));
+  add(b, list);
+  var io = ioView(); if(keepOpen) io.open = true; b.appendChild(io);
+  if(focusId && $(focusId)) $(focusId).focus();
 }
-$("m-run").addEventListener("click", function(){ ui.mode = "run"; render(); });
-$("m-setup").addEventListener("click", function(){ ui.mode = "setup"; render(); });
 render();
 })();
 </script>
