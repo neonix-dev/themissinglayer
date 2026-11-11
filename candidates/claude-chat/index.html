@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Missing Layer</title>
+<meta name="description" content="What I cannot create, I do not understand. A self-governed, local-first practice for building muscle across domains. Your reps stay in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=Noto+Sans+Devanagari:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: V0 as it was ruled. A top bar, then two panes that trade places: Run (site wide, store glanceable) and Setup (store wide, site a rail). */
+:root{
+  --paper:#e6ecee; --sheet:#f5f8f8; --ink:#13273a; --ink-soft:#4b6071; --line:#b4c3cb;
+  --grid:rgba(19,39,58,.055); --led:#b96a00; --led-glow:rgba(185,106,0,.25); --stamp:#a3261d;
+  --display:"IBM Plex Serif", Georgia, serif; --body:"IBM Plex Serif", Georgia, serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --deva:"Noto Sans Devanagari", "Kohinoor Devanagari", sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1b2a; --sheet:#12253a; --ink:#dce7ef; --ink-soft:#8ea5b7; --line:#2a435b;
+    --grid:rgba(220,231,239,.045); --led:#f2a93b; --led-glow:rgba(242,169,59,.3); --stamp:#ef7b70; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1b2a; --sheet:#12253a; --ink:#dce7ef; --ink-soft:#8ea5b7; --line:#2a435b;
+  --grid:rgba(220,231,239,.045); --led:#f2a93b; --led-glow:rgba(242,169,59,.3); --stamp:#ef7b70; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.55;
+  background-image:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size:24px 24px}
+.sheet{max-width:1120px; margin:0 auto; padding:20px 20px 40px; display:flex; flex-direction:column; gap:20px}
+p{margin:0; max-width:66ch}
+a{color:inherit; text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--led); outline-offset:2px}
+.mono{font-family:var(--mono); font-size:13px}
+.soft{color:var(--ink-soft)}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); margin:0}
+h1{font-family:var(--mono); font-weight:500; font-size:14px; letter-spacing:.26em; text-transform:uppercase; margin:0}
+h2{font-family:var(--display); font-weight:600; font-size:26px; line-height:1.2; margin:0; text-wrap:balance}
+h3{font-family:var(--mono); font-weight:500; font-size:13px; letter-spacing:.12em; text-transform:uppercase; margin:0}
+.stack{display:flex; flex-direction:column; gap:14px}
+.row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+button{font-family:var(--mono); font-size:13px; color:var(--ink); background:transparent; border:1px solid var(--ink); border-radius:3px; padding:7px 11px; cursor:pointer; line-height:1.2}
+button:hover{background:var(--ink); color:var(--sheet)}
+button.primary{background:var(--ink); color:var(--sheet)}
+button.primary:hover{opacity:.85}
+button.quiet{border-color:var(--line); color:var(--ink-soft)}
+button.quiet:hover{background:transparent; color:var(--ink); border-color:var(--ink)}
+button[disabled]{opacity:.35; cursor:not-allowed}
+button[disabled]:hover{background:transparent; color:var(--ink)}
+button[aria-pressed="true"], button[aria-selected="true"]{background:var(--ink); color:var(--sheet)}
+
+/* top bar */
+.bar{display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center; justify-content:space-between; border-bottom:1px solid var(--ink); padding-bottom:12px}
+.bar .id{display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline}
+.addr{font-family:var(--mono); font-size:13px; color:var(--ink-soft)}
+.seg{display:inline-flex}
+.seg button{border-radius:0}
+.seg button:first-child{border-radius:3px 0 0 3px}
+.seg button + button{border-left:0; border-radius:0 3px 3px 0}
+
+/* panes */
+.app{display:grid; gap:20px; align-items:start; grid-template-columns:minmax(0,1fr) 270px}
+.app.setup{grid-template-columns:190px minmax(0,1fr)}
+@media (max-width:820px){.app, .app.setup{grid-template-columns:1fr}}
+.pane{background:var(--sheet); border:1px solid var(--line); border-radius:4px; padding:18px; display:flex; flex-direction:column; gap:18px; min-width:0}
+.rail{font-family:var(--mono); font-size:13px; gap:12px; padding:14px}
+.rail pre, pre.json{margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:var(--mono); font-size:12.5px; line-height:1.5}
+.led{display:inline-block; width:10px; height:10px; border-radius:50%; border:1px solid var(--ink-soft); vertical-align:baseline; margin-right:8px}
+.led.on{background:var(--led); border-color:var(--led); box-shadow:0 0 0 3px var(--led-glow)}
+dl.kv{display:grid; grid-template-columns:auto 1fr; gap:3px 12px; margin:0}
+dl.kv dt{color:var(--ink-soft)} dl.kv dd{margin:0; text-align:right; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+.navlist{display:flex; flex-direction:column; gap:6px}
+.navlist button{text-align:left}
+
+/* head of the site */
+.frame{font-family:var(--display); font-size:clamp(24px,3.6vw,34px); line-height:1.2; margin:0; text-wrap:balance}
+.frame span{display:block; font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin-top:6px}
+.gate{border:1px solid var(--led); border-radius:3px; padding:12px 14px; display:flex; flex-direction:column; gap:10px}
+.tabs{display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line); padding-bottom:12px}
+.tabs .wip{border-style:dashed}
+
+/* reps */
+.rep{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center}
+.rep .n{font-family:var(--mono); font-size:56px; line-height:1; min-width:2ch; text-align:center; font-variant-numeric:tabular-nums}
+.rep .pm button{font-size:20px; width:44px; height:44px; padding:0}
+table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12.5px}
+th, td{text-align:left; padding:6px 10px 6px 0; border-top:1px solid var(--line); vertical-align:top}
+th{color:var(--ink-soft); font-weight:400; border-top:0}
+.tablewrap{overflow-x:auto}
+tr.live td:first-child::before{content:"● "; color:var(--led)}
+
+/* swaras */
+.swaras{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px}
+@media (max-width:520px){.swaras{grid-template-columns:repeat(4, minmax(0,1fr))}}
+.swaras button{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px}
+.swaras b{font-family:var(--deva); font-weight:500; font-size:19px; line-height:1.3}
+.swaras small{font-family:var(--mono); font-size:11px; opacity:.75}
+
+/* trail */
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; font-family:var(--mono); font-size:12px; color:var(--ink-soft)}
+.mk{font-family:var(--mono); font-size:12px; flex:none; width:1.3em; display:inline-block}
+.mk.k{color:var(--ink)} .mk.r{color:var(--led)} .mk.s{color:var(--ink-soft)}
+ol.trail{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+ol.trail > li{display:grid; grid-template-columns:104px minmax(0,1fr); gap:6px 16px; padding:14px 0; border-top:1px solid var(--line)}
+@media (max-width:560px){ol.trail > li{grid-template-columns:1fr}}
+.when{font-family:var(--mono); font-size:12.5px; color:var(--ink-soft); padding-top:3px}
+.called{font-family:var(--display); font-weight:600; font-size:19px; line-height:1.25}
+.lines{display:flex; flex-direction:column; gap:5px; margin-top:6px}
+.ln{display:flex; gap:4px; align-items:baseline}
+.ln q{quotes:none; font-family:var(--mono); font-size:13.5px; line-height:1.5}
+.ln.s q, .ln.s span.t{color:var(--ink-soft)}
+.ln span.t{font-size:15.5px}
+.site{font-size:15px; color:var(--ink-soft); margin-top:6px}
+ul.plain{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+ul.plain li{display:grid; grid-template-columns:54px minmax(0,1fr); gap:10px; font-size:15.5px}
+ul.plain .sc{font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums; text-align:right; padding-top:2px}
+ul.plain .ag{display:block; color:var(--ink-soft); font-size:14.5px}
+ul.dash{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px; font-size:15.5px}
+
+/* setup */
+textarea{font-family:var(--mono); font-size:12.5px; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:3px; padding:8px 10px; width:100%; resize:vertical}
+.msg{font-family:var(--mono); font-size:12px; color:var(--ink-soft); min-height:1.3em}
+.block{border-top:1px solid var(--line); padding-top:14px; display:flex; flex-direction:column; gap:10px}
+
+.titleblock{display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--ink); font-family:var(--mono); font-size:12px}
+.titleblock div{padding:8px 10px; border-right:1px solid var(--ink); display:flex; flex-direction:column; gap:2px; min-width:0; overflow-wrap:anywhere}
+.titleblock div:last-child{border-right:0}
+.titleblock span{color:var(--ink-soft); letter-spacing:.12em; text-transform:uppercase; font-size:10px}
+@media (max-width:640px){.titleblock{grid-template-columns:1fr 1fr}.titleblock div:nth-child(2){border-right:0}.titleblock div:nth-child(-n+2){border-bottom:1px solid var(--ink)}}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header class="bar">
+    <div class="id"><h1>The Missing Layer</h1><span class="eyebrow">Self Governance</span><span class="addr" id="addr"></span></div>
+    <div class="seg" role="group" aria-label="Mode">
+      <button type="button" id="m-run" aria-pressed="true">Run</button><button type="button" id="m-setup" aria-pressed="false">Setup</button>
+    </div>
+  </header>
+
+  <div class="app" id="app">
+    <div class="pane" id="left"></div>
+    <div class="pane" id="right"></div>
+  </div>
+
+  <div class="titleblock">
+    <div><span>this page</span>V0, rebuilt from its rulings</div>
+    <div><span>rebuilt by</span>a seat, claude.chat, from the traces</div>
+    <div><span>data</span>stays in this browser</div>
+    <div><span>source · MIT</span><a href="https://github.com/neonix-dev/themissinglayer">neonix-dev/themissinglayer</a></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, text){ var n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; }
+function btn(label, cls, fn){ var b = el("button", cls, label); b.type = "button"; b.addEventListener("click", fn); return b; }
+function add(p){ for(var i = 1; i < arguments.length; i++){ if(arguments[i]) p.appendChild(arguments[i]); } return p; }
+
+/* ============ the store, as ruled on 2026-06-17 ============
+   memory is truth · localStorage is read once, on landing, on a yes · after that it is write-only
+   tml.backup = volatile mirror of memory · a snapshot is a new key, never an overwrite, and points at its parent */
+var DOMAINS = [
+  { k:"guide",    label:"Guide" },
+  { k:"music",    label:"Music",    rep:true, link:"https://ekalavya.studio",    host:"ekalavya.studio" },
+  { k:"sanskrit", label:"Sanskrit", rep:true, link:"https://open-your-mind.org", host:"open-your-mind.org" },
+  { k:"golf",     label:"Golf",     wip:true },
+  { k:"ifly",     label:"iFLY",     wip:true }
+];
+var REPS = DOMAINS.filter(function(d){ return d.rep; });
+var mem = { session:null, vals:{}, live:{}, nodes:{}, lastWrite:null, writeOk:null, note:"" };
+REPS.forEach(function(d){ mem.vals[d.k] = 0; mem.live[d.k] = null; mem.nodes[d.k] = []; });
+var ui = { mode:"run", tab:"guide", io:"" };
+
+function put(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)); mem.lastWrite = new Date(); mem.writeOk = true; }catch(e){ mem.writeOk = false; } }
+function writeThrough(){ put("tml.backup", mem.vals); put("tml.live", mem.live); }
+function validN(n){ return typeof n === "number" && isFinite(n) && n >= 0 && Math.floor(n) === n; }
+
+function continueCold(){ mem.session = "cold"; mem.note = "Nothing was read."; render(); }
+function loadLocal(){
+  var found = 0;
+  try{
+    var b = JSON.parse(localStorage.getItem("tml.backup") || "null");
+    var l = JSON.parse(localStorage.getItem("tml.live") || "null");
+    REPS.forEach(function(d){
+      if(b && validN(b[d.k])) mem.vals[d.k] = b[d.k];
+      if(l && typeof l[d.k] === "string") mem.live[d.k] = l[d.k];
+    });
+    for(var i = 0; i < localStorage.length; i++){
+      var key = localStorage.key(i);
+      if(key && key.indexOf("tml.node.") === 0){
+        var node = JSON.parse(localStorage.getItem(key));
+        var dk = key.split(".")[2];
+        if(node && mem.nodes[dk] && node.data && validN(node.data.n)){ mem.nodes[dk].push(node); found++; }
+      }
+    }
+    REPS.forEach(function(d){ mem.nodes[d.k].sort(function(a, b2){ return a.at < b2.at ? -1 : 1; }); });
+    mem.session = "local"; mem.note = "Read once: " + found + " kept node" + (found === 1 ? "" : "s") + ". From here, write only.";
+  }catch(e){ mem.session = "cold"; mem.note = "This browser gave nothing to read. Continuing cold."; }
+  render();
+}
+function bump(dk, by){ mem.vals[dk] = Math.max(0, mem.vals[dk] + by); writeThrough(); render(); }
+function snapshot(dk){
+  var node = { id: Date.now().toString(36), parent: mem.live[dk], schema: dk + ".1.0", at: new Date().toISOString(), data: { n: mem.vals[dk] } };
+  mem.nodes[dk].push(node); mem.live[dk] = node.id;
+  put("tml.node." + dk + "." + node.id, node); writeThrough(); render();
+}
+function makeLive(dk, id){
+  var node = mem.nodes[dk].filter(function(n){ return n.id === id; })[0]; if(!node) return;
+  mem.vals[dk] = node.data.n; mem.live[dk] = id; writeThrough(); render();
+}
+function exportAll(){ return JSON.stringify({ schema:"tml.export.1", exported_at:new Date().toISOString(), backup:mem.vals, live:mem.live, nodes:mem.nodes }, null, 2); }
+function importAll(text){
+  var j = JSON.parse(text); if(!j || j.schema !== "tml.export.1" || !j.nodes) throw new Error("shape");
+  var added = 0;
+  REPS.forEach(function(d){
+    (j.nodes[d.k] || []).forEach(function(n){
+      if(!n || typeof n.id !== "string" || !n.data || !validN(n.data.n)) return;
+      if(mem.nodes[d.k].some(function(x){ return x.id === n.id; })) return;
+      var node = { id:n.id, parent:(typeof n.parent === "string" ? n.parent : null), schema:String(n.schema || d.k + ".1.0"), at:String(n.at || ""), data:{ n:n.data.n } };
+      mem.nodes[d.k].push(node); put("tml.node." + d.k + "." + node.id, node); added++;
+    });
+    if(j.backup && validN(j.backup[d.k])) mem.vals[d.k] = j.backup[d.k];
+    if(j.live && typeof j.live[d.k] === "string") mem.live[d.k] = j.live[d.k];
+  });
+  if(!mem.session) mem.session = "local";
+  writeThrough(); return added;
+}
+
+/* ============ sound: the April storyline for /music ============ */
+var SA = 277.18; /* C#, as on the map */
+var SWARAS = [["सा","1/1",1],["रे॒","16/15",16/15],["रे","9/8",9/8],["ग॒","6/5",6/5],["ग","5/4",5/4],["म","4/3",4/3],
+              ["म॑","45/32",45/32],["प","3/2",3/2],["ध॒","8/5",8/5],["ध","5/3",5/3],["नि॒","9/5",9/5],["नि","15/8",15/8]];
+var audio = { ctx:null, drone:null };
+function ctx(){ if(!audio.ctx){ var C = window.AudioContext || window.webkitAudioContext; if(!C) return null; audio.ctx = new C(); } if(audio.ctx.state === "suspended") audio.ctx.resume(); return audio.ctx; }
+function toggleDrone(){
+  var c = ctx(); if(!c) return;
+  if(audio.drone){ var g0 = audio.drone.g; g0.gain.setTargetAtTime(0, c.currentTime, 0.15); var os = audio.drone.os; setTimeout(function(){ os.forEach(function(o){ try{ o.stop(); }catch(e){} }); }, 700); audio.drone = null; render(); return; }
+  var g = c.createGain(); g.gain.value = 0; g.gain.setTargetAtTime(0.07, c.currentTime, 0.4);
+  var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1400; f.connect(g); g.connect(c.destination);
+  var oss = [SA / 2, SA].map(function(hz, i){ var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = hz; var og = c.createGain(); og.gain.value = i ? 0.45 : 1; o.connect(og); og.connect(f); o.start(); return o; });
+  audio.drone = { g:g, os:oss }; render();
+}
+function playSwara(ratio){
+  var c = ctx(); if(!c) return;
+  var o = c.createOscillator(); o.type = "triangle"; o.frequency.value = SA * ratio;
+  var g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(0.18, c.currentTime + 0.03); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.6);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 1.7);
+}
+
+/* ============ the trail ============
+   k = typed by the one who travelled, as typed · r = kept by a seat as a record of what he said · s = a seat's own words */
+var TRAIL = [
+  { when:"2026-03-09", called:"A thought experiment", lines:[
+      ["k","Just claim is not theorem but thought experiment"],
+      ["k","Missing layer across 5-6 domains and visible gap I felt while using AI."],
+      ["r","Every time you open a new conversation with an AI — you start over."]],
+    site:"The site then: the missing layers drawn across domains, and one experiment. One fixed opening, thirty subjects, one fixed output form, every run cold." },
+  { when:"2026-03-12", called:"A repo of experiments", lines:[
+      ["r","Not a blog. Not opinions. Lab notebooks that prove the missing layer exists."],
+      ["r","A stranger with zero context can clone, run, and reproduce the result."]] },
+  { when:"2026-03-15", called:"Bridges between domains", lines:[
+      ["s","Music ↔ Architecture across four levels: raw material, grammar, rhythm, composition. A build prompt was written for it."]] },
+  { when:"2026-04-07", called:"The constraint geometry", lines:[
+      ["k","Z always wakes up cold. Every time. Zero memory, zero rapport."],
+      ["k","Laws and First Principles are not designed upfront. They emerge organically as the architect works with the system."],
+      ["k","The architect builds everything except the LLMs and the application."]] },
+  { when:"2026-04-12", called:"A shell", lines:[
+      ["k","So all I need is shell"],
+      ["k","A shell on top of cli"]] },
+  { when:"2026-04-16", called:"The ? in the equation", lines:[
+      ["k","f(t) = X(t) ? i.Y"],
+      ["k","? -> the missing layer"],
+      ["k","X -> what you can control"],
+      ["k","Y -> what you cannot control"],
+      ["k","it is how I think"]],
+    site:"The site then: the equation and nothing else, and one page behind it, /music. Sa always sounding, twelve swaras to press. That storyline is under Music here." },
+  { when:"2026-05-19", called:"The interface", lines:[
+      ["s","A seat reports the question was asked: is interface the missing layer? Its three verbs then: unmount, mount, chat view."]] },
+  { when:"2026-06-17", called:"A practice", lines:[
+      ["k","\"What I cannot create, I do not understand.\" good start. A self-governed, local-first practice for building muscle across domains."],
+      ["k","local storage, 1 json per domain. contains schema of the generator who made it at the time."],
+      ["k","localstorage is write only. js always keeps local version. only reads on landing with user permissions. continue cold or load local."],
+      ["k","local storage also has versions so its not a single storage. phylogeny"],
+      ["k","Nice! V0 is up."]],
+    site:"The site then: V0. Setup and Run, the gate, the store, the domain switch. This page is that, rebuilt." },
+  { when:"2026-06-17", called:"Understanding", lines:[
+      ["k","the missing layer thesis is solved by him years ago."],
+      ["k","Practitioner Guide how to build understanding with your AI companion."],
+      ["k","only thing missing is schema, permissions and ability for me to take control"]] },
+  { when:"2026-09-13", called:"The layer nobody is standing", lines:[
+      ["k","Missing layer is the layer nobody is standing"],
+      ["k","Building it is never the hard part"],
+      ["k","Standing"],
+      ["k","Not stood"],
+      ["k","Missing layer is about starting with the verb"],
+      ["r","The ability to use a workflow engine effectively. He built such engines several times and was never given the seat that uses one."]],
+    site:"The site then, typed: “no branches nothing single page” · “its the root node. tree builds outside in” · “website gets first principles first”." },
+  { when:"2026-09-25", called:"How to talk", lines:[
+      ["r","F = X ¿ iY. The plus was the mistake. The model asks; he answers yes or no."]] },
+  { when:"2026-10-20", called:"Practice", lines:[
+      ["r","Three sites kept alive as a heartbeat. Creator, Neonix, Practice. Practice is themissinglayer.org."],
+      ["s","A scout, 2026-11-09: the domain answers nothing; the repo holds a licence only."]] },
+  { when:"2026-11-06", called:"The instrument", lines:[
+      ["r","interface is studied; instrument is played."],
+      ["r","it has to be discovered. if he knew it, he could have said it."]] },
+  { when:"2026-11-10", called:"The least", lines:[
+      ["r","What already exists? What is missing? Where is the smallest intervention that changes the outcome?"],
+      ["r","Does the problem get resolved?"]] }
+];
+/* this seat's reading, scored on -30…+30 for how sure the seat is; each with what speaks against it */
+var HELD = [
+  [28, "It starts cold.", "March: you start over. April: wakes up cold. June: continue cold. Nothing found against it."],
+  [26, "It is something done, kept up by doing.", "Against: a page of quotations is description. On this page only the counters and the swaras are done."],
+  [24, "What carries forward sits outside the engine, in the person's hands.", "Against: in April the person builds a shell around the engine; by September the person stands on a seat. These may be two things."],
+  [22, "Nothing goes out, and nothing is read without a yes.", "Against: witnessed only from June on."],
+  [20, "It was found, not made.", "Against: the name says something is missing. “Solved by him years ago” says it is not."]
+];
+var NOT_HIS = [
+  "“told / did / result” is a seat's phrase, 2026-06-19. The reply to it was the About line.",
+  "“Your reps stay in your browser.” A seat offered it on 2026-06-17. It was kept.",
+  "“The site is itself an instance of the layer it describes.” A seat's summary.",
+  "The prose of the 2026-11-10 pages is polished beyond the typed lines above. Who shaped it was not witnessed.",
+  "This seat's first candidate, 2026-11-10: the reset bench, folding after two same answers, the practice cards. Invented. Withdrawn here."
+];
+var NOT_SEEN = [
+  "V0's own code. It ran in a design studio; only its rulings and one description of its screen were found.",
+  "The hand-drawn Setup/Run wireframe, and the other hand-drawn pages.",
+  "The build held on the Linux box.",
+  "The thirty cold runs of March.",
+  "The live domain. It refused this seat's reader.",
+  "What stands behind the Guide door.",
+  "The other three candidates. Not opened, by rule."
+];
+var MARK = { k:["●","k"], r:["◐","r"], s:["○","s"] };
+
+/* ============ views ============ */
+function gateView(){
+  var g = el("div", "gate");
+  if(!mem.session){
+    add(g, el("p", "", "Your reps may already be in this browser. They are read once, here, only if you say so. After that the site only writes."),
+      add(el("div", "row"), btn("Continue cold", "", continueCold), btn("Load local", "primary", loadLocal)));
+  } else {
+    add(g, add(el("p", "mono"), document.createTextNode("session: " + mem.session + ". " + mem.note)));
+    g.style.borderColor = "var(--line)";
+  }
+  return g;
+}
+function repView(d){
+  var open = !!mem.session, box = el("div", "stack");
+  var rep = el("div", "rep");
+  var pm = add(el("div", "row pm"), btn("−", "", function(){ bump(d.k, -1); }), btn("+", "primary", function(){ bump(d.k, 1); }));
+  var n = el("div", "n", String(mem.vals[d.k])); n.setAttribute("aria-live", "polite"); n.setAttribute("aria-label", d.label + " reps");
+  var snap = btn("Snapshot", "", function(){ snapshot(d.k); });
+  add(rep, n, pm, snap, el("span", "mono soft", "schema " + d.k + ".1.0 · one integer"));
+  if(!open){ Array.prototype.forEach.call(rep.querySelectorAll("button"), function(b){ b.disabled = true; }); }
+  add(box, rep);
+  if(!open) add(box, el("p", "mono soft", "Choose cold or local above to begin."));
+  add(box, lineage(d.k));
+  return box;
+}
+function lineage(dk){
+  var wrap = el("div", "tablewrap"), nodes = mem.nodes[dk];
+  if(!nodes.length){ wrap.appendChild(el("p", "mono soft", "No snapshots. A snapshot is kept, stamped, and points at its parent.")); return wrap; }
+  var t = el("table"), h = el("tr");
+  ["node","parent","schema","n","kept at",""].forEach(function(x){ h.appendChild(el("th", "", x)); });
+  t.appendChild(h);
+  nodes.slice().reverse().forEach(function(n){
+    var r = el("tr", n.id === mem.live[dk] ? "live" : "");
+    [n.id, n.parent || "none", n.schema, String(n.data.n), n.at.replace("T", " ").slice(0, 16)].forEach(function(x){ r.appendChild(el("td", "", x)); });
+    var td = el("td"); if(n.id !== mem.live[dk]) td.appendChild(btn("Make live", "quiet", function(){ makeLive(dk, n.id); })); r.appendChild(td);
+    t.appendChild(r);
+  });
+  wrap.appendChild(t); return wrap;
+}
+function line(kind, text){
+  var l = el("div", "ln " + kind), m = el("span", "mk " + MARK[kind][1], MARK[kind][0]);
+  m.setAttribute("aria-label", kind === "k" ? "typed" : kind === "r" ? "kept record" : "a seat's words");
+  l.appendChild(m);
+  if(kind === "s"){ l.appendChild(el("span", "t", text)); } else { l.appendChild(el("q", "", text)); }
+  return l;
+}
+function guideView(){
+  var v = el("div", "stack");
+  add(v, el("h2", "", "Practitioner Guide"),
+    add(el("div", "lines"), line("k", "Practitioner Guide how to build understanding with your AI companion.")),
+    el("p", "", "In V0 this was the door: Intent Geometry, how to build alignment with AI, sealed until 2026-08-03. What stands behind it today was not witnessed. What was witnessed is the path that led to it, in the order it was walked. Placing the path here is this seat's choice."));
+  var lg = el("div", "legend");
+  [["k","typed by the one who travelled, as typed"],["r","kept by a seat as a record of what he said"],["s","a seat's own words"]].forEach(function(x){
+    add(lg, add(el("span"), el("span", "mk " + x[0], MARK[x[0]][0]), document.createTextNode(x[1])));
+  });
+  add(v, lg);
+  var ol = el("ol", "trail");
+  TRAIL.forEach(function(s){
+    var li = el("li"), body = el("div");
+    add(body, el("div", "called", s.called));
+    var ls = el("div", "lines"); s.lines.forEach(function(x){ ls.appendChild(line(x[0], x[1])); }); body.appendChild(ls);
+    if(s.site) body.appendChild(el("p", "site", s.site));
+    add(li, el("div", "when", s.when), body); ol.appendChild(li);
+  });
+  add(v, ol);
+
+  var held = el("ul", "plain");
+  HELD.forEach(function(h){
+    var li = el("li"), b = el("div");
+    add(b, document.createTextNode(h[1]), el("span", "ag", h[2]));
+    add(li, el("span", "sc", "+" + h[0]), b); held.appendChild(li);
+  });
+  add(v, add(el("div", "block"), el("h3", "", "What held at every station"), el("p", "soft", "A reading by this seat, not the territory. The number is how sure the seat is, on −30 to +30."), held));
+  var a = el("ul", "dash"); NOT_HIS.forEach(function(x){ a.appendChild(el("li", "", x)); });
+  add(v, add(el("div", "block"), el("h3", "", "Read as his, and not his"), a));
+  var c = el("ul", "dash"); NOT_SEEN.forEach(function(x){ c.appendChild(el("li", "", x)); });
+  add(v, add(el("div", "block"), el("h3", "", "Not witnessed on this path"), c));
+  return v;
+}
+function musicView(d){
+  var v = el("div", "stack");
+  add(v, el("h2", "", "Music"), outLink(d), repView(d));
+  var blk = add(el("div", "block"), el("h3", "", "Sa, and twelve"),
+    el("p", "", "The storyline for /music, 2026-04-18: Sa sounding underneath, twelve swaras, press one and hear it against Sa. Sa here is C♯, 277.18 Hz, as on the map."));
+  var dr = btn(audio.drone ? "Stop Sa" : "Sound Sa", audio.drone ? "primary" : "", toggleDrone); dr.setAttribute("aria-pressed", String(!!audio.drone));
+  add(blk, add(el("div", "row"), dr));
+  var grid = el("div", "swaras");
+  SWARAS.forEach(function(s){
+    var b = btn("", "", function(){ playSwara(s[2]); }); b.setAttribute("aria-label", "swara " + s[1]);
+    add(b, el("b", "", s[0]), el("small", "", s[1])); grid.appendChild(b);
+  });
+  add(blk, grid, el("p", "mono soft", "16/15 and 5/4 were seen in the record. The other ratios are the usual just ones, filled in by this seat."));
+  add(v, blk); return v;
+}
+function outLink(d){
+  var p = el("p", "mono"); var a = el("a", "", d.host + " ↗"); a.href = d.link; a.rel = "noopener";
+  add(p, document.createTextNode("the practice itself lives at "), a); return p;
+}
+function domainView(d){
+  if(d.k === "guide") return guideView();
+  if(d.k === "music") return musicView(d);
+  var v = el("div", "stack");
+  if(d.wip){ add(v, el("h2", "", d.k === "ifly" ? "iFLY indoor skydiving" : "Golf"), el("p", "", "Under construction in V0. No counter was ruled for it. None is added here.")); return v; }
+  add(v, el("h2", "", "Learning Sanskrit verses"), outLink(d), el("p", "mono soft", "A scout found no site answering there on 2026-11-09."), repView(d));
+  return v;
+}
+function tabsView(vertical){
+  var t = el("div", vertical ? "navlist" : "tabs"); if(!vertical) t.setAttribute("role", "tablist");
+  DOMAINS.forEach(function(d){
+    var b = btn(d.label, d.wip ? "wip" : "", function(){ ui.tab = d.k; render(); });
+    b.setAttribute(vertical ? "aria-pressed" : "aria-selected", String(ui.tab === d.k)); if(!vertical) b.setAttribute("role", "tab");
+    t.appendChild(b);
+  });
+  return t;
+}
+function siteView(){
+  var v = el("div", "stack"); v.style.gap = "18px";
+  var f = el("p", "frame", "What I cannot create, I do not understand.");
+  f.appendChild(el("span", "", "Richard Feynman · A self-governed, local-first practice for building muscle across domains. Your reps stay in your browser."));
+  var cur = DOMAINS.filter(function(d){ return d.k === ui.tab; })[0];
+  add(v, f, gateView(), tabsView(false), domainView(cur));
+  return v;
+}
+function glanceView(){
+  var v = el("div", "stack"); v.style.gap = "12px";
+  var led = el("span", "led" + (mem.writeOk ? " on" : ""));
+  add(v, el("h3", "", "Store"), add(el("div"), led, document.createTextNode(mem.session ? "session: " + mem.session : "nothing read yet")));
+  add(v, el("p", "soft", "memory (truth)"), el("pre", "", JSON.stringify(mem.vals)));
+  var dl = el("dl", "kv");
+  REPS.forEach(function(d){ add(dl, el("dt", "", d.k + " nodes"), el("dd", "", String(mem.nodes[d.k].length))); });
+  add(dl, el("dt", "", "last write"), el("dd", "", mem.lastWrite ? mem.lastWrite.toTimeString().slice(0, 8) : (mem.writeOk === false ? "refused" : "none")));
+  add(v, dl, el("p", "soft", "Browsers forget. Open Setup and copy your store out to keep it."));
+  return v;
+}
+function setupView(){
+  var v = el("div", "stack"); v.style.gap = "18px";
+  add(v, el("h2", "", "The store"), el("p", "", "Everything this site holds about you, laid open. Look into it, change it, take it away."), gateView());
+  REPS.forEach(function(d){
+    var b = add(el("div", "block"), el("h3", "", d.label));
+    var ta = el("textarea"); ta.rows = 2; ta.id = "edit-" + d.k; ta.value = JSON.stringify({ n: mem.vals[d.k] }); ta.setAttribute("aria-label", d.label + " live data"); ta.spellcheck = false;
+    var msg = el("span", "msg"); msg.setAttribute("role", "status");
+    var ap = btn("Apply to memory", "", function(){
+      try{ var j = JSON.parse(ta.value); if(!validN(j.n)) throw 0; mem.vals[d.k] = j.n; writeThrough(); render(); }
+      catch(e){ msg.textContent = "Needs the shape {\"n\": whole number, 0 or more}."; }
+    });
+    var sn = btn("Snapshot", "quiet", function(){ snapshot(d.k); });
+    if(!mem.session){ ap.disabled = true; sn.disabled = true; ta.disabled = true; }
+    add(b, ta, add(el("div", "row"), ap, sn, msg), lineage(d.k)); v.appendChild(b);
+  });
+  var io = add(el("div", "block"), el("h3", "", "Take it with you"));
+  var box = el("textarea"); box.rows = 7; box.id = "io"; box.value = ui.io; box.setAttribute("aria-label", "Store as JSON"); box.spellcheck = false;
+  box.addEventListener("input", function(){ ui.io = box.value; });
+  var m2 = el("span", "msg"); m2.setAttribute("role", "status");
+  var file = el("input"); file.type = "file"; file.accept = ".json,application/json"; file.id = "file"; file.className = "mono"; file.setAttribute("aria-label", "Load a store file");
+  file.addEventListener("change", function(){
+    var f = file.files && file.files[0]; if(!f) return;
+    var rd = new FileReader(); rd.onload = function(){ ui.io = String(rd.result); box.value = ui.io; m2.textContent = "File is in the box. Press Load."; }; rd.readAsText(f);
+  });
+  add(io, box, add(el("div", "row"),
+    btn("Copy store out", "", function(){
+      ui.io = exportAll(); box.value = ui.io; box.select();
+      try{ navigator.clipboard.writeText(ui.io).then(function(){ m2.textContent = "Copied."; }, function(){ m2.textContent = "In the box. Copy it from there."; }); }catch(e){ m2.textContent = "In the box. Copy it from there."; }
+    }),
+    btn("Load from the box", "", function(){
+      try{ var n = importAll(box.value); ui.io = ""; render(); }
+      catch(e){ m2.textContent = "That is not a store. Paste what Copy gave you."; }
+    }), file, m2));
+  v.appendChild(io);
+  return v;
+}
+function render(){
+  var app = $("app"), L = $("left"), R = $("right");
+  app.className = "app" + (ui.mode === "setup" ? " setup" : "");
+  $("m-run").setAttribute("aria-pressed", String(ui.mode === "run"));
+  $("m-setup").setAttribute("aria-pressed", String(ui.mode === "setup"));
+  $("addr").textContent = "tml › " + ui.mode + " › " + (ui.mode === "run" ? ui.tab : "store");
+  L.textContent = ""; R.textContent = "";
+  if(ui.mode === "run"){
+    L.className = "pane"; R.className = "pane rail";
+    L.appendChild(siteView()); R.appendChild(glanceView());
+  } else {
+    L.className = "pane rail"; R.className = "pane";
+    add(L, el("h3", "", "Site"), tabsView(true), el("p", "soft", "Pick a domain, then Run."));
+    R.appendChild(setupView());
+  }
+}
+$("m-run").addEventListener("click", function(){ ui.mode = "run"; render(); });
+$("m-setup").addEventListener("click", function(){ ui.mode = "setup"; render(); });
+render();
+})();
+</script>
+</body>
+</html>
