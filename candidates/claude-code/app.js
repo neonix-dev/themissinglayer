@@ -1,478 +1,502 @@
-/* The Missing Layer — the bench.
-   Everything lives in localStorage under one key. No network calls, no dependencies. */
+/* The Missing Layer — reader, fit diagnostic, and the layer builder.
+   Owner-authored text comes from content.js. Everything the visitor writes stays in localStorage. */
 (() => {
   'use strict';
 
-  const KEY = 'themissinglayer.v1';
-  const VERDICTS = {
-    cold:   { label: 'Made it cold',   hint: 'Blank page to finished. Nothing looked up.' },
-    looked: { label: 'Had to look',    hint: 'Got there, but with a reference open.' },
-    notyet: { label: 'Not yet',        hint: 'Could not make it. That is information.' },
+  const DOCS = window.TML_DOCS || [];
+  const DIAG = window.TML_DIAG || { parts: [], scoring: {}, honest: [] };
+  const KEY = 'themissinglayer.v2';
+
+  // ---------- the eight categories (thesis §2) + where the work lives (§8.2) ----------
+  const EXTERNAL = [
+    ['practitioner', 'Identity of the practitioner', 'What role you are operating in, what register your work is in.'],
+    ['work', 'Identity of the work', 'What this project is, what it is for.'],
+    ['state', 'State of the work', 'Where you are. What is done. What is in progress. What is next.'],
+    ['decisions', 'Decisions made', 'What is settled. What has been committed to.'],
+    ['open', 'Open questions', 'What is not yet decided. What is in motion.'],
+    ['conventions', 'Conventions and language', 'How you talk about this work. Your terms. Your shared vocabulary.'],
+    ['constraints', 'Constraints', 'What you will not do. The negative space.'],
+  ];
+  const INTERNAL = [
+    ['frames', 'Frames', 'How you look at this work.'],
+    ['attention', 'Attention-patterns', 'What you notice first; what you check before anything else.'],
+    ['principles', 'Operating principles', 'The rules you actually work by.'],
+    ['failures', 'Recognized failure-modes', 'The ways this work, or you, have gone wrong before.'],
+    ['questions', 'Characteristic questions', 'The questions you keep asking of the work.'],
+  ];
+  const MODES = {
+    A: { name: 'Mode A: Long Chat', short: 'Long chat', hint: 'Exploration. Accept drift.', mitigation: 'Periodically reload Law mid-chat. Do not assume early instructions are still active.' },
+    B: { name: 'Mode B: Memory On', short: 'Memory on', hint: 'Routine. Platform curates part of the signature.', mitigation: 'Treat memory as supplement to operator-controlled Law, never as replacement.' },
+    C: { name: 'Mode C: One Prompt, One Output', short: 'One prompt, one output', hint: 'Commits. Every call auditable.', mitigation: 'Build the FP-dump step into the workflow so it does not depend on memory or discipline alone.' },
   };
-  const SUGGESTED = ['Guitar', 'Code', 'Woodworking', 'Drawing', 'Writing', 'Electronics', 'Cooking', 'Mathematics'];
-  const DEFAULT_RULES = [
-    'Blank page. Nothing open to copy from.',
-    'If I look, I say so.',
-    'A rep counts on the day it happens.',
+  const REFLECT = [
+    'Where does the signature show internal contradiction?',
+    'Where has it accumulated assumptions that are not grounded?',
+    'Where has recent updating been over-fit to specific events?',
+    'Where does your expressed understanding diverge from your actual operating record?',
+    'What is your signature not addressing — the negative space?',
   ];
 
-  const fresh = () => ({ v: 1, domains: [], pieces: [], reps: [], rules: [...DEFAULT_RULES], hold: 3, active: null, sample: false });
+  const fresh = () => ({ v: 2, fields: {}, mode: 'C', depth: 'light', versions: [], predictions: [], fit: {} });
 
   // ---------- storage ----------
   let storageOK = true;
+  const valid = (s) => s && s.v === 2 && typeof s.fields === 'object' && Array.isArray(s.versions) && Array.isArray(s.predictions);
   function load() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return fresh();
-      const s = JSON.parse(raw);
-      return valid(s) ? { ...fresh(), ...s } : fresh();
-    } catch { storageOK = false; return fresh(); }
+    try { const raw = localStorage.getItem(KEY); if (!raw) return fresh(); const s = JSON.parse(raw); return valid(s) ? { ...fresh(), ...s } : fresh(); }
+    catch { storageOK = false; return fresh(); }
   }
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; }
-    catch { storageOK = false; }
-  }
-  function valid(s) {
-    return s && s.v === 1 && Array.isArray(s.domains) && Array.isArray(s.pieces) && Array.isArray(s.reps);
-  }
-
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; } catch { storageOK = false; } }
   let state = load();
-  let armed = null;       // id of a destructive button waiting for its second click
-  let draft = { verdict: null, gap: '' };
-  let flash = '';
-  let tick = null;
 
   // ---------- helpers ----------
-  const $ = (sel, el = document) => el.querySelector(sel);
+  const $ = (s, el = document) => el.querySelector(s);
   const main = $('#main');
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
   const pad = (n) => String(n).padStart(2, '0');
-  const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
-  const clock = (sec) => { const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60; return (h ? h + ':' + pad(m) : m) + ':' + pad(s); };
+  const isoDay = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const when = (t) => new Date(t).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
-  const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
-  function ago(t) {
-    const days = Math.round((startOfDay(Date.now()) - startOfDay(t)) / 864e5);
-    if (days <= 0) return 'today';
-    if (days === 1) return 'yesterday';
-    if (days < 14) return `${days} days ago`;
-    return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  let armed = null, flash = '';
+  function download(name, text, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
-  const longDay = (t) => new Date(t).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  const repsOf = (pieceId) => state.reps.filter((r) => r.pieceId === pieceId).sort((a, b) => a.at - b.at);
-  const piecesOf = (domainId) => state.pieces.filter((p) => p.domainId === domainId);
-  const isHeld = (reps) => reps.length >= state.hold && reps.slice(-state.hold).every((r) => r.verdict === 'cold');
-  const dot = (v) => `<i class="dot ${v}" title="${esc(VERDICTS[v]?.label || '')}"></i>`;
-  const armAttr = (id) => (armed === id ? ' data-armed="1"' : '');
 
-  // ---------- views ----------
+  // ---------- home + the session boundary ----------
+  const sim = { session: 1, z: 0, law: 0, geo: 0, intent: 0, fp: 0, layer: true, reexplained: 0, worked: 0 };
+  const dots = (n, cap = 24) => '<i></i>'.repeat(Math.min(n, cap));
+
+  function simView() {
+    const lost = !sim.layer;
+    const L = (cls, name, desc, n, isLost) => `
+      <div class="layer ${cls}${isLost ? ' lost' : ''}" data-layer="${cls}">
+        <b>${name}</b><span>${desc}</span><div class="meter" aria-label="${n} items">${dots(n)}</div>
+      </div>`;
+    const prior = sim.session - 1;
+    let read;
+    if (sim.layer) {
+      read = prior
+        ? `Session <b>${sim.session}</b>. Z remembers nothing of ${prior === 1 ? 'session 1' : `sessions 1–${prior}`}. It loads Law, reads the Geometry, picks up the Intent — and continues.`
+        : `Session <b>1</b>. Do some work, then end the session.`;
+    } else {
+      read = prior
+        ? `Session <b>${sim.session}</b>. The artifact survived, but nothing says how to read it. Context re-explained so far: <b>${sim.reexplained}</b>.`
+        : `Session <b>1</b>. Without the layer. Do some work, then end the session.`;
+    }
+    return `
+      <div class="sim-head">
+        <span>A working session</span>
+        <span class="switch" role="group" aria-label="Layer">
+          <button data-act="layer-on" aria-pressed="${sim.layer}">with the layer</button>
+          <button data-act="layer-off" aria-pressed="${!sim.layer}">without</button>
+        </span>
+      </div>
+      <div class="layers">
+        ${L('z', 'Z', 'The model. Each session, Z starts from zero.', sim.z)}
+        <div class="reset-line" aria-hidden="true"><span>session boundary</span></div>
+        ${L('law', 'Law', 'Your instructions. Breakable — Z can drift from it.', sim.law, lost)}
+        ${L('geo', 'Geometry', 'The structural substrate of the work. It accumulates.', sim.geo, lost)}
+        ${L('intent', 'Intent', 'What you are trying to do, refined as you go.', sim.intent, lost)}
+        ${L('fp', 'FP', 'The artifact. Where the work lives between sessions.', sim.fp)}
+      </div>
+      <div class="sim-foot">
+        <p class="readout" aria-live="polite">${read}</p>
+        <div class="row">
+          <button class="btn sm" data-act="work">Work</button>
+          <button class="btn sm primary" data-act="end" ${sim.worked ? '' : 'disabled'}>End session</button>
+          <button class="btn sm quiet" data-act="sim-reset">Reset</button>
+        </div>
+      </div>`;
+  }
+  function renderSim(flashCls) {
+    const el = $('#sim'); if (!el) return;
+    el.innerHTML = simView();
+    if (flashCls) el.querySelectorAll(flashCls).forEach((n) => n.classList.add('flash'));
+  }
+
   function home() {
-    const n = state.reps.length;
+    const thesis = DOCS.find((d) => d.id === 'thesis');
     return `
     <section class="hero">
-      <p class="eyebrow">A practice, not a course</p>
-      <h1 class="quote">What I cannot <em>create</em>, I do not understand.</h1>
-      <p class="by">— Richard Feynman, left on his blackboard, 1988</p>
-      <div class="hero-grid">
-        <div>
-          <p class="pitch">A self-governed, local-first practice for building muscle across domains. Your reps stay in your browser.</p>
-          <div class="row">
-            <a class="btn primary" href="#/bench">${n ? 'Back to the bench' : 'Go to the bench'} →</a>
-            <a class="btn quiet" href="#/about">What is this?</a>
-          </div>
-        </div>
-        <div>
-          <div class="stack" role="img" aria-label="Three layers: knowing about it at the bottom, understanding it at the top, and a missing layer between them: making it yourself.">
-            <div class="slab solid"><b>understanding it</b><span>what you wanted</span></div>
-            <div class="slab gap"><b>making it yourself</b><span>the missing layer</span></div>
-            <div class="slab base"><b>knowing about it</b><span>what you have</span></div>
-          </div>
-          <p class="stack-cap">Reading, watching and being told all land on the bottom layer. Nothing reaches the top without passing through the middle.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="steps" aria-label="How a rep works">
-      <div class="step"><span class="n">01</span><h3>Name the thing</h3><p>Something you would say you know. A twelve-bar blues. A binary search. A through dovetail. A proof.</p></div>
-      <div class="step"><span class="n">02</span><h3>Make it cold</h3><p>Blank page, nothing open to copy from, clock running. Then say honestly how it went.</p></div>
-      <div class="step"><span class="n">03</span><h3>Write what was missing</h3><p>One line. It is the first thing you see next time. Repeat until the thing holds.</p></div>
-    </section>
-
-    <section class="tenets">
-      <div><h3>Self-governed</h3><p>No curriculum, no teacher, no streak to protect. You choose the domains, write the rules, and give the verdicts.</p></div>
-      <div><h3>Local-first</h3><p>No account, no server, no analytics. The record lives in this browser and leaves only as a file you export.</p></div>
-      <div><h3>Across domains</h3><p>A chord, a joint, a function and an argument are the same shape of work: can you produce it from nothing, again?</p></div>
-    </section>`;
-  }
-
-  function bench() {
-    if (!state.domains.length) {
-      return `
-      <div class="head"><div><h1 class="h1">The bench</h1><p class="lede">Start with a domain: any field where you want the knowing to turn into doing.</p></div></div>
-      <div class="card empty">
-        <h2>Nothing on the bench yet.</h2>
-        <p>Pick a starting point, or type your own. Domains are only folders. The work is in what you put inside them.</p>
-        <div class="chips">${SUGGESTED.map((s) => `<button class="chip" data-act="add-domain" data-name="${esc(s)}">+ ${esc(s)}</button>`).join('')}</div>
-        <form class="row add-domain" data-form="domain">
-          <input class="field grow" name="name" maxlength="60" placeholder="Your own domain" aria-label="New domain name" required>
-          <button class="btn">Add</button>
-        </form>
-        <p class="small" style="margin-top:22px"><button class="btn quiet sm" data-act="sample">Just looking? Load sample reps</button></p>
-      </div>`;
-    }
-    const domains = state.domains.map((d) => {
-      const ps = piecesOf(d.id);
-      const reps = ps.reduce((n, p) => n + repsOf(p.id).length, 0);
-      const held = ps.filter((p) => isHeld(repsOf(p.id))).length;
-      const rows = ps.map((p) => {
-        const rs = repsOf(p.id), last = rs[rs.length - 1];
-        const status = !rs.length ? '<span class="tag">new</span>' : isHeld(rs) ? '<span class="tag held">held</span>' : '<span class="tag">working</span>';
-        const lastGap = last && last.gap ? last : null;
-        return `
-        <li class="piece">
-          <div class="title">${esc(p.title)}</div>
-          <div class="acts">
-            <button class="btn primary sm" data-act="start" data-id="${p.id}">Start cold</button>
-            <button class="x${armed === 'p' + p.id ? ' armed' : ''}" data-act="del-piece" data-id="${p.id}" aria-label="Remove ${esc(p.title)}">${armed === 'p' + p.id ? 'remove + reps?' : '×'}</button>
-          </div>
-          <div class="sub">
-            ${status}
-            ${rs.length ? `<span class="dots" aria-label="${plural(rs.length, 'rep')}">${rs.slice(-12).map((r) => dot(r.verdict)).join('')}</span><span>${plural(rs.length, 'rep')} · last ${ago(last.at)}</span>` : '<span>no reps yet</span>'}
-          </div>
-          ${lastGap ? `<div class="lastgap"><b>Missing last time</b>${esc(lastGap.gap)}</div>` : ''}
-        </li>`;
-      }).join('');
-      return `
-      <article class="card domain">
-        <header>
-          <div><h2>${esc(d.name)}</h2></div>
-          <div class="row">
-            <span class="meta">${plural(reps, 'rep')} · ${held} of ${ps.length} held</span>
-            <button class="x${armed === 'd' + d.id ? ' armed' : ''}" data-act="del-domain" data-id="${d.id}" aria-label="Remove domain ${esc(d.name)}">${armed === 'd' + d.id ? 'remove domain + everything in it?' : '×'}</button>
-          </div>
-        </header>
-        <ul class="pieces">${rows}</ul>
-        <form class="row add-piece" data-form="piece" data-id="${d.id}">
-          <input class="field grow" name="title" maxlength="140" placeholder="${ps.length ? 'Another thing to make from nothing' : 'A thing you claim to know, small enough to make in one sitting'}" aria-label="New thing to make in ${esc(d.name)}" required>
-          <button class="btn">Add</button>
-        </form>
-      </article>`;
-    }).join('');
-
-    return `
-    ${state.sample ? `<div class="banner"><span>These are <b>sample reps</b>, loaded so you can look around. They are not yours.</span><button class="btn sm" data-act="clear-sample">Clear and start my own</button></div>` : ''}
-    <div class="head">
-      <div><h1 class="h1">The bench</h1><p class="lede">Pick one thing. Make it from nothing. Say how it went.</p></div>
-      <form class="row" data-form="domain">
-        <input class="field" name="name" maxlength="60" placeholder="New domain" aria-label="New domain name" required style="width:180px">
-        <button class="btn">Add domain</button>
-      </form>
-    </div>
-    ${domains}
-    <div class="legend" aria-label="Legend">
-      <span>${dot('cold')} made it cold</span><span>${dot('looked')} had to look</span><span>${dot('notyet')} not yet</span>
-      <span><span class="tag held">held</span> last ${state.hold} reps cold</span>
-    </div>
-    <section class="card rules">
-      <h2>Your rules</h2>
-      <p class="muted small">Nobody checks these but you. Change them when they stop serving the work.</p>
-      <ol>${state.rules.map((r, i) => `<li><div><span>${esc(r)}</span><button class="x" data-act="del-rule" data-i="${i}" aria-label="Remove rule">×</button></div></li>`).join('') || '<li class="muted">No rules. That is also a rule.</li>'}</ol>
-      <form class="row" data-form="rule">
-        <input class="field grow" name="rule" maxlength="160" placeholder="Add a rule" aria-label="New rule" required>
-        <button class="btn">Add</button>
-      </form>
-      <div class="row hold">
-        <label for="hold">A thing is <b>held</b> when the last</label>
-        <input class="field" id="hold" type="number" min="1" max="20" value="${state.hold}" data-change="hold">
-        <span>reps in a row were made cold.</span>
-      </div>
-    </section>`;
-  }
-
-  function rep() {
-    const a = state.active;
-    const p = state.pieces.find((x) => x.id === a.pieceId);
-    const d = state.domains.find((x) => x.id === p.domainId);
-    const prior = repsOf(p.id).filter((r) => r.gap).pop() && repsOf(p.id).slice(-1)[0].gap ? repsOf(p.id).slice(-1)[0] : null;
-    if (a.stage === 'running') {
-      return `
-      <section class="rep">
-        <p class="eyebrow">${esc(d.name)} · rep ${repsOf(p.id).length + 1}</p>
-        <h1 class="what">${esc(p.title)}</h1>
-        <div class="clock" id="clock" role="timer" aria-live="off">${clock(elapsed())}</div>
-        <p class="remind">Leave this tab. Go make it — on paper, on the instrument, in an empty file. Come back when you are done or stuck.</p>
-        ${prior ? `<p class="prior"><b>Missing last time</b>${esc(prior.gap)}</p>` : ''}
-        <div class="row">
-          <button class="btn primary" data-act="stop">I'm done</button>
-          <button class="btn quiet" data-act="abandon">Abandon, don't count it</button>
-        </div>
-      </section>`;
-    }
-    return `
-    <section class="rep">
-      <p class="eyebrow">${esc(d.name)} · ${clock(a.seconds)} at the bench</p>
-      <h1 class="what">${esc(p.title)}</h1>
-      <div class="verdicts" role="group" aria-label="How did it go?">
-        ${Object.entries(VERDICTS).map(([k, v]) => `
-          <button class="verdict" data-act="verdict" data-v="${k}" aria-pressed="${draft.verdict === k}">
-            <b>${dot(k)}${v.label}</b><span>${v.hint}</span>
-          </button>`).join('')}
-      </div>
-      <label for="gap">What was missing?</label>
-      <textarea class="field" id="gap" maxlength="600" data-input="gap" placeholder="The step you blanked on. The thing you reached for. One line is enough, and it is fine to leave this empty if nothing was.">${esc(draft.gap)}</textarea>
+      <p class="epigraph"><i lang="sa">Yogaḥ karmasu kauśalam.</i> <b>Mastery is alignment within action.</b></p>
+      <h1>The model is stateless by design. You are <em>not.</em></h1>
+      <p class="lede">Continuity is your problem to solve. Each new session, the AI does not remember what you built together, and the gap between what you understand and what it operates with widens. The continuity-architecture you build around it is the missing layer.</p>
       <div class="row">
-        <button class="btn primary" data-act="log" ${draft.verdict ? '' : 'disabled style="opacity:.45;cursor:not-allowed"'}>Log the rep</button>
-        <button class="btn quiet" data-act="abandon">Discard</button>
+        <a class="btn primary" href="#/read/thesis">Read the thesis</a>
+        <a class="btn" href="#/build">Build your layer</a>
+      </div>
+      <p class="byline">Rajan Thakurdesai${thesis ? ` · ${thesis.words.toLocaleString()} words` : ''} · developed over two years of practice</p>
+    </section>
+
+    <section class="boundary" aria-labelledby="b-h">
+      <div>
+        <p class="eyebrow">The architecture, in one session</p>
+        <h2 id="b-h" style="margin-top:10px">Z resets. Everything else must cross.</h2>
+        <p>Five elements operate together. Each session loads Law into Z, reads Geometry, engages with FP, refines Intent. The session ends. FP, Law, Geometry and Intent persist. Z resets. The next session reloads.</p>
+        <p>Switch the layer off and end a session: the artifact survives, but the understanding that made it readable does not.</p>
+        <p class="quote">Understanding crosses the session boundary through serialized projections, not through direct transmission.</p>
+      </div>
+      <div class="card sim" id="sim">${simView()}</div>
+    </section>
+
+    <section class="three" aria-label="Three ways in">
+      <a href="#/read/thesis"><span class="n">01 · READ</span><h3>The publication</h3><p>The thesis, the three modes of practice, and a note for platform engineers who have already built this without calling it that.</p></a>
+      <a href="#/fit"><span class="n">02 · FIT</span><h3>Does it fit you?</h3><p>The diagnostic, by domain, practitioner and operating conditions. Not a gate, and not a score.</p></a>
+      <a href="#/build"><span class="n">03 · BUILD</span><h3>Your layer</h3><p>Write the eight things that must cross the boundary. Get a Law file with reflection and disclosure built in. Keep score against reality.</p></a>
+    </section>
+
+    <section class="warn">
+      <h2>The central failure mode</h2>
+      <div>
+        <p>This architecture can become a delusion-compounding engine if reality-contact mechanisms are weak.</p>
+        <p>That sentence is load-bearing. Read it again. Coherence is not strongly correlated with truth — <a href="#/read/thesis#thesis-9-the-central-failure-mode-and-how-to-guard-against-it">section 9</a> says what to do about it.</p>
       </div>
     </section>`;
   }
 
-  function ledger() {
-    const reps = [...state.reps].sort((a, b) => b.at - a.at);
-    if (!reps.length) {
-      return `<div class="head"><div><h1 class="h1">The ledger</h1><p class="lede">Every rep you log shows up here, with what was missing.</p></div></div>
-      <div class="card empty"><h2>No reps yet.</h2><p>The ledger fills itself. Go make something.</p><p style="margin-top:18px"><a class="btn primary" href="#/bench">Go to the bench →</a></p></div>`;
-    }
-    const cold = reps.filter((r) => r.verdict === 'cold').length;
-    const minutes = Math.round(reps.reduce((n, r) => n + (r.seconds || 0), 0) / 60);
-    const byDay = new Map();
-    reps.forEach((r) => { const k = dayKey(r.at); byDay.set(k, (byDay.get(k) || []).concat(r)); });
-
-    // 16 weeks, columns are weeks (Mon first), ending this week
-    const WEEKS = 16, today = startOfDay(Date.now());
-    const dow = (new Date(today).getDay() + 6) % 7;
-    const first = new Date(today); first.setDate(first.getDate() - dow - (WEEKS - 1) * 7);
-    let cells = '';
-    for (let i = 0; i < WEEKS * 7; i++) {
-      const d = new Date(first); d.setDate(first.getDate() + i);
-      if (d.getTime() > today) { cells += '<i class="cell future"></i>'; continue; }
-      const n = (byDay.get(dayKey(d)) || []).length;
-      cells += `<i class="cell${n ? ' l' + Math.min(n, 3) : ''}" title="${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${plural(n, 'rep')}"></i>`;
-    }
-
-    const days = [...byDay.entries()].map(([, rs]) => `
-      <section class="day">
-        <h3>${longDay(rs[0].at)}</h3>
-        ${rs.map((r) => {
-          const p = state.pieces.find((x) => x.id === r.pieceId);
-          const d = p && state.domains.find((x) => x.id === p.domainId);
-          return `<div class="entry">
-            ${dot(r.verdict)}
-            <div class="t">${esc(p ? p.title : 'removed')} <span class="muted small" style="font-weight:400">· ${esc(d ? d.name : '')}</span></div>
-            <div class="m"><span>${esc(VERDICTS[r.verdict]?.label.toLowerCase() || '')} · ${clock(r.seconds || 0)}</span><button class="x${armed === 'r' + r.id ? ' armed' : ''}" data-act="del-rep" data-id="${r.id}" aria-label="Delete this rep">${armed === 'r' + r.id ? 'delete?' : '×'}</button></div>
-            ${r.gap ? `<div class="g">${esc(r.gap)}</div>` : ''}
-          </div>`;
-        }).join('')}
-      </section>`).join('');
-
+  // ---------- reader ----------
+  function reader(id) {
+    const i = Math.max(0, DOCS.findIndex((d) => d.id === id));
+    const d = DOCS[i];
+    if (!d) return '<p>The documents did not load.</p>';
+    const prev = DOCS[i - 1], next = DOCS[i + 1];
     return `
-    ${state.sample ? `<div class="banner"><span>These are <b>sample reps</b>, not yours.</span><button class="btn sm" data-act="clear-sample">Clear and start my own</button></div>` : ''}
-    <div class="head"><div><h1 class="h1">The ledger</h1><p class="lede">What you actually did. No scores, no streaks to protect.</p></div></div>
-    <div class="stats">
-      <div class="stat"><b>${reps.length}</b><span>reps</span></div>
-      <div class="stat"><b>${Math.round((cold / reps.length) * 100)}%</b><span>made cold</span></div>
-      <div class="stat"><b>${byDay.size}</b><span>days at the bench</span></div>
-      <div class="stat"><b>${minutes < 120 ? minutes + 'm' : (minutes / 60).toFixed(1) + 'h'}</b><span>time making</span></div>
-    </div>
-    <p class="eyebrow" style="margin-bottom:10px">Last ${WEEKS} weeks</p>
-    <div class="grid-wrap"><div class="grid" role="img" aria-label="Reps per day over the last ${WEEKS} weeks">${cells}</div></div>
-    ${days}`;
-  }
-
-  function data() {
-    const bytes = new Blob([JSON.stringify(state)]).size;
-    return `
-    <div class="head"><div><h1 class="h1">Your data</h1><p class="lede">It is a single JSON record in this browser's local storage. There is no copy anywhere else, which means there is no backup unless you make one.</p></div></div>
-    ${storageOK ? '' : '<div class="banner"><span>This browser is refusing local storage (private window, or storage blocked). You can practice, but nothing will survive closing the tab. Export before you leave.</span></div>'}
-    <dl class="kv">
-      <dt>domains</dt><dd>${state.domains.length}</dd>
-      <dt>things to make</dt><dd>${state.pieces.length}</dd>
-      <dt>reps</dt><dd>${state.reps.length}</dd>
-      <dt>size</dt><dd>${bytes < 1024 ? bytes + ' bytes' : (bytes / 1024).toFixed(1) + ' KB'}</dd>
-      <dt>stored at</dt><dd>localStorage["${KEY}"]</dd>
-    </dl>
-    <div class="panel-list">
-      <div class="card"><div><h3>Export</h3><p>Download everything as one readable JSON file. This is your backup and your way to move browsers.</p></div><button class="btn" data-act="export">Download file</button></div>
-      <div class="card"><div><h3>Import</h3><p>Replace what is here with a file you exported earlier.</p></div><label class="btn" tabindex="0">Choose file<input type="file" accept="application/json,.json" data-change="import" hidden></label></div>
-      <div class="card"><div><h3>Erase</h3><p>Remove every domain, rep and rule from this browser. There is no undo.</p></div><button class="btn danger" data-act="erase">${armed === 'erase' ? 'Yes, erase everything' : 'Erase'}</button></div>
-    </div>
-    <p class="note" role="status">${esc(flash)}</p>`;
-  }
-
-  function about() {
-    return `
-    <div class="prose">
-      <h1 class="h1">About</h1>
-      <p class="lede" style="margin-bottom:22px">What this site is, what it is built from, and what is still a guess.</p>
-
-      <p>There is a layer between hearing how something works and understanding it. It is the part where you produce the thing yourself, from nothing, and find out which pieces you were only nodding along to. It cannot be read, watched or explained into place. This site is a bench for that layer and nothing more.</p>
-
-      <h2>What a rep is</h2>
-      <p>You name one thing small enough to make in a sitting. You make it cold. You give your own verdict, and you write down what was missing. The next time you sit down with it, that line is waiting. When the last few reps in a row were made cold, the thing is marked <em>held</em>, and you move on.</p>
-      <p>The site does not teach, grade, rank or remind. It keeps the record straight and stays out of the way.</p>
-
-      <h2>What it is built from</h2>
-      <p>The project's own stated purpose is one sentence, and the whole site is an attempt to take it literally:</p>
-      <blockquote>“What I cannot create, I do not understand.” A self-governed, local-first practice for building muscle across domains. Your reps stay in your browser.</blockquote>
-      <ul>
-        <li><b>Given:</b> the Feynman line as the bar; practice as the purpose; self-governed; local-first; across domains; reps stored in the browser.</li>
-        <li><b>Interpreted by the builder:</b> the reading of “the missing layer” as the making layer between knowing and understanding; the cold start; the three verdicts; the “what was missing” note; the <em>held</em> threshold; the names bench and ledger.</li>
-        <li><b>Not established:</b> who beyond its author this practice is meant for, and whether the mechanics here match what the author does by hand. Those are the owner's to say, and this page will change when they do.</li>
-      </ul>
-
-      <h2>What it does not do</h2>
-      <ul>
-        <li>No account, no sign-in, no server holding anything.</li>
-        <li>No analytics, cookies, fonts or scripts from anywhere else. After the page loads it makes no requests; your browser's network panel will confirm it.</li>
-        <li>No sync. Moving to another browser means exporting a file and importing it there.</li>
-      </ul>
-
-      <p style="margin-top:26px"><a class="btn primary" href="#/bench">Go to the bench →</a></p>
+    <div class="reader">
+      <aside class="toc" aria-label="Documents">
+        <div class="docs">${DOCS.map((x) => `<a href="#/read/${x.id}"${x.id === d.id ? ' aria-current="page"' : ''}><b>${esc(x.kind)}</b>${esc(x.title)}</a>`).join('')}</div>
+        <ol>${d.toc.map(([hid, t]) => `<li><a href="#/read/${d.id}#${hid}">${esc(t)}</a></li>`).join('')}</ol>
+      </aside>
+      <article class="doc">
+        <p class="eyebrow">${esc(d.kind)}</p>
+        <h1 class="h1" style="margin-top:8px">${esc(d.title)}</h1>
+        <p class="meta">${esc(d.author)} · ${d.words.toLocaleString()} words${d.id === 'fit' ? ' · <a href="#/fit">take it interactively →</a>' : ''}</p>
+        ${d.html}
+        <nav class="doc-next" aria-label="More documents">
+          ${prev ? `<a class="btn quiet" href="#/read/${prev.id}">← ${esc(prev.title)}</a>` : '<span></span>'}
+          ${next ? `<a class="btn" href="#/read/${next.id}">${esc(next.title)} →</a>` : '<a class="btn" href="#/build">Build your layer →</a>'}
+        </nav>
+      </article>
     </div>`;
   }
 
-  // ---------- render + routing ----------
-  const routes = { '': home, bench, ledger, data, about };
-  function route() { return (location.hash.replace(/^#\/?/, '') || '').split('/')[0]; }
-  function elapsed() { return Math.max(0, Math.floor((Date.now() - state.active.startedAt) / 1000)); }
+  // ---------- fit ----------
+  // Tiers are this site's reading of each answer's own verdict text; the document itself is explicit that it is not a numeric score.
+  const tier = (v) => (/poor|do not|will not produce|wait until|establish this/i.test(v) ? 'poor' : /caution|partial|possible|may be|verify/i.test(v) ? 'mixed' : 'fit');
+  const TIER_LABEL = { fit: 'fit', mixed: 'caution', poor: 'poor fit' };
 
-  function render(keepFocus) {
-    clearInterval(tick);
-    const r = route();
-    const inRep = state.active && state.pieces.some((p) => p.id === state.active.pieceId);
-    if (state.active && !inRep) { state.active = null; save(); }
-    main.innerHTML = inRep ? rep() : (routes[r] || home)();
-    document.querySelectorAll('nav a').forEach((a) => {
-      if (!inRep && a.dataset.nav === r) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  function fitResult() {
+    const per = DIAG.parts.map((p) => {
+      const ts = p.questions.map((q) => { const a = state.fit[q.n]; return a == null ? null : tier(q.opts[a].v); });
+      const answered = ts.filter(Boolean).length;
+      const t = answered < ts.length ? null : ts.includes('poor') ? 'poor' : ts.includes('mixed') ? 'mixed' : 'fit';
+      return { p, t, answered, total: ts.length };
     });
-    if (inRep && state.active.stage === 'running') {
-      const el = $('#clock');
-      tick = setInterval(() => { el.textContent = clock(elapsed()); document.title = `${clock(elapsed())} · ${$('.what').textContent}`; }, 1000);
-    } else {
-      const name = inRep ? '' : { bench: 'Bench', ledger: 'Ledger', data: 'Your data', about: 'About' }[r];
-      document.title = name ? `${name} · The Missing Layer` : 'The Missing Layer — practice, by making';
+    const total = per.reduce((n, x) => n + x.total, 0), answered = per.reduce((n, x) => n + x.answered, 0);
+    let key = null;
+    if (answered === total && total) {
+      const [dom, prac] = per;
+      const poorParts = per.filter((x) => x.t === 'poor').length;
+      if (poorParts >= 2) key = 'Poor fit across multiple parts';
+      else if (per.every((x) => x.t === 'fit')) key = 'Strong fit across all three parts';
+      else if (dom.t === 'fit' && prac.t !== 'fit') key = 'Strong domain-fit but mixed practitioner-fit';
+      else if (prac.t === 'fit' && dom.t !== 'fit') key = 'Strong practitioner-fit but mixed domain-fit';
+      else key = 'Mixed everywhere';
     }
-    if (keepFocus) { const f = $(keepFocus); if (f) f.focus(); }
+    let weakest = '';
+    if (key === 'Strong domain-fit but mixed practitioner-fit') {
+      const order = { poor: 0, mixed: 1, fit: 2 };
+      const q = [...DIAG.parts[1].questions].sort((a, b) => order[tier(a.opts[state.fit[a.n]].v)] - order[tier(b.opts[state.fit[b.n]].v)])[0];
+      weakest = `<p class="small muted">Your weakest practitioner answer: <b>${esc(q.n)}</b> — ${esc(q.q)}</p>`;
+    }
+    const allTop = answered === total && DIAG.parts.every((p) => p.questions.every((q) => state.fit[q.n] === 0));
+    return `
+      <div class="parts">${per.map((x) => `<span>${esc(x.p.title.replace(' Diagnostic', ''))} <span class="tag ${x.t || ''}">${x.t ? TIER_LABEL[x.t] : `${x.answered}/${x.total}`}</span></span>`).join('')}
+        ${answered ? '<button class="x" data-act="fit-clear">clear answers</button>' : ''}</div>
+      ${key ? `<h2>${esc(key)}</h2><p>${esc(DIAG.scoring[key] || '')}</p>${weakest}` : `<p class="small muted" style="margin-top:10px">${answered ? `${answered} of ${total} answered.` : 'Answer honestly.'} The guidance appears when every question has an answer. Answers stay in this browser.</p>`}
+      ${allTop ? `<p class="small" style="margin-top:10px;color:var(--rust)">You chose the strongest answer to every question. ${esc(DIAG.honest[1] || '')}</p>` : ''}`;
   }
-  function commit(keepFocus) { save(); render(keepFocus); }
 
-  // ---------- actions ----------
-  function addDomain(name) {
-    name = name.trim(); if (!name) return;
-    if (state.domains.some((d) => d.name.toLowerCase() === name.toLowerCase())) return;
-    state.domains.push({ id: uid(), name, created: Date.now() });
+  function fit() {
+    return `
+    <p class="eyebrow">Self-evaluation</p>
+    <h1 class="h1" style="margin-top:8px">Does this architecture fit you?</h1>
+    <p class="lede">The architecture amplifies whatever you load. If what you load is mis-fit to amplification, the amplification compounds the mis-fit. This is not a gate.</p>
+    ${DIAG.parts.map((p) => `
+      <section class="part" aria-labelledby="part-${p.n}">
+        <h2 id="part-${p.n}">${p.n}. ${esc(p.title)}</h2>
+        <p>${esc(p.intro)}</p>
+        ${p.questions.map((q) => `
+          <div class="card q">
+            <h3><span>${esc(q.n)}</span>${esc(q.q)}</h3>
+            <div class="opts" role="radiogroup" aria-label="${esc(q.q)}">
+              ${q.opts.map((o, i) => `
+                <button class="opt" role="radio" aria-checked="${state.fit[q.n] === i}" data-act="fit" data-q="${esc(q.n)}" data-i="${i}">
+                  <i></i><span>${esc(o.a)}<span class="v ${tier(o.v)}">${esc(o.v)}</span></span>
+                </button>`).join('')}
+            </div>
+          </div>`).join('')}
+        ${Object.keys(p.lists).length ? `<div class="domains">${Object.entries(p.lists).map(([h, items]) => `<div><h4>${esc(h)}</h4><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>` : ''}
+      </section>`).join('')}
+    <div class="card result" id="fit-result" aria-live="polite">${fitResult()}</div>
+    <section class="honest">
+      <h2>A note on honest answers</h2>
+      ${DIAG.honest.map((p) => `<p>${esc(p)}</p>`).join('')}
+    </section>`;
   }
-  // A destructive button needs two clicks; the first only arms it.
+
+  // ---------- build ----------
+  function lawText(f = state.fields, mode = state.mode, depth = state.depth, versionNo = state.versions.length + 1) {
+    const val = (k) => (f[k] || '').trim();
+    const block = (k, title) => `## ${title}\n${val(k) || '_Not yet written._'}\n`;
+    const title = (val('work').split('\n')[0] || 'this work').slice(0, 80);
+    const m = MODES[mode];
+    return [
+      `# Law — ${title}`,
+      `Loaded at the start of every session. Version ${versionNo}, ${isoDay()}. ${m.name}.`,
+      '',
+      '## Before operating: reflect',
+      'Before operating inside this signature, interrogate the signature itself:',
+      ...REFLECT.map((q) => `- ${q}`),
+      depth === 'heavy'
+        ? 'Heavy interrogation: this session commits to something the signature should be tested against. Answer each question before starting the work.'
+        : 'Light touch: this is routine continuation. Raise only what would change the next step.',
+      'The reflection is not a gate. It is a flag. Surface the risk; I evaluate; I decide. When I override a flagged risk, operate inside the override, with no further pushback on the acknowledged risk.',
+      '',
+      ...EXTERNAL.map(([k, t]) => block(k, t)),
+      '## Where the work lives (FP)',
+      `${val('fp') || '_Not yet written._'}`,
+      'Chat history is ephemeral; the artifact is canonical. Do not modify the artifact without being asked.',
+      '',
+      '## Understanding (projections)',
+      'These projections do not contain the understanding. They produce output that approximates operating with the understanding.',
+      '',
+      ...INTERNAL.map(([k, t]) => `### ${t}\n${val(k) || '_Not yet written._'}\n`),
+      `## Mode`,
+      `${m.name}. ${m.mitigation}`,
+      '',
+      '## Disclosure',
+      'Append to every substantive output:',
+      `*(\*) Produced with this specific understanding, in ${m.name.split(':')[0]}. If not true, please do risk assessment before accepting advice.*`,
+      '',
+    ].join('\n');
+  }
+  function highlight(t) {
+    return esc(t).split('\n').map((l) => (/^#{1,3} /.test(l) ? `<span class="hd">${l}</span>` : l === '_Not yet written._' ? `<span class="ph">${l}</span>` : l)).join('\n');
+  }
+  const filled = (f = state.fields) => [...EXTERNAL, ...INTERNAL, ['fp']].filter(([k]) => (f[k] || '').trim()).length;
+  const TOTAL_FIELDS = EXTERNAL.length + INTERNAL.length + 1;
+
+  function fieldHTML([k, t, hint], rows = 2) {
+    return `<div class="fld"><label for="f-${k}">${esc(t)}<small>${esc(hint)}</small></label>
+      <textarea class="field" id="f-${k}" rows="${rows}" data-field="${k}">${esc(state.fields[k] || '')}</textarea></div>`;
+  }
+
+  function build() {
+    const held = state.predictions.filter((p) => p.outcome === 'held').length;
+    const settled = state.predictions.filter((p) => p.outcome !== 'open').length;
+    return `
+    <p class="eyebrow">Build</p>
+    <h1 class="h1" style="margin-top:8px">Your layer</h1>
+    <p class="lede">The first seven can be captured. The eighth — your understanding — cannot be captured directly; it crosses through its projections. Write what you can. Empty sections stay visible in the file as negative space.</p>
+    ${storageOK ? '' : '<p class="note">This browser is refusing local storage. Nothing here will survive closing the tab — download before you leave.</p>'}
+    <div class="build" style="margin-top:30px">
+      <div>
+        <section class="group"><h2>External · <b>artifact-able</b></h2>
+          ${EXTERNAL.map((f) => fieldHTML(f, f[0] === 'state' ? 3 : 2)).join('')}
+          ${fieldHTML(['fp', 'Where the work lives (FP)', 'The actual artifact. Versioned. State-trackable. Distinct from your conversations with the model.'], 2)}
+        </section>
+        <section class="group"><h2>Internal · <b>through its projections</b></h2>
+          ${INTERNAL.map((f) => fieldHTML(f)).join('')}
+        </section>
+        <section class="group"><h2>Mode of practice</h2>
+          <div class="choice" role="group" aria-label="Mode">${Object.entries(MODES).map(([k, m]) => `<button data-act="mode" data-mode="${k}" aria-pressed="${state.mode === k}"><b>${k} · ${esc(m.short)}</b>${esc(m.hint)}</button>`).join('')}</div>
+          <div class="fld"><label>Reflection<small>Proportional to the stakes.</small></label>
+            <div class="choice" role="group" aria-label="Reflection depth" style="grid-template-columns:1fr 1fr">
+              <button data-act="depth" data-depth="light" aria-pressed="${state.depth === 'light'}"><b>Light touch</b>Routine continuation.</button>
+              <button data-act="depth" data-depth="heavy" aria-pressed="${state.depth === 'heavy'}"><b>Heavy</b>About to commit to something.</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="preview">
+        <div class="bar"><span class="mono small muted" id="filled">${filled()} of ${TOTAL_FIELDS} written</span>
+          <span class="row"><button class="btn sm" data-act="copy">Copy</button><button class="btn sm" data-act="download-law">Download CLAUDE.md</button></span></div>
+        <pre id="law" aria-label="Generated Law file">${highlight(lawText())}</pre>
+        <p class="note" id="law-note" role="status">${esc(flash)}</p>
+      </div>
+    </div>
+
+    <section class="ledger">
+      <div>
+        <h2>Versions</h2>
+        <p>Your Geometry accumulates. Seal a version when the Law changes, so you can read older outputs against current reality — retrospective calibration.</p>
+        <div class="row" style="margin-bottom:12px"><input class="field" id="vnote" maxlength="120" placeholder="What changed (optional)" style="flex:1;min-width:0"><button class="btn" data-act="seal">Seal version ${state.versions.length + 1}</button></div>
+        <ul class="list">${state.versions.length ? [...state.versions].reverse().map((v, i) => `
+          <li><span class="t">v${state.versions.length - i}${v.note ? ' · ' + esc(v.note) : ''}</span>
+            <span class="m">${when(v.at)} · ${v.filled}/${TOTAL_FIELDS} written · ${MODES[v.mode]?.short || ''}</span>
+            <span class="a"><button class="x" data-act="restore" data-id="${v.id}">${armed === 'r' + v.id ? 'replace current?' : 'restore'}</button><button class="x" data-act="dl-version" data-id="${v.id}">download</button></span></li>`).join('') : '<li><span class="empty">No sealed versions yet.</span></li>'}</ul>
+      </div>
+      <div>
+        <h2>Scorekeeping</h2>
+        <p>Track predictions against outcomes. When your Geometry predicts X and reality produces not-X, the Geometry needs revision, not protection.</p>
+        <form class="addrow" data-form="prediction">
+          <input class="field" name="text" maxlength="240" placeholder="My understanding predicts…" required aria-label="Prediction">
+          <input class="field" name="by" type="date" aria-label="Check by" value="${isoDay(Date.now() + 14 * 864e5)}">
+          <button class="btn">Add</button>
+        </form>
+        <p class="mono small muted" style="margin:10px 0">${settled ? `${held} of ${settled} settled predictions held` : 'Nothing settled yet.'}</p>
+        <ul class="list">${state.predictions.length ? [...state.predictions].reverse().map((p) => {
+          const overdue = p.outcome === 'open' && p.by && p.by < isoDay();
+          return `<li><span class="t">${esc(p.text)}</span>
+            <span class="m">${p.outcome === 'open' ? (p.by ? `check by ${p.by}${overdue ? ' · due' : ''}` : 'open') : `<span class="tag ${p.outcome === 'held' ? 'fit' : 'poor'}">${p.outcome === 'held' ? 'held' : 'did not hold'}</span> v${p.v}`}</span>
+            <span class="a">${p.outcome === 'open' ? `<button class="x" data-act="held" data-id="${p.id}">held</button><button class="x" data-act="missed" data-id="${p.id}">did not hold</button>` : `<button class="x" data-act="reopen" data-id="${p.id}">reopen</button>`}<button class="x${armed === 'p' + p.id ? ' armed' : ''}" data-act="del-pred" data-id="${p.id}" aria-label="Delete prediction">${armed === 'p' + p.id ? 'delete?' : '×'}</button></span></li>`;
+        }).join('') : '<li><span class="empty">No predictions yet.</span></li>'}</ul>
+      </div>
+    </section>
+
+    <div class="card data-strip">
+      <span>Everything above lives only in this browser. ${plural(state.versions.length, 'version')}, ${plural(state.predictions.length, 'prediction')}.</span>
+      <span class="row">
+        <button class="btn sm" data-act="export">Export all</button>
+        <label class="btn sm" tabindex="0">Import<input type="file" accept="application/json,.json" data-change="import" hidden></label>
+        <button class="btn sm quiet" data-act="erase">${armed === 'erase' ? 'Yes, erase everything' : 'Erase'}</button>
+      </span>
+    </div>`;
+  }
+
+  // ---------- sources ----------
+  function sources() {
+    return `
+    <div class="prose">
+      <p class="eyebrow">Sources</p>
+      <h1 class="h1" style="margin-top:8px">Where this came from</h1>
+      <p class="lede">This site is a reconstruction. The text is the author's; the instruments are built from it. This page says which is which.</p>
+
+      <h2>The author's words</h2>
+      <p>The four documents under <a href="#/read/thesis">Read</a> are reproduced from the author's own drafts, each headed with his name and with <code>themissinglayer.org</code> as its source, dated 2026-05-17. Only their full text is used. Notes added later by an AI assistant were left out.</p>
+      <div class="prov">
+        ${DOCS.map((d) => `<div><span>${esc(d.kind)}</span><span>${esc(d.title)} — ${d.words.toLocaleString()} words</span></div>`).join('')}
+        <div><span>Left out</span><span>A fifth draft, “The Missing Layer (GPT version)”, is a re-articulation written by GPT, not the author. It also redefines <i>FP</i> in a way that conflicts with the thesis.</span></div>
+      </div>
+
+      <h2>Built from the text</h2>
+      <ul>
+        <li><b>The session-boundary demonstration</b> on the home page illustrates section 3 of the thesis. The counts are illustrative, not measured.</li>
+        <li><b>The fit diagnostic</b> uses the questions and verdicts verbatim. Colouring each answer as fit, caution, or poor fit, and choosing which scoring paragraph applies, is this site's reading of the verdict text. The diagnostic itself says it is not a numeric score.</li>
+        <li><b>The Law builder</b> takes its categories from section 2 of the thesis, its reflection questions from section 5, the override from section 6, the disclosure from section 7, and the mode-aware disclosure and mitigations from <i>Modes of Practice</i>. The layout of the generated file, and the wording of the light and heavy reflection lines, are this site's.</li>
+        <li><b>Versions and scorekeeping</b> implement two of the reality-contact mechanisms in section 9: retrospective calibration and empirical scorekeeping.</li>
+      </ul>
+
+      <h2>Named but not found</h2>
+      <p>The thesis lists companion artifacts: a diagram of the six-element architecture; example Claude.md files for a software, a writing and a research project; the over-fit failure case; the trading anti-pattern. None of them turned up in any trace, so none were written here in the author's name.</p>
+
+      <h2>What this site does not do</h2>
+      <ul>
+        <li>No account, no server, no analytics, no third-party fonts or scripts.</li>
+        <li>What you write under Build and Fit stays in this browser's local storage, and leaves only as a file you export.</li>
+      </ul>
+    </div>`;
+  }
+
+  // ---------- routing ----------
+  function route() { const [r, a] = location.hash.replace(/^#\/?/, '').split('#')[0].split('/'); return { r: r || '', a }; }
+  function render() {
+    const { r, a } = route();
+    const view = { '': home, read: () => reader(a || 'thesis'), fit, build, sources }[r] || home;
+    main.innerHTML = view();
+    document.querySelectorAll('nav a').forEach((n) => (n.dataset.nav === r ? n.setAttribute('aria-current', 'page') : n.removeAttribute('aria-current')));
+    const titles = { read: (DOCS.find((d) => d.id === (a || 'thesis')) || {}).title, fit: 'Fit', build: 'Your layer', sources: 'Sources' };
+    document.title = titles[r] && titles[r] !== 'The Missing Layer' ? `${titles[r]} · The Missing Layer` : 'The Missing Layer';
+    const anchor = location.hash.split('#')[2];
+    if (anchor) { const el = document.getElementById(anchor); if (el) el.scrollIntoView(); }
+  }
+  function commit() { save(); render(); }
   function confirmArm(id) { if (armed === id) { armed = null; return true; } armed = id; render(); return false; }
 
+  // ---------- events ----------
   const actions = {
-    'add-domain': (el) => { addDomain(el.dataset.name); commit(); },
-    start: (el) => { state.active = { pieceId: el.dataset.id, startedAt: Date.now(), stage: 'running' }; draft = { verdict: null, gap: '' }; commit(); window.scrollTo(0, 0); },
-    stop: () => { state.active.seconds = elapsed(); state.active.stage = 'verdict'; commit(); },
-    abandon: () => { state.active = null; commit(); },
-    verdict: (el) => { draft.verdict = el.dataset.v; render(`[data-v="${draft.verdict}"]`); },
-    log: () => {
-      if (!draft.verdict) return;
-      const a = state.active;
-      state.reps.push({ id: uid(), pieceId: a.pieceId, at: Date.now(), seconds: a.seconds, verdict: draft.verdict, gap: draft.gap.trim() });
-      state.active = null; draft = { verdict: null, gap: '' };
-      if (route() !== 'bench') { save(); location.hash = '#/bench'; } else commit();
+    work: () => { sim.worked++; sim.z++; sim.fp++; sim.intent = Math.min(sim.intent + 1, 12); if (sim.z % 2 === 1) sim.law++; if (sim.z % 3 === 0) sim.geo++; renderSim('[data-layer="z"]'); },
+    end: () => {
+      if (!sim.worked) return;
+      if (!sim.layer) { sim.reexplained += sim.law + sim.geo + sim.intent; sim.law = 0; sim.geo = 0; sim.intent = 0; }
+      sim.session++; sim.z = 0; sim.worked = 0;
+      renderSim(sim.layer ? '[data-layer="z"]' : '.layer');
     },
-    'del-piece': (el) => { if (!confirmArm('p' + el.dataset.id)) return; state.pieces = state.pieces.filter((p) => p.id !== el.dataset.id); state.reps = state.reps.filter((r) => r.pieceId !== el.dataset.id); commit(); },
-    'del-domain': (el) => {
-      if (!confirmArm('d' + el.dataset.id)) return;
-      const gone = new Set(piecesOf(el.dataset.id).map((p) => p.id));
-      state.domains = state.domains.filter((d) => d.id !== el.dataset.id);
-      state.pieces = state.pieces.filter((p) => !gone.has(p.id));
-      state.reps = state.reps.filter((r) => !gone.has(r.pieceId));
-      commit();
+    'sim-reset': () => { Object.assign(sim, { session: 1, z: 0, law: 0, geo: 0, intent: 0, fp: 0, reexplained: 0, worked: 0 }); renderSim(); },
+    'layer-on': () => { sim.layer = true; actions['sim-reset'](); },
+    'layer-off': () => { sim.layer = false; actions['sim-reset'](); },
+    fit: (el) => { state.fit[el.dataset.q] = +el.dataset.i; save(); const g = el.closest('.opts'); g.querySelectorAll('.opt').forEach((b) => b.setAttribute('aria-checked', b === el)); $('#fit-result').innerHTML = fitResult(); },
+    'fit-clear': () => { state.fit = {}; commit(); },
+    mode: (el) => { state.mode = el.dataset.mode; commit(); },
+    depth: (el) => { state.depth = el.dataset.depth; commit(); },
+    copy: async () => {
+      let ok = false; try { await navigator.clipboard.writeText(lawText()); ok = true; } catch {}
+      $('#law-note').textContent = ok ? 'Copied. Load it at the start of the next session.' : 'Copy was blocked by the browser. Use Download instead.';
     },
-    'del-rep': (el) => { if (!confirmArm('r' + el.dataset.id)) return; state.reps = state.reps.filter((r) => r.id !== el.dataset.id); commit(); },
-    'del-rule': (el) => { state.rules.splice(+el.dataset.i, 1); commit(); },
-    sample: () => { state = sample(); commit(); },
-    'clear-sample': () => { state = fresh(); commit(); },
-    erase: () => { if (!confirmArm('erase')) return; state = fresh(); flash = 'Erased. This browser holds nothing now.'; commit(); },
-    export: () => {
-      const blob = new Blob([JSON.stringify({ ...state, active: null }, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = `themissinglayer-${dayKey(Date.now())}.json`;
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      flash = 'Exported. Keep the file somewhere you trust.'; render();
+    'download-law': () => { download('CLAUDE.md', lawText(), 'text/markdown'); $('#law-note').textContent = 'Downloaded CLAUDE.md.'; },
+    seal: () => {
+      const note = ($('#vnote')?.value || '').trim();
+      state.versions.push({ id: uid(), at: Date.now(), note, fields: { ...state.fields }, mode: state.mode, depth: state.depth, filled: filled(), text: lawText() });
+      flash = `Sealed version ${state.versions.length}.`; commit(); flash = '';
     },
+    restore: (el) => {
+      if (!confirmArm('r' + el.dataset.id)) return;
+      const v = state.versions.find((x) => x.id === el.dataset.id); if (!v) return;
+      state.fields = { ...v.fields }; state.mode = v.mode; state.depth = v.depth;
+      flash = `Restored version ${state.versions.indexOf(v) + 1} into the editor.`; commit(); flash = '';
+    },
+    'dl-version': (el) => { const i = state.versions.findIndex((x) => x.id === el.dataset.id); if (i > -1) download(`CLAUDE.v${i + 1}.md`, state.versions[i].text, 'text/markdown'); },
+    held: (el) => { const p = state.predictions.find((x) => x.id === el.dataset.id); if (p) { p.outcome = 'held'; p.settled = Date.now(); } commit(); },
+    missed: (el) => { const p = state.predictions.find((x) => x.id === el.dataset.id); if (p) { p.outcome = 'missed'; p.settled = Date.now(); } commit(); },
+    reopen: (el) => { const p = state.predictions.find((x) => x.id === el.dataset.id); if (p) p.outcome = 'open'; commit(); },
+    'del-pred': (el) => { if (!confirmArm('p' + el.dataset.id)) return; state.predictions = state.predictions.filter((x) => x.id !== el.dataset.id); commit(); },
+    export: () => download(`themissinglayer-${isoDay()}.json`, JSON.stringify(state, null, 2), 'application/json'),
+    erase: () => { if (!confirmArm('erase')) return; state = fresh(); commit(); },
   };
 
   main.addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]');
     if (!el) { if (armed) { armed = null; render(); } return; }
-    if (armed && !el.dataset.act.startsWith('del-') && el.dataset.act !== 'erase') armed = null;
-    flash = '';
-    actions[el.dataset.act]?.(el);
+    const act = el.dataset.act;
+    if (armed && !['restore', 'del-pred', 'erase'].includes(act)) armed = null;
+    actions[act]?.(el);
+  });
+
+  main.addEventListener('input', (e) => {
+    const k = e.target.dataset.field; if (!k) return;
+    state.fields[k] = e.target.value; save();
+    const pre = $('#law'); if (pre) pre.innerHTML = highlight(lawText());
+    const f = $('#filled'); if (f) f.textContent = `${filled()} of ${TOTAL_FIELDS} written`;
   });
 
   main.addEventListener('submit', (e) => {
-    const f = e.target.closest('[data-form]'); if (!f) return;
+    const f = e.target.closest('[data-form="prediction"]'); if (!f) return;
     e.preventDefault();
-    const kind = f.dataset.form;
-    if (kind === 'domain') { addDomain(f.name.value); commit(); }
-    if (kind === 'piece') {
-      const title = f.title.value.trim();
-      if (title) state.pieces.push({ id: uid(), domainId: f.dataset.id, title, created: Date.now() });
-      commit(`[data-form="piece"][data-id="${f.dataset.id}"] input`);
-    }
-    if (kind === 'rule') { const r = f.rule.value.trim(); if (r) state.rules.push(r); commit('[data-form="rule"] input'); }
+    const text = f.text.value.trim(); if (!text) return;
+    state.predictions.push({ id: uid(), at: Date.now(), text, by: f.by.value || '', outcome: 'open', v: state.versions.length || 0 });
+    commit(); $('[data-form="prediction"] input[name="text"]')?.focus();
   });
-
-  main.addEventListener('input', (e) => { if (e.target.dataset.input === 'gap') draft.gap = e.target.value; });
 
   main.addEventListener('change', (e) => {
-    const k = e.target.dataset.change;
-    if (k === 'hold') { state.hold = Math.min(20, Math.max(1, parseInt(e.target.value, 10) || 3)); commit(); }
-    if (k === 'import') {
-      const file = e.target.files[0]; if (!file) return;
-      file.text().then((t) => {
-        let s; try { s = JSON.parse(t); } catch { s = null; }
-        if (!valid(s)) { flash = 'That file is not a Missing Layer export. Nothing was changed.'; return render(); }
-        const ids = new Set(s.pieces.map((p) => p.id));
-        state = { ...fresh(), ...s, active: null, reps: s.reps.filter((r) => ids.has(r.pieceId) && VERDICTS[r.verdict]) };
-        flash = `Imported ${plural(state.reps.length, 'rep')} across ${plural(state.domains.length, 'domain')}.`;
-        commit();
-      });
-    }
+    if (e.target.dataset.change !== 'import') return;
+    const file = e.target.files[0]; if (!file) return;
+    file.text().then((t) => {
+      let s; try { s = JSON.parse(t); } catch { s = null; }
+      if (!valid(s)) { flash = 'That file is not a Missing Layer export. Nothing changed.'; render(); flash = ''; return; }
+      state = { ...fresh(), ...s }; flash = `Imported ${plural(state.versions.length, 'version')} and ${plural(state.predictions.length, 'prediction')}.`; commit(); flash = '';
+    });
   });
 
-  // ---------- sample data (clearly marked, never mixed with real reps) ----------
-  function sample() {
-    const s = fresh(); s.sample = true;
-    const now = Date.now(), D = 864e5;
-    const mk = (domain, items) => {
-      const d = { id: uid(), name: domain, created: now - 40 * D }; s.domains.push(d);
-      items.forEach(([title, reps]) => {
-        const p = { id: uid(), domainId: d.id, title, created: now - 40 * D }; s.pieces.push(p);
-        reps.forEach(([daysAgo, verdict, min, gap]) => s.reps.push({ id: uid(), pieceId: p.id, at: now - daysAgo * D - 3600e3, seconds: min * 60 + (daysAgo * 7) % 50, verdict, gap: gap || '' }));
-      });
-    };
-    mk('Guitar', [
-      ['Twelve-bar blues in A, with a turnaround', [[33, 'notyet', 9, 'Lost the form at bar 9. I know the chords, not where I am in them.'], [29, 'looked', 12, 'Had to check the turnaround fingering.'], [22, 'cold', 8], [15, 'cold', 6], [6, 'cold', 5]]],
-      ['A minor pentatonic, all five positions, connected', [[20, 'looked', 14, 'Positions 3 and 4 blur together moving up the neck.'], [11, 'looked', 11, 'Position 4 still. The shift on the B string.'], [2, 'cold', 10]]],
-    ]);
-    mk('Code', [
-      ['Binary search, no off-by-one, first try', [[31, 'looked', 7, 'lo <= hi versus lo < hi. I guessed.'], [24, 'cold', 4], [17, 'cold', 3], [9, 'cold', 3]]],
-      ['An LRU cache from an empty file', [[13, 'notyet', 25, 'Could describe it perfectly. Could not keep the list and the map in step on eviction.'], [5, 'looked', 21, 'Moving a node to the front: forgot to unlink it first.'], [0, 'cold', 16]]],
-      ['Parse a CSV line with quoted commas', [[3, 'notyet', 18, 'Escaped quotes inside quoted fields. Never actually handled them before, only used a library.']]],
-    ]);
-    mk('Woodworking', [
-      ['Through dovetail, hand cut, one corner', [[27, 'notyet', 55, 'Sawed on the wrong side of the line on two tails.'], [14, 'looked', 48, 'Checked the marking sequence: tails first, then transfer.'], [1, 'looked', 41, 'Baseline gaps. Paring past the knife line.']]],
-    ]);
-    return s;
-  }
-
-  // ---------- go ----------
-  window.addEventListener('hashchange', () => { armed = null; flash = ''; render(); window.scrollTo(0, 0); main.focus({ preventScroll: true }); });
+  window.addEventListener('hashchange', () => {
+    armed = null; render();
+    if (!location.hash.split('#')[2]) window.scrollTo(0, 0);
+    main.focus({ preventScroll: true });
+  });
   window.addEventListener('storage', (e) => { if (e.key === KEY) { state = load(); render(); } });
   render();
 
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
