@@ -1,6 +1,6 @@
 // Offline support. Network first so updates land; the cache answers when there is no network.
-const CACHE = 'tml-1';
-const FILES = ['./', 'index.html', 'style.css', 'app.js'];
+const CACHE = 'tml-2';
+const FILES = ['./', 'index.html', 'style.css', 'content.js', 'app.js'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
