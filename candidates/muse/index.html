@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:," />
+    <title>The Missing Layer</title>
+    <style>
+      :root {
+        --bg: #0a0e12;
+        --bg2: #0d1219;
+        --panel: #0e141c;
+        --line: #22303f;
+        --line-soft: #18222d;
+        --ink: #e9e7de;
+        --muted: #9aa7b4;
+        --faint: #63738380;
+        --slate: #94a3b8;
+        --teal: #5eead4;
+        --teal-dim: rgba(94, 234, 212, 0.45);
+        --amber: #f0b64f;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 17px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      ::selection { background: rgba(94,234,212,.25); }
+
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 0 22px; }
+
+      /* ---------- header ---------- */
+      header.top {
+        border-bottom: 1px solid var(--line-soft);
+      }
+      header.top .wrap {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 16px; flex-wrap: wrap;
+        padding-top: 18px; padding-bottom: 18px;
+      }
+      .brand {
+        font-family: var(--mono); font-size: 13px; letter-spacing: .34em;
+        color: var(--ink); white-space: nowrap;
+      }
+      .brand b { color: var(--teal); font-weight: 400; }
+      .domain {
+        font-family: var(--mono); font-size: 12px; letter-spacing: .18em; color: var(--muted);
+      }
+
+      /* ---------- generic section furniture ---------- */
+      section { padding: 74px 0 8px; }
+      .sec-label {
+        font-family: var(--mono); font-size: 11px; letter-spacing: .38em;
+        text-transform: uppercase; color: var(--slate);
+        display: flex; align-items: center; gap: 16px; margin: 0 0 30px;
+      }
+      .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+      .sec-label .n { color: var(--teal); }
+      h2.sec-title {
+        font-size: clamp(24px, 3.4vw, 34px); font-weight: 600; letter-spacing: -0.01em;
+        margin: 0 0 14px; line-height: 1.2;
+      }
+      p { margin: 0 0 16px; }
+      .muted { color: var(--muted); }
+      .mono { font-family: var(--mono); }
+
+      /* ---------- hero ---------- */
+      .hero { padding: 84px 0 10px; }
+      .hero .claim {
+        font-size: clamp(30px, 5.6vw, 56px); line-height: 1.12; font-weight: 650;
+        letter-spacing: -0.02em; margin: 0 0 26px; max-width: 15em;
+      }
+      .hero .claim .past { color: var(--teal); }
+      .feynman {
+        border-left: 2px solid var(--teal);
+        padding: 4px 0 4px 22px; margin: 34px 0 30px; max-width: 640px;
+      }
+      .feynman blockquote {
+        margin: 0; font-size: clamp(20px, 3vw, 27px); line-height: 1.35; font-weight: 550;
+      }
+      .feynman cite {
+        display: block; margin-top: 10px; font-style: normal;
+        font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: var(--muted);
+        text-transform: uppercase;
+      }
+      .hero .lede { max-width: 660px; color: var(--ink); }
+      .hero .lede .dim { color: var(--muted); }
+      .hero .repo-line {
+        font-family: var(--mono); font-size: 13px; color: var(--muted);
+        border: 1px solid var(--line-soft); background: var(--bg2);
+        padding: 14px 18px; margin-top: 30px; max-width: 660px; line-height: 1.7;
+      }
+      .hero .repo-line .t { color: var(--teal); }
+
+      /* ---------- crossing diagram ---------- */
+      .diagram-box {
+        border: 1px solid var(--line-soft); background: var(--bg2);
+        padding: 26px 18px 10px; overflow: hidden;
+      }
+      .diagram-box svg { display: block; width: 100%; height: auto; }
+      .diagram-box figcaption {
+        font-family: var(--mono); font-size: 13px; color: var(--muted);
+        text-align: center; padding: 14px 6px 16px; letter-spacing: .04em;
+      }
+      .diagram-box figcaption b { color: var(--ink); font-weight: 400; }
+      .legend {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px 34px;
+        margin: 26px 0 6px; padding: 0; list-style: none;
+        font-size: 15px;
+      }
+      .legend li { display: flex; gap: 12px; align-items: baseline; color: var(--muted); }
+      .legend .k {
+        font-family: var(--mono); font-size: 12px; min-width: 30px; text-align: center;
+        border: 1px solid var(--line); padding: 2px 0; flex: none;
+      }
+      .legend .k.teal { color: var(--teal); border-color: rgba(94,234,212,.4); }
+      .legend .k.amber { color: var(--amber); border-color: rgba(240,182,79,.4); }
+      .legend .k.slate { color: var(--slate); }
+      .legend .k.ink { color: var(--ink); }
+      .legend b { color: var(--ink); font-weight: 550; }
+
+      /* ---------- numbered entries (principles / definitions) ---------- */
+      .entries { border-top: 1px solid var(--line-soft); }
+      .entry {
+        display: grid; grid-template-columns: 64px 1fr; gap: 8px 22px;
+        padding: 28px 0; border-bottom: 1px solid var(--line-soft);
+      }
+      .entry .num {
+        font-family: var(--mono); font-size: 15px; color: var(--teal);
+        border: 1px solid rgba(94,234,212,.35); width: 40px; height: 40px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .entry h3 { margin: 4px 0 8px; font-size: 21px; font-weight: 600; }
+      .entry h3 .gloss { color: var(--muted); font-weight: 400; }
+      .entry p { color: var(--muted); max-width: 640px; margin-bottom: 10px; }
+      .entry p b, .entry p .w { color: var(--ink); font-weight: 550; }
+      .entry blockquote {
+        margin: 12px 0 4px; padding-left: 18px; border-left: 2px solid var(--amber);
+        color: var(--ink); font-size: 17px; max-width: 620px;
+      }
+
+      /* ---------- instrument ---------- */
+      .instrument {
+        border: 1px solid var(--line); background: var(--panel);
+        margin-top: 8px;
+      }
+      .inst-head {
+        display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
+        padding: 16px 20px; border-bottom: 1px solid var(--line-soft);
+        font-family: var(--mono); font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--slate);
+      }
+      .inst-head .live { color: var(--teal); }
+      .inst-head .live::before { content: "●"; margin-right: 8px; font-size: 9px; vertical-align: 2px; }
+      .q-block { padding: 22px 20px 6px; }
+      .q-block label {
+        display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
+        text-transform: uppercase; color: var(--slate); margin-bottom: 10px;
+      }
+      #q-input {
+        width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+        font-family: var(--mono); font-size: 16px; padding: 14px 16px; min-height: 52px;
+        outline: none; border-radius: 0;
+      }
+      #q-input:focus { border-color: var(--teal); }
+      #q-input::placeholder { color: #55636f; }
+      .shelf { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; align-items: center; }
+      .shelf .shelf-label {
+        font-family: var(--mono); font-size: 10px; letter-spacing: .26em; color: var(--faint);
+        text-transform: uppercase; margin-right: 2px;
+      }
+      .chip {
+        font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+        background: transparent; border: 1px solid var(--line); padding: 9px 13px;
+        cursor: pointer; min-height: 38px; text-align: left;
+      }
+      .chip:hover { color: var(--ink); border-color: var(--slate); }
+      .chip.active { color: var(--teal); border-color: rgba(94,234,212,.55); }
+
+      .inst-grid {
+        display: grid; grid-template-columns: 1fr 1.7fr 1fr; gap: 0;
+        border-top: 1px solid var(--line-soft); margin-top: 16px;
+      }
+      .side {
+        padding: 20px; border-right: 1px solid var(--line-soft);
+      }
+      .side:last-child { border-right: none; border-left: 1px solid var(--line-soft); }
+      .side h4 {
+        margin: 0 0 4px; font-family: var(--mono); font-size: 12px; letter-spacing: .3em;
+        text-transform: uppercase; font-weight: 400; color: var(--teal);
+      }
+      .side .who { font-size: 13px; color: var(--muted); margin-bottom: 16px; min-height: 2.6em; }
+      .yn { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); margin-bottom: 20px; }
+      .yn button {
+        background: transparent; border: none; color: var(--muted); cursor: pointer;
+        font-family: var(--mono); font-size: 14px; letter-spacing: .2em; padding: 12px 0; min-height: 46px;
+      }
+      .yn button + button { border-left: 1px solid var(--line); }
+      .yn button.on-yes { background: var(--teal); color: #06231d; font-weight: 700; }
+      .yn button.on-no { background: var(--amber); color: #2a1c02; font-weight: 700; }
+      .conf-label {
+        display: flex; justify-content: space-between; font-family: var(--mono);
+        font-size: 10px; letter-spacing: .18em; color: var(--faint); text-transform: uppercase; margin-bottom: 6px;
+      }
+      .side input[type="range"] {
+        -webkit-appearance: none; appearance: none; width: 100%; height: 38px; background: transparent; cursor: pointer; margin: 0;
+      }
+      .side input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--line); }
+      .side input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none; width: 18px; height: 26px; margin-top: -12px;
+        background: var(--bg); border: 2px solid var(--teal); border-radius: 0;
+      }
+      .side input[type="range"]::-moz-range-track { height: 2px; background: var(--line); }
+      .side input[type="range"]::-moz-range-thumb { width: 14px; height: 22px; background: var(--bg); border: 2px solid var(--teal); border-radius: 0; }
+      .side .val {
+        font-family: var(--mono); font-size: 26px; color: var(--ink); margin-top: 4px;
+      }
+      .side .val small { font-size: 11px; color: var(--muted); letter-spacing: .14em; display: block; margin-top: 2px; }
+
+      .stage { padding: 20px; display: flex; flex-direction: column; }
+      .canvas-wrap { position: relative; background: var(--bg); border: 1px solid var(--line-soft); }
+      #waves { display: block; width: 100%; height: 188px; }
+      .canvas-tag {
+        position: absolute; top: 8px; font-family: var(--mono); font-size: 10px;
+        letter-spacing: .24em; color: var(--teal); text-transform: uppercase; pointer-events: none;
+      }
+      .canvas-tag.a { left: 12px; }
+      .canvas-tag.b { right: 12px; color: var(--teal-dim); }
+      .canvas-tag.lock {
+        left: 50%; transform: translateX(-50%); top: auto; bottom: 8px; color: var(--ink);
+        opacity: 0; transition: opacity .4s;
+      }
+      .instrument.locking .canvas-tag.lock { opacity: 1; }
+
+      .readouts {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line-soft);
+        border: 1px solid var(--line-soft); margin-top: 16px;
+      }
+      .readout { background: var(--bg2); padding: 12px 14px; }
+      .readout .rl {
+        font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; color: var(--faint);
+        text-transform: uppercase; margin-bottom: 4px;
+      }
+      .readout .rv { font-family: var(--mono); font-size: 20px; color: var(--ink); }
+      .readout .rv.teal { color: var(--teal); }
+      .readout .rv.amber { color: var(--amber); }
+      .readout.pulse .rv { animation: pulse .45s ease; }
+      @keyframes pulse { 0% { opacity: .25; } 100% { opacity: 1; } }
+
+      .meter-block { margin-top: 16px; }
+      .meter-labels {
+        display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px;
+        letter-spacing: .16em; color: var(--faint); text-transform: uppercase; margin-bottom: 6px;
+      }
+      .meter-labels .thr { color: var(--amber); }
+      .meter {
+        position: relative; height: 12px; background: var(--bg); border: 1px solid var(--line-soft);
+      }
+      .meter .fill {
+        position: absolute; top: 0; bottom: 0; left: 50%; width: 0;
+        background: var(--teal); opacity: .85; transition: width .3s ease, left .3s ease, background .3s;
+      }
+      .meter .fill.neg { background: var(--amber); }
+      .meter .center { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--slate); }
+      .meter .thresh { position: absolute; left: 90%; top: -4px; bottom: -4px; width: 2px; background: var(--amber); }
+      .threshold-note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+      .threshold-note b { color: var(--amber); font-weight: 550; }
+
+      .inst-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+      .btn {
+        font-family: var(--mono); font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+        padding: 13px 20px; min-height: 48px; cursor: pointer; border-radius: 0;
+      }
+      .btn-ask { background: var(--teal); border: 1px solid var(--teal); color: #06231d; font-weight: 700; }
+      .btn-ask:hover { background: #7df0dc; }
+      .btn-new { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+      .btn-new:hover { color: var(--ink); border-color: var(--slate); }
+      .asks {
+        font-family: var(--mono); font-size: 12px; color: var(--muted); margin-left: auto; letter-spacing: .1em;
+      }
+      .asks b { color: var(--ink); font-weight: 400; }
+      .inst-status { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 14px; min-height: 1.5em; }
+      .inst-status .ok { color: var(--teal); }
+      .inst-status .bad { color: var(--amber); }
+      .instrument.locking .side, .instrument.locking .q-block { opacity: .45; pointer-events: none; }
+
+      /* ---------- rules + canon ---------- */
+      .below-inst {
+        display: grid; grid-template-columns: 1fr 1.4fr; gap: 44px; margin-top: 44px;
+      }
+      .rules h3, .canon h3 {
+        font-family: var(--mono); font-size: 11px; letter-spacing: .34em; text-transform: uppercase;
+        color: var(--slate); font-weight: 400; margin: 0 0 18px;
+        display: flex; align-items: center; gap: 14px;
+      }
+      .rules h3::after, .canon h3::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+      .rules ol { margin: 0; padding: 0; list-style: none; counter-reset: r; }
+      .rules li {
+        counter-increment: r; position: relative; padding: 0 0 14px 34px; color: var(--muted); font-size: 15px;
+      }
+      .rules li::before {
+        content: counter(r, decimal-leading-zero); position: absolute; left: 0; top: 2px;
+        font-family: var(--mono); font-size: 11px; color: var(--teal);
+      }
+      .rules li b { color: var(--ink); font-weight: 550; }
+      .canon-empty {
+        border: 1px dashed var(--line); padding: 20px; color: var(--muted); font-size: 15px;
+      }
+      .canon-list { list-style: none; margin: 0; padding: 0; }
+      .canon-item {
+        border: 1px solid var(--line-soft); background: var(--bg2); padding: 16px 18px; margin-bottom: 10px;
+      }
+      .canon-item.fresh { animation: canonIn .8s ease; border-color: rgba(94,234,212,.55); }
+      @keyframes canonIn { 0% { opacity: 0; transform: translateY(-14px); } 100% { opacity: 1; transform: none; } }
+      .canon-item .cq { font-size: 16px; color: var(--ink); margin-bottom: 8px; }
+      .canon-item .cm {
+        font-family: var(--mono); font-size: 11.5px; color: var(--muted); letter-spacing: .06em; line-height: 1.8;
+      }
+      .canon-item .cm .stamp { color: var(--teal); letter-spacing: .2em; }
+      .canon-item.expired { opacity: .55; }
+      .canon-item.expired .cq { text-decoration: line-through; }
+      .canon-item.expired .cm .stamp { color: var(--amber); }
+      .canon-note { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-top: 14px; letter-spacing: .04em; }
+      .canon-note .t { color: var(--teal); }
+      .ghost {
+        position: fixed; z-index: 50; pointer-events: none; font-family: var(--mono); font-size: 14px;
+        color: var(--teal); background: var(--bg2); border: 1px solid rgba(94,234,212,.6);
+        padding: 10px 14px; max-width: 70vw;
+      }
+
+      /* ---------- footer ---------- */
+      footer {
+        margin-top: 96px; border-top: 1px solid var(--line-soft); padding: 30px 0 44px;
+      }
+      footer .wrap { display: flex; flex-direction: column; gap: 8px; }
+      footer .f-line {
+        display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; align-items: baseline;
+      }
+      footer .f-dom { font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: var(--muted); }
+      footer .f-quote { font-size: 16px; color: var(--ink); }
+      footer .f-quote b { color: var(--teal); font-weight: 550; }
+      footer .f-none { font-family: var(--mono); font-size: 11.5px; color: var(--faint); letter-spacing: .06em; }
+
+      /* ---------- responsive ---------- */
+      @media (max-width: 900px) {
+        .inst-grid { grid-template-columns: 1fr 1fr; }
+        .stage { grid-column: 1 / -1; order: 3; border-top: 1px solid var(--line-soft); }
+        .side.b { border-left: 1px solid var(--line-soft); border-right: none; }
+        .below-inst { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 560px) {
+        section { padding-top: 54px; }
+        .hero { padding-top: 56px; }
+        .inst-grid { grid-template-columns: 1fr; }
+        .side { border-right: none; border-bottom: 1px solid var(--line-soft); }
+        .side.b { border-left: none; }
+        .stage { order: 3; }
+        .legend { grid-template-columns: 1fr; }
+        .entry { grid-template-columns: 48px 1fr; }
+        .readouts { grid-template-columns: 1fr 1fr; }
+        .asks { margin-left: 0; width: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .canon-item.fresh, .readout.pulse .rv { animation: none; }
+        .meter .fill, .canvas-tag.lock { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <header class="top">
+      <div class="wrap">
+        <div class="brand">THE MISSING <b>LAYER</b></div>
+        <div class="domain">themissinglayer.org</div>
+      </div>
+    </header>
+
+    <main class="wrap">
+
+      <!-- ================= HERO ================= -->
+      <div class="hero">
+        <p class="claim">Everyone asks how you did it. They look <span class="past">past the layer</span> where it happened.</p>
+        <p class="lede">
+          A finished mastery shows only its fruit — the solved problem, the landed jump, the shipped system.
+          The layer where it actually happened is underneath all of that, and it is still running:
+          <span class="w" style="color:var(--ink)">the Practice</span> —
+          <span class="dim">one generator, worked again and again, across every domain it enters.</span>
+        </p>
+        <div class="feynman">
+          <blockquote>&ldquo;What I cannot create, I do not understand.&rdquo;</blockquote>
+          <cite>— Richard Feynman</cite>
+        </div>
+        <p class="lede">
+          You don&rsquo;t practice the 10,000 things. You practice the one generator.
+          The 10,000 outputs are cache — regenerated fresh in each new field.
+          Past solvings bank nothing: the question is always whether it runs <em>now</em>.
+          The only way to know for sure is to practice — the generator running now is the only knowing there is.
+        </p>
+        <div class="repo-line">
+          <span class="t">&gt;</span> A self-governed, local-first practice for building muscle across domains.<br />
+          <span class="t">&gt;</span> Your reps stay in your browser.
+        </div>
+      </div>
+
+      <!-- ================= THE CROSSING ================= -->
+      <section id="crossing">
+        <p class="sec-label"><span class="n">01</span> The Crossing</p>
+        <h2 class="sec-title">Two sides. One crossing. Only meaning travels.</h2>
+        <p class="muted" style="max-width:660px">
+          Wherever two sides meet — a person and a system, a maker and a material, one mind and another —
+          each side knows only its own interior. Everything else is a model, a crossing, and a cost.
+          This is the shape of that meeting.
+        </p>
+
+        <figure class="diagram-box" style="margin:26px 0 0">
+          <svg viewBox="0 0 920 460" role="img" aria-label="Diagram of the crossing: six hollow triangles in a chain. Triangles 1 and 5 on the far left and right are the two sides. Triangles 2 and 4 are each side's model of the other. Triangle 3, above center, knows what each side can do. Triangle 6, lower center, forms an hourglass with triangle 3 and is the place that knows what each side does. U-shaped curves beneath the triangles are the interface. A ground line beneath everything is first principles.">
+            <!-- T3 tag -->
+            <text x="460" y="72" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="3" fill="#94a3b8">KNOWS WHAT EACH SIDE CAN DO</text>
+
+            <!-- row tags -->
+            <text x="220" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#5eead4">SIDE A</text>
+            <text x="340" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#f0b64f">A&rsquo;S MODEL OF B</text>
+            <text x="580" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#f0b64f">B&rsquo;S MODEL OF A</text>
+            <text x="700" y="180" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="2" fill="#5eead4">SIDE B</text>
+
+            <!-- Triangle 3 (above center, pointing down) -->
+            <polygon points="400,92 520,92 460,196" fill="rgba(148,163,184,0.05)" stroke="#94a3b8" stroke-width="1.5"/>
+            <text x="460" y="118" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9.5" letter-spacing="2" fill="#94a3b8">CAN DO</text>
+            <text x="460" y="156" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#94a3b8">3</text>
+
+            <!-- Row triangles -->
+            <!-- T1 -->
+            <polygon points="160,300 220,196 280,300" fill="rgba(94,234,212,0.05)" stroke="#5eead4" stroke-width="1.5"/>
+            <text x="220" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#5eead4">1</text>
+            <!-- T2 -->
+            <polygon points="280,300 340,196 400,300" fill="rgba(240,182,79,0.05)" stroke="#f0b64f" stroke-width="1.5"/>
+            <text x="340" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#f0b64f">2</text>
+            <!-- T6 (lower center of hourglass) -->
+            <polygon points="400,300 460,196 520,300" fill="rgba(233,231,222,0.06)" stroke="#e9e7de" stroke-width="1.5"/>
+            <text x="460" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#e9e7de">6</text>
+            <text x="460" y="291" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9.5" letter-spacing="2" fill="#e9e7de">DOES</text>
+            <!-- T4 -->
+            <polygon points="520,300 580,196 640,300" fill="rgba(240,182,79,0.05)" stroke="#f0b64f" stroke-width="1.5"/>
+            <text x="580" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#f0b64f">4</text>
+            <!-- T5 -->
+            <polygon points="640,300 700,196 760,300" fill="rgba(94,234,212,0.05)" stroke="#5eead4" stroke-width="1.5"/>
+            <text x="700" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17" fill="#5eead4">5</text>
+
+            <!-- crossing point -->
+            <circle cx="460" cy="196" r="4" fill="#e9e7de"/>
+            <text x="478" y="191" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="10" letter-spacing="2" fill="#e9e7de">THE CROSSING</text>
+
+            <!-- interface: U curves -->
+            <g fill="none" stroke="#64748b" stroke-width="1.5">
+              <path d="M160,308 Q220,350 280,308"/>
+              <path d="M280,308 Q340,350 400,308"/>
+              <path d="M400,308 Q460,350 520,308"/>
+              <path d="M520,308 Q580,350 640,308"/>
+              <path d="M640,308 Q700,350 760,308"/>
+            </g>
+            <text x="460" y="378" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="3" fill="#94a3b8">THE INTERFACE</text>
+
+            <!-- ground line: first principles -->
+            <line x1="120" y1="402" x2="800" y2="402" stroke="#e9e7de" stroke-width="1" opacity="0.55"/>
+            <text x="460" y="428" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="11" letter-spacing="3" fill="#e9e7de">FIRST PRINCIPLES</text>
+            <text x="460" y="447" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="10" fill="#637383">the common understanding beneath both sides</text>
+          </svg>
+          <figcaption><b>An artifact is an interface.</b> Only meaning crosses.</figcaption>
+        </figure>
+
+        <ul class="legend">
+          <li><span class="k teal">1·5</span><span><b>The two sides.</b> Each knows only its own interior — nothing else on either side is given.</span></li>
+          <li><span class="k amber">2·4</span><span><b>Each side&rsquo;s model of the other.</b> What A believes B can do; what B believes A can do. A model is not the side.</span></li>
+          <li><span class="k slate">3</span><span><b>Knows what each side can do.</b> Capability, held above the crossing — before anything happens.</span></li>
+          <li><span class="k ink">6</span><span><b>The place that knows what each side does.</b> The record of the act itself, where the apexes meet.</span></li>
+          <li><span class="k slate">U</span><span><b>The interface.</b> The curves underneath: the cost of carrying something across, paid on every crossing.</span></li>
+          <li><span class="k ink">—</span><span><b>First principles.</b> The ground line both sides stand on, whether they know it or not.</span></li>
+        </ul>
+      </section>
+
+      <!-- ================= FIRST PRINCIPLES ================= -->
+      <section id="principles">
+        <p class="sec-label"><span class="n">02</span> First Principles</p>
+        <h2 class="sec-title">The ground line, named.</h2>
+        <div class="entries">
+          <div class="entry">
+            <div class="num">1</div>
+            <div>
+              <h3>Environment <span class="gloss">— what does not move.</span></h3>
+              <p>The unmoving frame. It has no oughts; it just is. You do not negotiate with it, model it away, or wait for it to change its mind. You build on it precisely because it will still be there.</p>
+              <blockquote>&ldquo;I don&rsquo;t have to worry if the landing zone will be there after I jump and before I land.&rdquo;</blockquote>
+            </div>
+          </div>
+          <div class="entry">
+            <div class="num">2</div>
+            <div>
+              <h3>Fields of Interaction <span class="gloss">— what holds across a gap without touching it.</span></h3>
+              <p>Interaction across separation, never by contact or merging. Two sides can act on each other across a distance — through a field, through an interface — while remaining exactly what they are. The gap is not a defect. The gap is where the field lives.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= THREE DEFINITIONS ================= -->
+      <section id="definitions">
+        <p class="sec-label"><span class="n">03</span> Three Definitions</p>
+        <h2 class="sec-title">Words, held to their bounds.</h2>
+        <div class="entries">
+          <div class="entry">
+            <div class="num">1</div>
+            <div>
+              <h3>Artificial <span class="gloss">— produced by art rather than by nature.</span></h3>
+              <p><span class="w">The decided.</span> Shared meaning is sometimes found, sometimes made — &ldquo;A&rdquo; is A, but &ldquo;g&rdquo; is whatever value we decide. An artificial system is one held to its oughts and bounds; testing is exactly that holding.</p>
+            </div>
+          </div>
+          <div class="entry">
+            <div class="num">2</div>
+            <div>
+              <h3>Artifact as Interface <span class="gloss">— after Herbert Simon.</span></h3>
+              <p>An artifact is the meeting point between an <span class="w">inner</span> — the substance and organization of the artifact itself — and an <span class="w">outer</span> — the environment it operates in. The interface is the cost of carrying something across, and the component that transcribes meaning across. <span class="w">Only the meaning travels.</span></p>
+            </div>
+          </div>
+          <div class="entry">
+            <div class="num">3</div>
+            <div>
+              <h3>Practice <span class="gloss">— the generator itself, running.</span></h3>
+              <p>Solving once and again; each &ldquo;again&rdquo; deposits confidence. Practice is not preparation for the real thing — run in the present tense, it is the real thing. <span class="w">Mastery is what alignment looks like when the crossing is no longer needed.</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= THE INSTRUMENT ================= -->
+      <section id="instrument">
+        <p class="sec-label"><span class="n">04</span> The Instrument</p>
+        <h2 class="sec-title">Triangulation: do we know what each other knows?</h2>
+        <p class="muted" style="max-width:680px">
+          The matrix exists for one purpose: <span style="color:var(--ink)">to find out if you know what I know and I know what you know.</span>
+          It is only for the uncertain — things both sides are sure of never enter it. They are the checklist; they just run.
+          Bring one uncertain question. Let each side answer, honestly, with its confidence. Watch the waves.
+        </p>
+
+        <div class="instrument" id="instrument-box">
+          <div class="inst-head">
+            <span>Triangulation Matrix</span>
+            <span class="live">In session</span>
+          </div>
+
+          <div class="q-block">
+            <label for="q-input">The uncertain question</label>
+            <input id="q-input" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="Type the question neither side is sure of&hellip;" />
+            <div class="shelf" id="shelf">
+              <span class="shelf-label">From the shelf</span>
+              <!-- preset chips injected by script -->
+            </div>
+          </div>
+
+          <div class="inst-grid">
+            <!-- SIDE A -->
+            <div class="side a">
+              <h4>Side A</h4>
+              <p class="who">This side. It knows only its own interior.</p>
+              <div class="yn" role="group" aria-label="Side A answer">
+                <button type="button" id="a-yes">YES</button>
+                <button type="button" id="a-no">NO</button>
+              </div>
+              <div class="conf-label"><span>&minus;1 · I don&rsquo;t know</span><span>Confidence</span><span>+1 · Full</span></div>
+              <input type="range" id="a-conf" min="-1" max="1" step="0.01" value="0.55" aria-label="Side A confidence, minus 1 (I don't know) to plus 1 (full confidence)" />
+              <div class="val"><span id="a-val">+0.55</span><small>side a value</small></div>
+            </div>
+
+            <!-- STAGE -->
+            <div class="stage">
+              <div class="canvas-wrap">
+                <canvas id="waves" width="640" height="188"></canvas>
+                <span class="canvas-tag a">Wave · A</span>
+                <span class="canvas-tag b">Wave · B</span>
+                <span class="canvas-tag lock">Standing wave — canon</span>
+              </div>
+
+              <div class="readouts">
+                <div class="readout"><div class="rl">Side A</div><div class="rv" id="r-a">+0.55</div></div>
+                <div class="readout"><div class="rl">Side B</div><div class="rv" id="r-b">+0.35</div></div>
+                <div class="readout" id="ro-shared"><div class="rl">Shared confidence</div><div class="rv teal" id="r-shared">+0.45</div></div>
+                <div class="readout" id="ro-gap"><div class="rl">Gap</div><div class="rv amber" id="r-gap">0.10</div></div>
+              </div>
+
+              <div class="meter-block">
+                <div class="meter-labels">
+                  <span>&minus;1 · opposed / unknown</span>
+                  <span class="thr">Set threshold +0.80</span>
+                  <span>+1</span>
+                </div>
+                <div class="meter" aria-hidden="true">
+                  <div class="fill" id="meter-fill"></div>
+                  <div class="center"></div>
+                  <div class="thresh"></div>
+                </div>
+                <p class="threshold-note">Canon forms past the <b>set threshold, +0.80</b> — decided, not found. A bound the system is held to, like &ldquo;g&rdquo;.</p>
+              </div>
+
+              <div class="inst-actions">
+                <button type="button" class="btn btn-ask" id="btn-ask">Ask again</button>
+                <button type="button" class="btn btn-new" id="btn-new">New question</button>
+                <span class="asks">asks this question: <b id="asks-count">0</b></span>
+              </div>
+              <p class="inst-status" id="inst-status">The waves are out of reach of canon. Raise confidence, or ask again — each honest re-asking deposits confidence.</p>
+            </div>
+
+            <!-- SIDE B -->
+            <div class="side b">
+              <h4>Side B</h4>
+              <p class="who">The other side. A knows it only through the crossing.</p>
+              <div class="yn" role="group" aria-label="Side B answer">
+                <button type="button" id="b-yes">YES</button>
+                <button type="button" id="b-no">NO</button>
+              </div>
+              <div class="conf-label"><span>&minus;1 · I don&rsquo;t know</span><span>Confidence</span><span>+1 · Full</span></div>
+              <input type="range" id="b-conf" min="-1" max="1" step="0.01" value="0.35" aria-label="Side B confidence, minus 1 (I don't know) to plus 1 (full confidence)" />
+              <div class="val"><span id="b-val">+0.35</span><small>side b value</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="below-inst">
+          <div class="rules">
+            <h3>Rules of the matrix</h3>
+            <ol>
+              <li><b>Only the uncertain enters.</b> What both sides are sure of is the checklist — it just runs, and never takes up the matrix.</li>
+              <li><b>Every question needs a floor and an exit.</b> A floor: it must bottom out in what is. An exit: it resolves, or it graduates to protocol.</li>
+              <li><b>Canon forms past a set threshold.</b> The threshold is decided, not found — held like any other bound of an artificial system.</li>
+              <li><b>At +1 the crossing is eliminated.</b> Fully shared, the question dissolves — or becomes protocol, and runs without being asked.</li>
+              <li><b>Canon has a shelf life.</b> Even +1 expires. A parachute reserve packing is valid six months; then the checklist runs again.</li>
+            </ol>
+          </div>
+
+          <div class="canon">
+            <h3>Canon — this browser</h3>
+            <div id="canon-empty" class="canon-empty">Nothing has graduated yet. Canon is earned past the threshold, never declared.</div>
+            <ul class="canon-list" id="canon-list"></ul>
+            <p class="canon-note"><span class="t">&gt;</span> Your canon stays in your browser. Nothing here phones home.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <div class="f-line">
+          <span class="f-dom">themissinglayer.org</span>
+          <span class="f-quote">The generator is the knowing. <b>Run it again.</b></span>
+        </div>
+        <span class="f-none">No contact form. No newsletter. No analytics. Nothing here phones home.</span>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        "use strict";
+        var $ = function (id) { return document.getElementById(id); };
+        var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var THRESHOLD = 0.8;
+        var SHELF_DAYS = 180; // a reserve packing is valid six months
+
+        var PRESETS = [
+          "Does the interface carry the meaning — or the thing itself?",
+          "Is the reserve packed within the last six months?",
+          "Can each side state what the other side does — not what it says?",
+          "Is this certain enough to leave the matrix and just run?"
+        ];
+
+        /* ---------------- state ---------------- */
+        var state = {
+          question: "",
+          a: { answer: "yes", conf: 0.55 },
+          b: { answer: "yes", conf: 0.35 },
+          asks: 0,
+          bonus: 0,
+          locked: false
+        };
+
+        /* ---------------- canon storage (browser-local only) ---------------- */
+        var memCanon = [];
+        var KEY = "tml.canon.v1";
+        function loadCanon() {
+          try {
+            var raw = window.localStorage.getItem(KEY);
+            if (raw) { var p = JSON.parse(raw); if (Object.prototype.toString.call(p) === "[object Array]") return p; }
+          } catch (e) { /* storage unavailable: fall through to memory */ }
+          return memCanon;
+        }
+        function saveCanon(list) {
+          memCanon = list;
+          try { window.localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { /* in-memory only */ }
+        }
+        var canon = loadCanon();
+
+        /* ---------------- helpers ---------------- */
+        function cert(c) { return (c + 1) / 2; }                    // -1..+1 -> 0..1
+        function stance(s) { return (s.answer === "yes" ? 1 : -1) * cert(s.conf); }
+        function agree() { return state.a.answer === state.b.answer; }
+        function shared() {
+          if (agree()) {
+            var v = (state.a.conf + state.b.conf) / 2 + state.bonus;
+            return Math.max(-1, Math.min(1, v));
+          }
+          return -((cert(state.a.conf) + cert(state.b.conf)) / 2);  // opposed: no shared ground
+        }
+        function gap() { return Math.abs(stance(state.a) - stance(state.b)); }
+        function fmt(v) { return (v < 0 ? "\u2212" : "+") + Math.abs(v).toFixed(2); }
+        function fmtDate(ts) {
+          var d = new Date(ts);
+          return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        /* ---------------- DOM refs ---------------- */
+        var input = $("q-input"), shelf = $("shelf"), box = $("instrument-box");
+        var aYes = $("a-yes"), aNo = $("a-no"), bYes = $("b-yes"), bNo = $("b-no");
+        var aConf = $("a-conf"), bConf = $("b-conf");
+        var statusEl = $("inst-status");
+
+        /* preset chips */
+        var chips = [];
+        PRESETS.forEach(function (q, i) {
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "chip"; b.textContent = q;
+          b.addEventListener("click", function () {
+            setQuestion(q);
+            chips.forEach(function (c) { c.classList.remove("active"); });
+            b.classList.add("active");
+            input.focus();
+          });
+          shelf.appendChild(b); chips.push(b);
+          if (i === 0) { b.classList.add("active"); }
+        });
+
+        function setQuestion(q) {
+          state.question = q;
+          if (input.value !== q) input.value = q;
+          state.asks = 0; state.bonus = 0;
+          sync(); checkCanon();
+        }
+
+        input.addEventListener("input", function () {
+          state.question = input.value;
+          chips.forEach(function (c) { c.classList.toggle("active", c.textContent === input.value); });
+          checkCanon();
+        });
+
+        /* ---------------- side controls ---------------- */
+        function bindSide(side, yesBtn, noBtn, slider, valEl) {
+          yesBtn.addEventListener("click", function () { state[side].answer = "yes"; sync(); checkCanon(); });
+          noBtn.addEventListener("click", function () { state[side].answer = "no"; sync(); checkCanon(); });
+          slider.addEventListener("input", function () {
+            state[side].conf = parseFloat(slider.value);
+            sync();
+            checkCanon();
+          });
+        }
+        bindSide("a", aYes, aNo, aConf, $("a-val"));
+        bindSide("b", bYes, bNo, bConf, $("b-val"));
+
+        function setToggle(btn, on, cls) {
+          btn.classList.toggle(cls, on);
+        }
+
+        /* ---------------- readouts ---------------- */
+        function sync() {
+          setToggle(aYes, state.a.answer === "yes", "on-yes");
+          setToggle(aNo, state.a.answer === "no", "on-no");
+          setToggle(bYes, state.b.answer === "yes", "on-yes");
+          setToggle(bNo, state.b.answer === "no", "on-no");
+          if (parseFloat(aConf.value) !== state.a.conf) aConf.value = state.a.conf;
+          if (parseFloat(bConf.value) !== state.b.conf) bConf.value = state.b.conf;
+          $("a-val").textContent = fmt(stance(state.a));
+          $("b-val").textContent = fmt(stance(state.b));
+          $("r-a").textContent = fmt(stance(state.a));
+          $("r-b").textContent = fmt(stance(state.b));
+          var sh = shared();
+          $("r-shared").textContent = fmt(sh);
+          $("r-gap").textContent = gap().toFixed(2);
+          $("asks-count").textContent = state.asks;
+          var fill = $("meter-fill");
+          var pct = (sh + 1) / 2 * 100;
+          if (sh >= 0) { fill.style.left = "50%"; fill.style.width = (pct - 50) + "%"; }
+          else { fill.style.left = pct + "%"; fill.style.width = (50 - pct) + "%"; }
+          fill.classList.toggle("neg", sh < 0);
+          if (!state.locked) updateStatus(sh);
+        }
+
+        function updateStatus(sh) {
+          if (!state.question.trim()) {
+            statusEl.innerHTML = "Name the uncertain question first. The certain never enters the matrix.";
+          } else if (!agree()) {
+            statusEl.innerHTML = "<span class=\"bad\">The sides disagree.</span> The waves stay out of phase and the gap is the honest readout. The question stays in the matrix.";
+          } else if (sh >= THRESHOLD) {
+            statusEl.innerHTML = "<span class=\"ok\">Shared confidence past the set threshold.</span> Locking into a standing wave&hellip;";
+          } else {
+            statusEl.innerHTML = "The sides agree, but shared confidence is short of the threshold by " +
+              (THRESHOLD - sh).toFixed(2) + ". Raise confidence, or ask again — each honest re-asking deposits confidence.";
+          }
+        }
+
+        function pulse(id) {
+          var el = $(id);
+          el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+        }
+
+        /* ---------------- ask again / new question ---------------- */
+        $("btn-ask").addEventListener("click", function () {
+          if (state.locked) return;
+          state.asks += 1;
+          if (agree()) {
+            state.bonus = Math.min(0.45, state.bonus + 0.07);   // re-asking deposits confidence
+            pulse("ro-shared");
+          } else {
+            pulse("ro-gap");                                     // disagreement deposits nothing
+          }
+          sync(); checkCanon();
+        });
+
+        $("btn-new").addEventListener("click", function () {
+          if (state.locked) return;
+          resetMatrix();
+        });
+
+        function resetMatrix() {
+          state.question = ""; input.value = "";
+          state.a = { answer: "yes", conf: 0.2 };
+          state.b = { answer: "no", conf: 0.2 };
+          state.asks = 0; state.bonus = 0;
+          chips.forEach(function (c) { c.classList.remove("active"); });
+          sync();
+        }
+
+        /* ---------------- canon ---------------- */
+        function checkCanon() {
+          if (state.locked) return;
+          if (!state.question.trim()) return;
+          if (agree() && shared() >= THRESHOLD) startLock();
+        }
+
+        function startLock() {
+          state.locked = true;
+          box.classList.add("locking");
+          sync();
+          var delay = reduced ? 150 : 1600;
+          window.setTimeout(graduate, delay);
+        }
+
+        function graduate() {
+          var q = state.question.trim();
+          var item = { q: q, ts: Date.now() };
+          canon.unshift(item);
+          saveCanon(canon);
+          animateOut(q);
+          renderCanon(true);
+          box.classList.remove("locking");
+          state.locked = false;
+          resetMatrix();
+          statusEl.innerHTML = "<span class=\"ok\">Canon.</span> &ldquo;" + escapeHtml(q) + "&rdquo; graduated past the threshold and left the matrix. It will expire — canon has a shelf life.";
+        }
+
+        function animateOut(q) {
+          if (reduced || !input.animate) return;
+          try {
+            var r = input.getBoundingClientRect();
+            var list = $("canon-list").getBoundingClientRect();
+            var g = document.createElement("div");
+            g.className = "ghost"; g.textContent = q;
+            g.style.left = r.left + "px"; g.style.top = r.top + "px"; g.style.width = Math.min(r.width, window.innerWidth * 0.7) + "px";
+            document.body.appendChild(g);
+            var dy = (list.top + 10) - r.top;
+            var anim = g.animate(
+              [{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(" + dy + "px)", opacity: 0.15 }],
+              { duration: 750, easing: "cubic-bezier(.3,.7,.3,1)" }
+            );
+            anim.onfinish = function () { g.remove(); };
+            window.setTimeout(function () { if (g.parentNode) g.remove(); }, 1000);
+          } catch (e) { /* animation is decoration; canon is already saved */ }
+        }
+
+        function escapeHtml(s) {
+          return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function renderCanon(freshFirst) {
+          var list = $("canon-list");
+          list.innerHTML = "";
+          $("canon-empty").style.display = canon.length ? "none" : "block";
+          var now = Date.now();
+          canon.forEach(function (item, idx) {
+            var exp = item.ts + SHELF_DAYS * 86400000;
+            var expired = now > exp;
+            var daysLeft = Math.ceil((exp - now) / 86400000);
+            var li = document.createElement("li");
+            li.className = "canon-item" + (expired ? " expired" : "") + (freshFirst && idx === 0 ? " fresh" : "");
+            var shelf = expired
+              ? "EXPIRED " + fmtDate(exp) + " — shelf life spent. The checklist runs again."
+              : "Shelf life: " + daysLeft + (daysLeft === 1 ? " day" : " days") + " left · expires " + fmtDate(exp) + " — then the checklist runs again.";
+            li.innerHTML =
+              "<div class=\"cq\">" + escapeHtml(item.q) + "</div>" +
+              "<div class=\"cm\"><span class=\"stamp\">" + (expired ? "WAS CANON" : "CANON") + "</span> · entered " + fmtDate(item.ts) + "<br />" + shelf + "</div>";
+            list.appendChild(li);
+          });
+        }
+
+        /* ---------------- waves ---------------- */
+        var canvas = $("waves"), ctx = canvas.getContext("2d");
+        var phaseA = 0, phaseB = Math.PI, lockBlend = 0;
+        var t0 = Date.now();
+
+        function fitCanvas() {
+          var r = canvas.getBoundingClientRect();
+          var dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.max(300, Math.round(r.width * dpr));
+          canvas.height = Math.round(188 * dpr);
+        }
+        window.addEventListener("resize", fitCanvas);
+        fitCanvas();
+
+        function wavePath(w, h, t, phase, amp, wob, seed) {
+          var mid = h / 2, k = (Math.PI * 2) / (w / 2.6);
+          ctx.beginPath();
+          for (var x = 0; x <= w; x += 3) {
+            var y = mid
+              + Math.sin(x * k + phase - t * 1.7) * amp
+              + Math.sin(x * 0.045 + t * 2.4 + seed) * wob
+              + Math.sin(x * 0.011 - t * 0.9 + seed * 2.1) * wob * 0.6;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+
+        function draw() {
+          var w = canvas.width, h = canvas.height;
+          var t = (Date.now() - t0) / 1000;
+          ctx.clearRect(0, 0, w, h);
+          var dpr = window.devicePixelRatio || 1;
+
+          /* center line */
+          ctx.strokeStyle = "rgba(148,163,184,0.18)"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+
+          var targetA = state.a.answer === "yes" ? 0 : Math.PI;
+          var targetB = state.b.answer === "yes" ? 0 : Math.PI;
+          if (state.locked) { targetB = targetA; }
+          phaseA += (targetA - phaseA) * 0.05;
+          phaseB += (targetB - phaseB) * 0.05;
+          lockBlend += ((state.locked ? 1 : 0) - lockBlend) * 0.04;
+
+          var ampA = (6 + cert(state.a.conf) * 30) * dpr;
+          var ampB = (6 + cert(state.b.conf) * 30) * dpr;
+          var wobA = (1 - cert(state.a.conf)) * 8 * dpr;
+          var wobB = (1 - cert(state.b.conf)) * 8 * dpr;
+          var compAlpha = 1 - lockBlend * 0.72;
+
+          ctx.lineWidth = 2 * dpr;
+          ctx.strokeStyle = "rgba(94,234,212," + (0.95 * compAlpha) + ")";
+          wavePath(w, h, t, phaseA, ampA, wobA * (1 - lockBlend), 0);
+          ctx.strokeStyle = "rgba(94,234,212," + (0.42 * compAlpha) + ")";
+          wavePath(w, h, t, phaseB, ampB, wobB * (1 - lockBlend), 17);
+
+          if (lockBlend > 0.02) {
+            var mid = h / 2, k = (Math.PI * 2) / (w / 2.6);
+            var ampAvg = (ampA + ampB) / 2;
+            /* envelope */
+            ctx.strokeStyle = "rgba(233,231,222," + (0.30 * lockBlend) + ")";
+            ctx.lineWidth = 1 * dpr;
+            ctx.setLineDash([5 * dpr, 5 * dpr]);
+            [-1, 1].forEach(function (s) {
+              ctx.beginPath();
+              for (var x = 0; x <= w; x += 4) {
+                var y = mid + s * Math.abs(Math.cos((x - w / 2) * k)) * 2 * ampAvg * 0.92;
+                if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+              }
+              ctx.stroke();
+            });
+            ctx.setLineDash([]);
+            /* standing wave */
+            ctx.strokeStyle = "rgba(233,231,222," + (0.95 * lockBlend) + ")";
+            ctx.lineWidth = 2.4 * dpr;
+            ctx.beginPath();
+            for (var x2 = 0; x2 <= w; x2 += 3) {
+              var y2 = mid + 2 * ampAvg * 0.92 * Math.cos((x2 - w / 2) * k) * Math.sin(t * 1.7);
+              if (x2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+            }
+            ctx.stroke();
+          }
+          window.requestAnimationFrame(draw);
+        }
+
+        /* ---------------- init ---------------- */
+        setQuestion(PRESETS[0]);
+        renderCanon(false);
+        window.requestAnimationFrame(draw);
+      })();
+    </script>
+  </body>
+</html>
