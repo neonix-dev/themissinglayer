@@ -1,0 +1,59 @@
+{
+  "application": "The Missing Layer",
+  "base": "a desktop application window: a title, a menu bar, a work area, a status line",
+  "rule": "placed with the browser's own verbs; no markup, style or script is handed to it",
+  "layers": ["menu bar", "menu", "item"],
+  "title": "The Missing Layer",
+  "work area": "Four independent interpretations of The Missing Layer. Open one from the File menu.",
+  "status line": "Ready. Every piece on this page was placed through the engine, from contract.json.",
+  "menus": [
+    {
+      "menu": "File",
+      "items": [
+        {
+          "item": "Open",
+          "opens": [
+            { "item": "Claude Code", "goes": "candidates/claude-code/" },
+            { "item": "ChatGPT", "goes": "candidates/chatgpt/" },
+            { "item": "Muse", "goes": "candidates/muse/" },
+            { "item": "Claude Chat", "goes": "candidates/claude-chat/" }
+          ]
+        },
+        { "item": "Save contract", "saves": "contract.json" }
+      ]
+    },
+    {
+      "menu": "Edit",
+      "items": [
+        { "item": "Scratch line", "accepts": "text" },
+        { "item": "Clear", "clears": "Scratch line" }
+      ]
+    },
+    {
+      "menu": "View",
+      "items": [
+        { "item": "Contract", "goes": "contract.json" },
+        { "item": "Card selector", "goes": "selector.html" }
+      ]
+    },
+    {
+      "menu": "Help",
+      "items": [
+        {
+          "item": "About",
+          "shows": "The Missing Layer. A menu bar with no markup, style or script written for it. The contract states intent; the browser's engine did the rest.",
+          "dismiss": "OK"
+        }
+      ]
+    }
+  ],
+  "proves": [
+    "every menu starts closed",
+    "touching a menu opens it",
+    "opening another menu closes the first",
+    "Open reveals four destinations and each one exists",
+    "choosing a destination goes there",
+    "the scratch line takes typed text and Clear empties it",
+    "About appears when asked for and goes away when dismissed"
+  ]
+}
