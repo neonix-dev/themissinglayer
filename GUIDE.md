@@ -46,6 +46,8 @@ Each claim starts from a fresh load of the page. A claim with no moves, or with 
 
 A value starting with `@` is read from the contract: `@menus.3.items.0.shows`.
 
+A thing's name is all the text it holds, read as one line, however the text is split into pieces inside it. So one part of a row can carry its own colour or weight and the row keeps its name: a summary holding `Asha ` and a coloured `owes you $20` is called `Asha owes you $20`.
+
 ## Place it and check it
 
 You need Python 3 and a Chromium browser. Nothing else is installed.
@@ -59,6 +61,8 @@ python3 observe.py http://127.0.0.1:8000/yours/ ../yours/contract.json ../yours/
 ```
 
 Every claim must print HELD. Report any that print FAILED as failed; do not reword the claim to make it pass.
+
+The same check runs against the public site once the page is there: `python3 observe.py https://themissinglayer.org/yours/ ...`. A page is on the site only when it has been merged; until then the address shows the root page instead, and `exists` reports such a destination as missing.
 
 ## If you cannot run a browser
 
