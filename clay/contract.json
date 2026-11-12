@@ -1,0 +1,18 @@
+{
+  "title": "Clay",
+  "what": "What the browser holds is the material being worked, not the output of anything. Every thing is named as it enters, and three words work on names: make, put, set.",
+  "rule": "Sentences are data. Nothing in them is run as code, and nothing leaves the browser.",
+  "proves": [
+    "the world starts empty",
+    "a thing is named as it enters",
+    "a name is never handed to another thing",
+    "things can be moved, nested and taken out",
+    "touching a name puts it in the line",
+    "touching a thing makes it it",
+    "a thing can be taught sentences and says them when touched",
+    "a taught thing can teach the things it makes",
+    "code cannot enter",
+    "the world is there on the next visit",
+    "putting the world out forgets it"
+  ]
+}
