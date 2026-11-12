@@ -56,7 +56,9 @@ def here():
     return past["entries"][past["currentIndex"]]["url"]
 
 def middle(name):
-    q = h.say("DOM.getBoxModel", nodeId=named(name)["nodeId"])["model"]["content"]
+    node = named(name)["nodeId"]
+    h.say("DOM.scrollIntoViewIfNeeded", nodeId=node)
+    q = h.say("DOM.getBoxModel", nodeId=node)["model"]["content"]
     return (q[0] + q[4]) / 2, (q[1] + q[5]) / 2
 
 def touch(name):
@@ -110,6 +112,7 @@ moves = {
 
 held = []
 for claim in contract["proves"]:
+    h.say("Storage.clearDataForOrigin", origin=site, storageTypes="local_storage")   # each claim meets the page as a first visit
     h.say("Page.navigate", url=site)
     time.sleep(1)
     answers = [moves[move](*map(given, args)) for move, *args in proof.get(claim, [])]
