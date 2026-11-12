@@ -1,0 +1,20 @@
+{
+  "title": "Yellow World",
+  "says": "A little yellow world, placed by the browser.",
+  "places": [
+    {
+      "place": "Sunshine",
+      "note": "The sun is shining in Yellow World."
+    },
+    {
+      "place": "Garden",
+      "note": "A yellow flower grows here."
+    }
+  ],
+  "proves": [
+    "both places start folded",
+    "opening Sunshine reveals its world",
+    "opening Garden closes Sunshine",
+    "the path to another page exists"
+  ]
+}
