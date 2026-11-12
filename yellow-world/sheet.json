@@ -1,0 +1,71 @@
+{
+  "html": {
+    "lang": "en",
+    "style": "background:#ffeb3b;color:#493600;font-family:system-ui;padding:2rem"
+  },
+  "head": [
+    [
+      "meta",
+      {
+        "charset": "utf-8"
+      }
+    ],
+    [
+      "meta",
+      {
+        "name": "viewport",
+        "content": "width=device-width, initial-scale=1"
+      }
+    ],
+    [
+      "title",
+      "{title}"
+    ]
+  ],
+  "body": [
+    [
+      "h1",
+      "{title}"
+    ],
+    [
+      "p",
+      "{says}"
+    ],
+    [
+      "main",
+      [
+        "each",
+        "places"
+      ]
+    ],
+    [
+      "p",
+      [
+        "a",
+        {
+          "href": "../second/"
+        },
+        "Explore another page"
+      ]
+    ]
+  ],
+  "words": [
+    [
+      "place",
+      [
+        "details",
+        {
+          "name": "places"
+        },
+        [
+          "summary",
+          "{place}"
+        ],
+        [
+          "p",
+          "{note}"
+        ]
+      ]
+    ]
+  ]
+}
