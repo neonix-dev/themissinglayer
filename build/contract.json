@@ -1,6 +1,6 @@
 {
   "title": "Build",
-  "what": "A page that builds itself from data, from inside the site, with the site's own engine.",
+  "what": "A page that builds itself from data, from inside the site, with the site's own engine. What is built is clay: every piece has a name, and a reader can pick any piece and reshape it.",
   "rule": "Data is never run. The engine refuses scripts, styles, handlers and anything from another site, and says so.",
   "proves": [
     "it starts as an empty sheet built from data",
@@ -9,6 +9,15 @@
     "removing from a list removes from the page",
     "a whole page given as data is built",
     "data that carries code is refused and the rest is built",
-    "the root page's own contract builds here unchanged"
+    "the root page's own contract builds here unchanged",
+    "every piece has a name, shown where the piece is",
+    "touching a name picks the piece",
+    "a picked piece can be reworded",
+    "a picked piece can be moved",
+    "a picked piece can be put inside another",
+    "a picked piece can be copied and removed",
+    "a new piece can be added inside a picked one",
+    "code cannot be shaped in",
+    "a piece keeps the name it came with"
   ]
 }
