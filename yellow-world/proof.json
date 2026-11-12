@@ -1,0 +1,50 @@
+{
+  "both places start folded": [
+    [
+      "closed",
+      "Sunshine"
+    ],
+    [
+      "closed",
+      "Garden"
+    ]
+  ],
+  "opening Sunshine reveals its world": [
+    [
+      "touch",
+      "Sunshine"
+    ],
+    [
+      "open",
+      "Sunshine"
+    ],
+    [
+      "shows",
+      "The sun is shining in Yellow World."
+    ]
+  ],
+  "opening Garden closes Sunshine": [
+    [
+      "touch",
+      "Sunshine"
+    ],
+    [
+      "touch",
+      "Garden"
+    ],
+    [
+      "open",
+      "Garden"
+    ],
+    [
+      "closed",
+      "Sunshine"
+    ]
+  ],
+  "the path to another page exists": [
+    [
+      "exists",
+      "Explore another page"
+    ]
+  ]
+}
