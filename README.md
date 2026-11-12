@@ -2,6 +2,8 @@
 
 Root `index.html` is an application-style menu bar that opens four independent websites. The earlier card selector is kept as `selector.html`.
 
+Building a page here? Read `GUIDE.md` first.
+
 ## How the root page is made
 
 Nobody writes the root page. Three plain files say everything, and the instrument knows nothing about any of them:
