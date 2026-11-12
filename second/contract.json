@@ -1,0 +1,16 @@
+{
+  "title": "Four paths",
+  "says": "Four independent interpretations of The Missing Layer.",
+  "paths": [
+    { "path": "Claude Code", "goes": "../candidates/claude-code/", "note": "Claude Code CLI" },
+    { "path": "ChatGPT", "goes": "../candidates/chatgpt/", "note": "ChatGPT" },
+    { "path": "Muse", "goes": "../candidates/muse/", "note": "Muse" },
+    { "path": "Claude Chat", "goes": "../candidates/claude-chat/", "note": "Claude Chat" }
+  ],
+  "proves": [
+    "every path starts folded",
+    "unfolding a path shows its way in, and it exists",
+    "only one path is unfolded at a time",
+    "following a path goes there"
+  ]
+}

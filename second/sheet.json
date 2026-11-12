@@ -1,0 +1,18 @@
+{
+  "base": "a single sheet: a title, a line of text, a list of things that unfold one at a time",
+  "html": { "lang": "en" },
+  "head": [
+    ["meta", { "charset": "utf-8" }],
+    ["meta", { "name": "viewport", "content": "width=device-width, initial-scale=1" }],
+    ["title", "{title}"]
+  ],
+  "body": [
+    ["h1", "{title}"],
+    ["p", "{says}"],
+    ["main", ["each", "paths"]]
+  ],
+  "words": [
+    ["path", ["details", { "name": "paths" }, ["summary", "{path}"],
+      ["p", "{note}. ", ["a", { "href": "{goes}" }, "Enter {path}"]]]]
+  ]
+}
