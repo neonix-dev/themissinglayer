@@ -1,0 +1,34 @@
+{
+  "base": "a desktop application window: a title, a menu bar, a work area, a status line",
+  "html": { "lang": "en" },
+  "head": [
+    ["meta", { "charset": "utf-8" }],
+    ["meta", { "name": "viewport", "content": "width=device-width, initial-scale=1" }],
+    ["title", "{title}"]
+  ],
+  "body": [
+    ["h1", "{title}"],
+    ["nav", { "aria-label": "Menu bar" },
+      ["table", { "role": "presentation" }, ["tbody", ["tr", ["each", "menus"]]]]],
+    ["hr"],
+    ["main", ["p", "{work area}"]],
+    ["hr"],
+    ["footer", ["small", "{status line}"]]
+  ],
+  "words": [
+    ["items.accepts", ["td", { "valign": "top" }, ["details", { "name": "menubar" },
+      ["summary", "{menu}"], ["form", { "method": "dialog" }, ["menu", ["each", "items"]]]]]],
+    ["menu", ["td", { "valign": "top" }, ["details", { "name": "menubar" },
+      ["summary", "{menu}"], ["menu", ["each", "items"]]]]],
+    ["opens", ["li", ["details", ["summary", "{item}"], ["menu", ["each", "opens"]]]]],
+    ["goes", ["li", ["a", { "href": "{goes}" }, "{item}"]]],
+    ["saves", ["li", ["a", { "href": "{saves}", "download": "{saves}" }, "{item}"]]],
+    ["accepts", ["li", ["label", "{item} ", ["input", { "type": "{accepts}", "name": "{item:slug}" }]]]],
+    ["clears", ["li", ["input", { "type": "reset", "value": "{item}" }]]],
+    ["shows", ["li",
+      ["button", { "type": "button", "popovertarget": "{item:slug}" }, "{item}"],
+      ["later", ["div", { "popover": "auto", "id": "{item:slug}" },
+        ["p", "{shows}"],
+        ["button", { "type": "button", "popovertarget": "{item:slug}", "popovertargetaction": "hide" }, "{dismiss}"]]]]]
+  ]
+}

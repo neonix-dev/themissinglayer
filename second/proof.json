@@ -1,0 +1,14 @@
+{
+  "every path starts folded": [
+    ["closed", "Claude Code"], ["closed", "ChatGPT"], ["closed", "Muse"], ["closed", "Claude Chat"]
+  ],
+  "unfolding a path shows its way in, and it exists": [
+    ["touch", "Muse"], ["open", "Muse"], ["exists", "Enter Muse"]
+  ],
+  "only one path is unfolded at a time": [
+    ["touch", "Muse"], ["touch", "ChatGPT"], ["open", "ChatGPT"], ["closed", "Muse"]
+  ],
+  "following a path goes there": [
+    ["touch", "Claude Chat"], ["touch", "Enter Claude Chat"], ["at", "../candidates/claude-chat/"]
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "every menu starts closed": [
+    ["closed", "File"], ["closed", "Open"], ["closed", "Edit"], ["closed", "View"], ["closed", "Help"]
+  ],
+  "touching a menu opens it": [
+    ["touch", "File"], ["open", "File"]
+  ],
+  "opening another menu closes the first": [
+    ["touch", "File"], ["touch", "Help"], ["open", "Help"], ["closed", "File"]
+  ],
+  "Open reveals four destinations and each one exists": [
+    ["touch", "File"], ["touch", "Open"],
+    ["exists", "Claude Code"], ["exists", "ChatGPT"], ["exists", "Muse"], ["exists", "Claude Chat"]
+  ],
+  "choosing a destination goes there": [
+    ["touch", "File"], ["touch", "Open"], ["touch", "Claude Code"], ["at", "candidates/claude-code/"]
+  ],
+  "the scratch line takes typed text and Clear empties it": [
+    ["touch", "Edit"], ["touch", "Scratch line"], ["type", "intent travels"],
+    ["holds", "Scratch line", "intent travels"], ["touch", "Clear"], ["holds", "Scratch line", ""]
+  ],
+  "About appears when asked for and goes away when dismissed": [
+    ["touch", "Help"], ["hides", "@menus.3.items.0.shows"],
+    ["touch", "About"], ["shows", "@menus.3.items.0.shows"],
+    ["touch", "OK"], ["hides", "@menus.3.items.0.shows"]
+  ]
+}
