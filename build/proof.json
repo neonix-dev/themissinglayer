@@ -6,24 +6,45 @@
     ["touch", "Build"], ["touch", "title"], ["type", " by hand"], ["shows", "by hand"]
   ],
   "adding to a list adds to the page": [
-    ["touch", "Build"], ["hides", "A third thing"], ["touch", "Add to sections"],
-    ["touch", "sections 3 heading"], ["type", "A third thing"], ["shows", "A third thing"]
+    ["touch", "Build"], ["hides", "A third thing"], ["touch", "Add to sections"], ["touch", "sections 3 heading"], ["type", "A third thing"], ["shows", "A third thing"]
   ],
   "removing from a list removes from the page": [
     ["touch", "Build"], ["shows", "What you can do"], ["touch", "Remove sections 1"], ["hides", "What you can do"]
   ],
   "a whole page given as data is built": [
-    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"],
-    ["type", "{\"contract\":{\"name\":\"Typed in\"},\"base\":{\"body\":[[\"h2\",\"{name} from data\"]]}}"],
-    ["touch", "Build from this"], ["shows", "Typed in from data"], ["hides", "An empty sheet"]
+    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"], ["type", "{\"contract\":{\"name\":\"Typed in\"},\"base\":{\"body\":[[\"h2\",\"{name} from data\"]]}}"], ["touch", "Build from this"], ["shows", "Typed in from data"], ["hides", "An empty sheet"]
   ],
   "data that carries code is refused and the rest is built": [
-    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"],
-    ["type", "{\"contract\":{\"name\":\"Kept\"},\"base\":{\"body\":[[\"script\",\"document.title='it r'+'an'\"],[\"h2\",{\"onclick\":\"x()\",\"style\":\"color:red\"},\"{name} piece\"],[\"a\",{\"href\":\"javascript:x()\"},\"bad link\"],[\"img\",{\"src\":\"https://example.com/a.png\"}]]}}"],
-    ["touch", "Build from this"], ["shows", "Kept piece"], ["shows", "Refused 5"], ["hides", "it ran"]
+    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"], ["type", "{\"contract\":{\"name\":\"Kept\"},\"base\":{\"body\":[[\"script\",\"document.title='it r'+'an'\"],[\"h2\",{\"onclick\":\"x()\",\"style\":\"color:red\"},\"{name} piece\"],[\"a\",{\"href\":\"javascript:x()\"},\"bad link\"],[\"img\",{\"src\":\"https://example.com/a.png\"}]]}}"], ["touch", "Build from this"], ["shows", "Kept piece"], ["shows", "Refused 5"], ["hides", "it ran"]
   ],
   "the root page's own contract builds here unchanged": [
-    ["touch", "Build"], ["touch", "Root page"], ["shows", "The Missing Layer"], ["closed", "File"],
-    ["touch", "Build"], ["touch", "File"], ["open", "File"], ["touch", "Open"], ["exists", "Claude Code"]
+    ["touch", "Build"], ["touch", "Root page"], ["shows", "The Missing Layer"], ["closed", "File"], ["touch", "Build"], ["touch", "File"], ["open", "File"], ["touch", "Open"], ["exists", "Claude Code"]
+  ],
+  "every piece has a name, shown where the piece is": [
+    ["touch", "Shape"], ["hides", "h1-1"], ["touch", "Show names"], ["shows", "h1-1"], ["shows", "details-2"]
+  ],
+  "touching a name picks the piece": [
+    ["touch", "Shape"], ["touch", "Show names"], ["touch", "p-1"], ["holds", "Piece", "p-1"]
+  ],
+  "a picked piece can be reworded": [
+    ["touch", "Shape"], ["touch", "Piece"], ["type", "p-1"], ["touch", "Text"], ["type", "Shaped by hand"], ["touch", "Set text"], ["shows", "Shaped by hand"], ["hides", "Open Build above"]
+  ],
+  "a picked piece can be moved": [
+    ["before", "What you can do", "What the engine will not do"], ["touch", "Shape"], ["touch", "Piece"], ["type", "details-2"], ["touch", "Move up"], ["before", "What the engine will not do", "What you can do"]
+  ],
+  "a picked piece can be put inside another": [
+    ["touch", "Shape"], ["touch", "Piece"], ["type", "p-1"], ["touch", "Other piece"], ["type", "main-1"], ["touch", "Put inside other"], ["before", "What the engine will not do", "This page was built from data by the site's own engine. Open Build above and change it."]
+  ],
+  "a picked piece can be copied and removed": [
+    ["touch", "Shape"], ["touch", "Piece"], ["type", "details-1"], ["touch", "Copy"], ["shows", "Copied details-1 as details-3"], ["touch", "Remove"], ["shows", "Removed details-1"], ["shows", "What you can do"]
+  ],
+  "a new piece can be added inside a picked one": [
+    ["touch", "Shape"], ["touch", "Piece"], ["type", "main-1"], ["touch", "New piece"], ["type", "p"], ["touch", "Text"], ["type", "Made of clay"], ["touch", "Add inside"], ["shows", "Made of clay"], ["shows", "Added p-4 inside main-1"]
+  ],
+  "code cannot be shaped in": [
+    ["touch", "Shape"], ["touch", "Piece"], ["type", "h1-1"], ["touch", "Attribute"], ["type", "onclick"], ["touch", "Value"], ["type", "document.title='it r'+'an'"], ["touch", "Set attribute"], ["shows", "Refused 1"], ["touch", "New piece"], ["type", "script"], ["touch", "Add inside"], ["shows", "Added nothing"], ["hides", "it ran"]
+  ],
+  "a piece keeps the name it came with": [
+    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"], ["type", "{\"contract\":{},\"base\":{\"body\":[[\"h2\",{\"id\":\"mine\"},\"Named by me\"],[\"p\",\"Named by the engine\"]]}}"], ["touch", "Build from this"], ["touch", "Shape"], ["touch", "Show names"], ["shows", "mine"], ["shows", "p-1"], ["hides", "h2-1"]
   ]
 }

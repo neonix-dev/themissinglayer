@@ -2,6 +2,9 @@
 // Data is never run: no script, no style, no handler, nothing brought in from another site.
 // A page is { "contract": what is wanted, "base": which native piece each word becomes,
 // "at": optional folder its addresses are relative to }. The format is the one in GUIDE.md.
+// Every piece has a name: the id it came with, or one the engine gives it. What is built
+// is clay: a reader picks a piece by name and moves, changes, copies, removes or adds to it,
+// and the engine writes the page down again as it then stands.
 (() => {
   "use strict";
   const KEY = "themissinglayer.build.v1";
@@ -43,7 +46,7 @@
 
   // ---- building: data in, native pieces out -------------------------------------------
   const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const fill = (text, thing) => String(text).replace(/\{([^}:]+)(:slug)?\}/g, (_, key, safe) => {
+  const fill = (text, thing) => page.base["as built"] ? String(text) : String(text).replace(/\{([^}:]+)(:slug)?\}/g, (_, key, safe) => {
     if (thing == null || !(key in Object(thing))) { refused.push(`nothing called "${key}" to fill in`); return ""; }
     return safe ? slug(String(thing[key])) : String(thing[key]);
   });
@@ -60,6 +63,12 @@
     return web && kind === "a" && name === "href" ? to.href : null;
   };
 
+  const allowed = (kind, name, value) => {
+    if (!/^[a-z][a-z0-9-]*$/.test(name) || name.startsWith("on") || NOT_SET.has(name) || value.startsWith("tml-")) return null;
+    return ADDRESS.has(name) ? address(kind, name, value) : value;
+  };
+  const makes = (kind) => /^[a-z][a-z0-9]*$/.test(kind) && !NEVER.has(kind);
+
   function place(parent, form, thing) {
     if (!Array.isArray(form) || typeof form[0] !== "string") return refused.push("a piece that is not a list starting with a name");
     const [kind, ...parts] = form;
@@ -73,17 +82,15 @@
       return;
     }
     if (kind === "later") return later.push([parts[0], thing]);
-    if (!/^[a-z][a-z0-9]*$/.test(kind) || NEVER.has(kind)) return refused.push(`<${kind}>`);
+    if (!makes(kind)) return refused.push(`<${kind}>`);
     const node = document.createElement(kind);
     for (const part of parts) {
       if (typeof part === "string") node.append(fill(part, thing));
       else if (Array.isArray(part)) place(node, part, thing);
       else if (part && typeof part === "object") {
         for (const [name, raw] of Object.entries(part)) {
-          let value = fill(raw, thing);
-          const bad = !/^[a-z][a-z0-9-]*$/.test(name) || name.startsWith("on") || NOT_SET.has(name) || value.startsWith("tml-");
-          if (!bad && ADDRESS.has(name)) value = address(kind, name, value);
-          if (bad || value == null) refused.push(`${name} on <${kind}>`); else node.setAttribute(name, value);
+          const value = allowed(kind, name, fill(raw, thing));
+          if (value == null) refused.push(`${name} on <${kind}>`); else node.setAttribute(name, value);
         }
       }
     }
@@ -99,15 +106,130 @@
     for (const [form, thing] of later) place(room, form, thing);
     const pieces = room.querySelectorAll("*").length;
     $("page").replaceChildren(room);
+    name();
     const title = (base.head || []).find((f) => Array.isArray(f) && f[0] === "title");
     document.title = title ? fill(title[1] || "", page.contract) : "Build";
     $("notice").hidden = !fromLink;
-    $("status").replaceChildren(`Built ${pieces} pieces.` + (refused.length ? ` Refused ${refused.length}:` : " Refused nothing."));
-    if (refused.length) {
-      const list = el("ul");
-      for (const what of new Set(refused)) list.append(el("li", what));
-      $("status").append(list);
+    told(`Built ${pieces} pieces.`);
+    survey();
+  }
+
+  function told(text) {
+    $("status").replaceChildren(text + (refused.length ? ` Refused ${refused.length}:` : " Refused nothing."));
+    if (!refused.length) return;
+    const list = el("ul");
+    for (const what of new Set(refused)) list.append(el("li", what));
+    $("status").append(list);
+  }
+
+  // ---- every piece has a name -----------------------------------------------------------
+  function name() {
+    const room = $("page"), taken = new Set(), count = {};
+    for (const node of room.querySelectorAll("[id]")) {
+      if (taken.has(node.id)) { refused.push(`a second piece called "${node.id}"`); node.removeAttribute("id"); } else taken.add(node.id);
     }
+    for (const node of room.querySelectorAll(":not([id])")) {
+      const kind = node.localName;
+      let id;
+      do { count[kind] = (count[kind] || 0) + 1; id = `${kind}-${count[kind]}`; } while (taken.has(id) || document.getElementById(id));
+      taken.add(id); node.id = id;
+    }
+  }
+  const piece = (id) => id === "page" ? $("page") : (id && !id.startsWith("tml-") && $("page").querySelector("#" + CSS.escape(id))) || null;
+  const choose = (id) => { $("piece").value = id; say(`Picked ${id}.`); };
+
+  // The list of all pieces, and the overlay that shows each name where the piece is.
+  function survey() {
+    const walk = (node, into) => {
+      for (const child of node.children) {
+        const own = Array.from(child.childNodes).filter((c) => c.nodeType === 3).map((c) => c.data).join(" ").trim();
+        const pick = el("button", `Pick ${child.id}`, { type: "button" });
+        pick.onclick = () => choose(child.id);
+        const row = el("li"); row.append(pick, ` ${child.localName}` + (own ? `: ${own.slice(0, 40)}` : ""));
+        into.append(row);
+        if (child.children.length) walk(child, row.appendChild(el("menu")));
+      }
+    };
+    const list = el("menu"); walk($("page"), list);
+    $("all").replaceChildren(list);
+    labels();
+  }
+  function labels() {
+    $("ids").replaceChildren();
+    if (!$("show").checked) return;
+    // A name sits at the right-hand end of its piece, clear of the words. Names that would
+    // land on the same spot step leftwards, outermost piece first.
+    const used = {};
+    for (const node of $("page").querySelectorAll("*")) {
+      const box = node.getBoundingClientRect();
+      if (!node.checkVisibility() || (!box.width && !box.height)) continue;
+      const wide = node.id.length * 6 + 8, line = Math.round(box.top / 6);
+      const wanted = Math.max(box.right, box.left + wide) - wide;
+      const left = Math.min(wanted, (used[line] ?? Infinity) - wide - 2);
+      used[line] = left;
+      const tag = el("button", node.id, { type: "button", style: `position:absolute;left:${Math.max(0, left) + scrollX}px;top:${box.top + scrollY}px;width:${wide}px;font:10px monospace;padding:0;margin:0;opacity:.85` });
+      tag.onclick = () => choose(node.id);
+      $("ids").append(tag);
+    }
+  }
+
+  // ---- clay: pick a piece by name, then move, change, copy, remove or add to it ---------
+  const written = (node) => node.nodeType === 3 ? node.data : [node.localName,
+    ...(node.attributes.length ? [Object.fromEntries(Array.from(node.attributes, (a) => [a.name, a.value]))] : []),
+    ...kept(node).map(written)];
+  const kept = (node) => Array.from(node.childNodes).filter((c) => c.nodeType === 1 || (c.nodeType === 3 && c.data));
+
+  function shape(act) {
+    refused = [];
+    const room = $("page"), node = piece($("piece").value.trim()), other = piece($("other").value.trim());
+    const text = $("text").value;
+    if (!node) return say("No piece is called that. Turn on Show names, or open All pieces, and pick one.");
+    const whole = node === room;
+    let done;
+    if (act === "add") {
+      const kind = $("kind").value.trim().toLowerCase();
+      if (!makes(kind)) { refused.push(`<${kind}>`); return told("Added nothing."); }
+      node.append(el(kind, text || null)); name();
+      done = `Added ${node.lastElementChild.id} inside ${whole ? "page" : node.id}.`;
+    } else if (whole) return say("The page itself can only be added to.");
+    else if (act === "up" || act === "down") {
+      const next = act === "up" ? node.previousElementSibling : node.nextElementSibling;
+      if (!next) return say(`${node.id} is already ${act === "up" ? "first" : "last"} where it is.`);
+      act === "up" ? next.before(node) : next.after(node);
+      done = `Moved ${node.id} ${act}.`;
+    } else if (act === "before" || act === "after" || act === "into") {
+      if (!other || (other === room && act !== "into")) return say("Name the other piece first.");
+      if (node.contains(other)) return say("A piece cannot be put inside itself.");
+      act === "before" ? other.before(node) : act === "after" ? other.after(node) : other.append(node);
+      done = `Put ${node.id} ${act === "into" ? "inside" : act} ${other === room ? "page" : other.id}.`;
+    } else if (act === "remove") {
+      node.remove(); $("piece").value = "";
+      done = `Removed ${node.id}.`;
+    } else if (act === "copy") {
+      const twin = node.cloneNode(true);
+      for (const each of [twin, ...twin.querySelectorAll("[id]")]) each.removeAttribute("id");
+      node.after(twin); name();
+      done = `Copied ${node.id} as ${twin.id}.`;
+    } else if (act === "text") {
+      const first = Array.from(node.childNodes).find((c) => c.nodeType === 3);
+      if (first) first.data = text; else node.prepend(text);
+      done = `Changed the text of ${node.id}.`;
+    } else if (act === "attribute") {
+      const attr = $("attr").value.trim().toLowerCase(), value = $("value").value;
+      if (value === "") node.removeAttribute(attr);
+      else {
+        const safe = allowed(node.localName, attr, value);
+        if (safe == null) { refused.push(`${attr} on <${node.localName}>`); return told("Changed nothing."); }
+        if (attr === "id" && document.getElementById(safe)) return say(`Something is already called ${safe}.`);
+        node.setAttribute(attr, safe);
+        if (attr === "id") $("piece").value = safe;
+      }
+      done = `Set ${attr} on ${node.id}.`;
+    }
+    // The engine writes the page down as it now stands; from here the page is its pieces.
+    name();
+    page = { contract: {}, base: { "as built": true, head: [["title", document.title]], body: kept(room).map(written) } };
+    fields(); keep(); survey(); told(done);
   }
 
   // ---- the page as data: kept, carried, saved -----------------------------------------
@@ -124,6 +246,9 @@
   function changed(all) {
     build();
     if (all) fields();
+    keep();
+  }
+  function keep() {
     const text = JSON.stringify(page, null, 1);
     if (document.activeElement !== $("data")) $("data").value = text;
     $("link").setAttribute("href", "#page=" + pack(JSON.stringify(page)));
@@ -172,7 +297,13 @@
     return wrap(name, input);
   }
   const wrap = (name, input) => { const label = el("label", name + " "); label.append(input); return el("p", label); };
-  function fields() { $("fields").replaceChildren(...Object.entries(page.contract).map(([k, v]) => field(v, [k]))); }
+  function fields() {
+    $("fields").replaceChildren(...(page.base["as built"]
+      ? [el("p", "This page has been shaped by hand, so it is now written down piece by piece. Change it under Shape.")]
+      : Object.entries(page.contract).map(([k, v]) => field(v, [k]))));
+  }
+
+  const row = (...things) => { const p = el("p"); things.forEach((t, i) => p.append(i ? " " : "", t)); return p; };
 
   // ---- the tools, made once ------------------------------------------------------------
   function tools() {
@@ -205,9 +336,29 @@
     box.append(from);
     const carry = el("p");
     carry.append(el("a", "Link to this page", { id: "tml-link", href: "#" }), " · ", el("a", "Save as a file", { id: "tml-save", download: "page.json", href: "#" }));
-    box.append(carry, el("p", el("output", null, { id: "tml-status" })));
+    box.append(carry);
+
+    const clay = el("details", null, { id: "tml-shape" });
+    clay.append(el("summary", "Shape"));
+    clay.append(el("p", "Everything on the page has a name. Pick a piece by its name, then move it, change it, copy it, remove it or add to it."));
+    const ask = (label, id, attrs) => { const l = el("label", label + " "); l.append(el("input", null, { id: "tml-" + id, type: "text", size: 16, ...attrs })); return l; };
+    const does = (label, act) => { const b = el("button", label, { type: "button" }); b.onclick = () => shape(act); return b; };
+    const show = ask("Show names", "show", { type: "checkbox", size: null });
+    show.firstElementChild.removeAttribute("size");
+    show.firstElementChild.onchange = labels;
+    const all = el("details"); all.append(el("summary", "All pieces"), el("div", null, { id: "tml-all" }));
+    clay.append(el("p", show), all,
+      el("p", ask("Piece", "piece")), row(does("Move up", "up"), does("Move down", "down"), does("Copy", "copy"), does("Remove", "remove")),
+      el("p", ask("Other piece", "other")), row(does("Put before other", "before"), does("Put after other", "after"), does("Put inside other", "into")),
+      el("p", ask("Text", "text", { size: 30 })), row(does("Set text", "text")),
+      el("p", ask("Attribute", "attr")), el("p", ask("Value", "value")), row(does("Set attribute", "attribute")),
+      el("p", ask("New piece", "kind")), row(does("Add inside", "add")));
+    const status = el("p", el("output", null, { id: "tml-status" }));
     const notice = el("p", el("small", "Built from data carried in the link. It is not a page this site has published."), { id: "tml-notice", hidden: "" });
-    document.body.append(box, el("hr"), notice, el("div", null, { id: "tml-page" }));
+    const room = el("div", null, { id: "tml-page" });
+    room.addEventListener("toggle", labels, true);
+    addEventListener("resize", labels);
+    document.body.append(box, clay, status, el("hr"), notice, room, el("div", null, { id: "tml-ids" }));
   }
 
   function arrive() {
