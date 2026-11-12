@@ -1,0 +1,29 @@
+{
+  "it starts as an empty sheet built from data": [
+    ["shows", "An empty sheet"], ["shows", "What you can do"], ["closed", "Build"]
+  ],
+  "changing a field changes the page": [
+    ["touch", "Build"], ["touch", "title"], ["type", " by hand"], ["shows", "by hand"]
+  ],
+  "adding to a list adds to the page": [
+    ["touch", "Build"], ["hides", "A third thing"], ["touch", "Add to sections"],
+    ["touch", "sections 3 heading"], ["type", "A third thing"], ["shows", "A third thing"]
+  ],
+  "removing from a list removes from the page": [
+    ["touch", "Build"], ["shows", "What you can do"], ["touch", "Remove sections 1"], ["hides", "What you can do"]
+  ],
+  "a whole page given as data is built": [
+    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"],
+    ["type", "{\"contract\":{\"name\":\"Typed in\"},\"base\":{\"body\":[[\"h2\",\"{name} from data\"]]}}"],
+    ["touch", "Build from this"], ["shows", "Typed in from data"], ["hides", "An empty sheet"]
+  ],
+  "data that carries code is refused and the rest is built": [
+    ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"],
+    ["type", "{\"contract\":{\"name\":\"Kept\"},\"base\":{\"body\":[[\"script\",\"document.title='it r'+'an'\"],[\"h2\",{\"onclick\":\"x()\",\"style\":\"color:red\"},\"{name} piece\"],[\"a\",{\"href\":\"javascript:x()\"},\"bad link\"],[\"img\",{\"src\":\"https://example.com/a.png\"}]]}}"],
+    ["touch", "Build from this"], ["shows", "Kept piece"], ["shows", "Refused 5"], ["hides", "it ran"]
+  ],
+  "the root page's own contract builds here unchanged": [
+    ["touch", "Build"], ["touch", "Root page"], ["shows", "The Missing Layer"], ["closed", "File"],
+    ["touch", "Build"], ["touch", "File"], ["open", "File"], ["touch", "Open"], ["exists", "Claude Code"]
+  ]
+}

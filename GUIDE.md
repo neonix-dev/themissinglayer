@@ -1,6 +1,8 @@
 # Guide for a party building a page here
 
-This is for any AI or person who can touch this repository. You do not write a page. You state what it should be, and the browser writes it.
+This is for any AI or person who can touch this site. You do not write a page. You state what it should be, and the browser writes it.
+
+**If all you have is a browser that clicks and types,** read "The base" below for the format, then go straight to "Building from inside the site". You need no files, no proof and no repository.
 
 ## The rule
 
@@ -24,11 +26,20 @@ A base has `html` (attributes for the page), `head`, `body` and `words`.
 
 - A piece is `[element, {attributes}, children...]`. A child is a string of text or another piece.
 - `{name}` in any text or attribute is filled from the contract. `{name:slug}` makes it safe to use as an id.
-- `["each", "list"]` places every entry of that contract list. Each entry is placed with the first form under `words` whose word the entry has.
+- `words` is a list of pairs, `[word, piece]`. A word is the name of a key.
+- `["each", "list"]` places every entry of that contract list. Each entry is placed with the piece of the first pair whose word is a key the entry has.
+- Fill-ins work anywhere in a text or an attribute value, alone or inside a longer line: `"Recent: {expense}"`, `{"color": "{tone}"}`.
+- To make entries differ, put the difference in the data and fill an attribute from it. A friend entry `{"friend": "Ben", "owes": "you owe $15", "tone": "red"}` with the piece `["li", "{friend} ", ["font", {"color": "{tone}"}, "{owes}"]]` shows each amount in its own colour, and every new entry has a `tone` to set.
 - A word like `items.accepts` matches an entry whose `items` list has any member with `accepts`.
 - `["later", piece]` places the piece at the end of the page instead of here.
 
-Use native elements that already behave: `details` with a shared `name` for things that open one at a time, `popover` and `popovertarget` for things that appear, a `form` with `input type="reset"` to clear, `a` to go somewhere.
+Use native elements that already behave:
+
+- **Open one at a time:** `["details", {"name": "groups"}, ["summary", "{group}"], ...]`. Folds sharing a `name` close each other.
+- **Appear without leaving the page:** a button `["button", {"type": "button", "popovertarget": "new"}, "Add"]` and, anywhere on the page, `["div", {"id": "new", "popover": "auto"}, ...]`. The `id` and the `popovertarget` must match. `later` is only needed when the piece is placed from inside a list.
+- **Clear what was typed:** fields inside a `form`, with `["input", {"type": "reset", "value": "Clear"}]`.
+- **Go somewhere:** `["a", {"href": "..."}, "..."]`.
+- **Colour and layout:** `font` takes `color`; `table`, `td` and `body`-level blocks take `bgcolor`, `align` and `width`.
 
 ### The proof
 
@@ -64,9 +75,32 @@ Every claim must print HELD. Report any that print FAILED as failed; do not rewo
 
 The same check runs against the public site once the page is there: `python3 observe.py https://themissinglayer.org/yours/ ...`. A page is on the site only when it has been merged; until then the address shows the root page instead, and `exists` reports such a destination as missing.
 
+## Building from inside the site
+
+If all you have is a browser that clicks and types, use `/build/` on the site. It ships the site's own engine, which receives a page as data and builds it in front of you. Nothing is installed and nothing is sent anywhere.
+
+1. Open `https://themissinglayer.org/build/` and touch **Build**.
+2. To change what is there, edit any field; replace its text as you would in any text field. Fields are named by where they sit in the data: `title`, `friends 2 owes`. To grow or shrink a list, touch **Add to friends** or **Remove friends 2**. A new entry has the same fields as the first entry of its list, empty. The page is built again at once.
+3. To bring your own page, touch **Give it a whole page**, then **Empty the box**, type your page as JSON into **Page as data**, and touch **Build from this**.
+4. Read the line that starts `Built`, just under the links. It lists anything the engine refused. The box now shows your page as the engine holds it, laid out one value per line.
+5. **Link to this page** is an address that carries the whole page. Give that address to someone and the page builds for them on the site. **Save as a file** gives the same data as a file. **Start from** loads a ready page to change: an empty sheet, the site's root page, or the four paths.
+
+A page is one JSON object: `{"contract": {...}, "base": {...}}`. The contract and the base are exactly the ones described above. This is a complete page:
+
+```json
+{"contract": {"title": "Groups", "groups": [{"group": "Flat", "owed": "you are owed $40"}]},
+ "base": {"head": [["title", "{title}"]],
+          "body": [["h1", "{title}"], ["menu", ["each", "groups"]]],
+          "words": [["group", ["li", "{group}: ", ["b", "{owed}"]]]]}}
+```
+
+Data is never run. The engine refuses `script`, `style`, frames, embedded objects, any attribute starting with `on`, the `style` attribute, and any address that leaves the site (a plain link in an `a` may point elsewhere). For looks, use the native attributes listed under "The base".
+
+A page built this way lives in its link and in your own browser. It becomes a published page of the site only when its data is placed and merged as described above; a page opened from a link says so.
+
 ## If you cannot run a browser
 
-Write the three files and stop there. Say plainly that the page has not been placed or checked, and leave `index.html` for a party who can run the instrument. Do not write the page by hand.
+Build the page at `/build/` if you can reach the site, and hand over its link. Otherwise write the three files and stop there. Say plainly that the page has not been placed or checked, and leave `index.html` for a party who can run the instrument. Do not write the page by hand.
 
 ## Boundaries
 
