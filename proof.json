@@ -1,4 +1,7 @@
 {
+  "the name and the tagline are shown": [
+    ["shows", "@title"], ["shows", "@tagline"]
+  ],
   "every menu starts closed": [
     ["closed", "File"], ["closed", "Open"], ["closed", "Edit"], ["closed", "View"], ["closed", "Help"]
   ],

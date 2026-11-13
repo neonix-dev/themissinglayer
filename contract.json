@@ -1,9 +1,10 @@
 {
   "application": "The Missing Layer",
-  "base": "a desktop application window: a title, a menu bar, a work area, a status line",
+  "base": "a cover that fills the first screen with the name and a tagline, centred; below it a desktop application window: a menu bar, a work area, a status line",
   "rule": "placed with the browser's own verbs; no markup, style or script is handed to it",
   "layers": ["menu bar", "menu", "item"],
   "title": "The Missing Layer",
+  "tagline": "Say what it should be. The browser builds it.",
   "work area": "Four independent interpretations of The Missing Layer. Open one from the File menu.",
   "status line": "Ready. Every piece on this page was placed through the engine, from contract.json.",
   "menus": [
@@ -48,6 +49,7 @@
     }
   ],
   "proves": [
+    "the name and the tagline are shown",
     "every menu starts closed",
     "touching a menu opens it",
     "opening another menu closes the first",

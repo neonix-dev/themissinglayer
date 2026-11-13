@@ -115,7 +115,7 @@ moves = {
     "before": before,
     "at": lambda path: here() == urljoin(site, path),
     "exists": exists,
-    "holds": lambda name, text: any(said(n, "name") == name and said(n, "value") == text for n in heard() if said(n, "role") == "textbox"),
+    "holds": lambda name, text: any(said(n, "name").strip() == name and said(n, "value") == text for n in heard() if said(n, "role") == "textbox"),
     "shows": lambda text: any(text in said(n, "name") for n in heard()),
     "hides": lambda text: not any(text in said(n, "name") for n in heard()),
 }

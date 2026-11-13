@@ -1,6 +1,6 @@
 # Ashwamedh exhibition
 
-Root `index.html` is an application-style menu bar that opens four independent websites. The earlier card selector is kept as `selector.html`.
+Root `index.html` opens on a cover: the name and a tagline, centred, and nothing else on the first screen. One screen down is an application-style menu bar that opens four independent websites. The earlier card selector is kept as `selector.html`.
 
 Building a page here? Read `GUIDE.md` first.
 
