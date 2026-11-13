@@ -1,0 +1,35 @@
+{
+  "the world starts empty": [
+    ["shows", "The world is empty"]
+  ],
+  "a thing is named as it enters": [
+    ["touch", "Say"], ["type", "make p in world"], ["touch", "Do"], ["shows", "made p-1"]
+  ],
+  "a name is never handed to another thing": [
+    ["touch", "Say"], ["type", "make p in world; put p-1 out; make p in world"], ["touch", "Do"], ["shows", "made p-2"]
+  ],
+  "things can be moved, nested and taken out": [
+    ["touch", "Say"], ["type", "make p in world; set it text first; make p in world; set it text second; make div in world"], ["touch", "Do"], ["before", "first", "second"], ["touch", "Say"], ["type", "put p-2 before p-1"], ["touch", "Do"], ["before", "second", "first"], ["touch", "Say"], ["type", "put p-1 in div-1; put p-2 out"], ["touch", "Do"], ["shows", "put p-2 out"], ["hides", "second"], ["shows", "first"]
+  ],
+  "touching a name puts it in the line": [
+    ["touch", "Say"], ["type", "make h1 in world; set it text Hello"], ["touch", "Do"], ["touch", "Names"], ["touch", "h1-1"], ["holds", "Say", "h1-1 "]
+  ],
+  "touching a thing makes it it": [
+    ["touch", "Say"], ["type", "make p in world; set it text first; make p in world; set it text second"], ["touch", "Do"], ["touch", "first"], ["shows", "That is p-1"], ["touch", "Say"], ["type", "set it text changed"], ["touch", "Do"], ["shows", "set text of p-1"], ["shows", "changed"]
+  ],
+  "a thing can be taught sentences and says them when touched": [
+    ["touch", "Say"], ["type", "make input in world; set it aria-label Friend; make button in world; set it text Add; make ul in world; set button-1 does make li in ul-1; set it text {input-1}"], ["touch", "Do"], ["touch", "Friend"], ["type", "Asha"], ["touch", "Add"], ["shows", "made li-1"], ["shows", "Asha"]
+  ],
+  "a taught thing can teach the things it makes": [
+    ["touch", "Say"], ["type", "make button in world; set it text Grow; set it does make button in world; set it text More; set it does make p in world; set it text grown"], ["touch", "Do"], ["touch", "Grow"], ["touch", "More"], ["shows", "grown"]
+  ],
+  "code cannot enter": [
+    ["touch", "Say"], ["type", "make script in world"], ["touch", "Do"], ["shows", "script cannot be made here"], ["touch", "Say"], ["type", "make p in world; set it onclick x()"], ["touch", "Do"], ["shows", "onclick cannot be set"], ["touch", "Say"], ["type", "make a in world; set it href javascript:x()"], ["touch", "Do"], ["shows", "that kind of address cannot be used"]
+  ],
+  "the world is there on the next visit": [
+    ["touch", "Say"], ["type", "make ul in world; make li in it; set it text Still here ; make font in it; set it text and whole"], ["touch", "Do"], ["again"], ["shows", "The world is as you left it: 3 things"], ["shows", "Still here"], ["shows", "and whole"]
+  ],
+  "putting the world out forgets it": [
+    ["touch", "Say"], ["type", "make h1 in world; set it text Gone soon"], ["touch", "Do"], ["touch", "Say"], ["type", "put world out"], ["touch", "Do"], ["again"], ["shows", "The world is empty"], ["hides", "Gone soon"]
+  ]
+}

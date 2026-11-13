@@ -37,7 +37,7 @@ def inside(node, other):
 def named(name):
     hit = None
     for node in nodes():
-        if node["nodeName"] in ("TITLE", "#text") or name not in (words(node).strip(), node["has"].get("value")):
+        if node["nodeName"] in ("TITLE", "#text") or name not in (words(node).strip(), node["has"].get("value"), node["has"].get("aria-label")):
             continue
         if hit is None or inside(node, hit):
             hit = node
@@ -93,6 +93,10 @@ def before(first, second):
     order = [n["backendNodeId"] for n in nodes()]
     return order.index(named(first)["backendNodeId"]) < order.index(named(second)["backendNodeId"])
 
+def again():
+    h.say("Page.reload")
+    time.sleep(1)
+
 def given(value):
     if not value.startswith("@"):
         return value
@@ -104,6 +108,7 @@ def given(value):
 # Each move either acts (returns None) or answers whether something holds.
 moves = {
     "touch": touch,
+    "again": again,
     "type": type_in,
     "open": lambda name: "open" in within(named(name), "DETAILS")["has"],
     "closed": lambda name: "open" not in within(named(name), "DETAILS")["has"],

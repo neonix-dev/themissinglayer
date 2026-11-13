@@ -119,6 +119,10 @@ After the first reshaping the engine writes the page down as it stands, piece by
 
 A page built this way lives in its link and in your own browser. It becomes a published page of the site only when its data is placed and merged as described above; a page opened from a link says so.
 
+## Clay
+
+`/clay/` is the smallest instrument here. The world starts empty, there is one line to speak in, and three words: `make`, `put`, `set`. Every thing is named as it enters, the Names box shows each name where its thing is, and a thing can be taught sentences that it says when touched, so controls are made of the same material as everything else. The page states its own words; nothing else needs reading. What is said is kept in the browser and nowhere else.
+
 ## If you cannot run a browser
 
 Build the page at `/build/` if you can reach the site, and hand over its link. Otherwise write the three files and stop there. Say plainly that the page has not been placed or checked, and leave `index.html` for a party who can run the instrument. Do not write the page by hand.
