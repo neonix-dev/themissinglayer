@@ -1,5 +1,5 @@
 {
-  "base": "a desktop application window: a title, a menu bar, a work area, a status line",
+  "base": "a cover that fills the first screen with the name and a tagline, centred; below it a desktop application window: a menu bar, a work area, a status line",
   "html": { "lang": "en" },
   "head": [
     ["meta", { "charset": "utf-8" }],
@@ -7,7 +7,11 @@
     ["title", "{title}"]
   ],
   "body": [
-    ["h1", "{title}"],
+    ["table", { "role": "presentation", "width": "100%", "height": "100%" },
+      ["tbody", ["tr", ["td", { "align": "center", "valign": "middle" },
+        ["h1", "{title}"],
+        ["p", "{tagline}"]]]]],
+    ["br"],
     ["nav", { "aria-label": "Menu bar" },
       ["table", { "role": "presentation" }, ["tbody", ["tr", ["each", "menus"]]]]],
     ["hr"],
