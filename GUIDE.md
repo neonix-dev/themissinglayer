@@ -82,7 +82,7 @@ If all you have is a browser that clicks and types, use `/build/` on the site. I
 1. Open `https://themissinglayer.org/build/` and touch **Build**.
 2. To change what is there, edit any field; replace its text as you would in any text field. Fields are named by where they sit in the data: `title`, `friends 2 owes`. To grow or shrink a list, touch **Add to friends** or **Remove friends 2**. A new entry has the same fields as the first entry of its list, empty. The page is built again at once.
 3. To bring your own page, touch **Give it a whole page**, then **Empty the box**, type your page as JSON into **Page as data**, and touch **Build from this**.
-4. Read the line that starts `Built`, just under the links. It lists anything the engine refused. The box now shows your page as the engine holds it, laid out one value per line.
+4. Read the line that starts `Built`, just above the page. It lists anything the engine refused. The box now shows your page as the engine holds it, laid out one value per line.
 5. **Link to this page** is an address that carries the whole page. Give that address to someone and the page builds for them on the site. **Save as a file** gives the same data as a file. **Start from** loads a ready page to change: an empty sheet, the site's root page, or the four paths.
 
 A page is one JSON object: `{"contract": {...}, "base": {...}}`. The contract and the base are exactly the ones described above. This is a complete page:
@@ -95,6 +95,27 @@ A page is one JSON object: `{"contract": {...}, "base": {...}}`. The contract an
 ```
 
 Data is never run. The engine refuses `script`, `style`, frames, embedded objects, any attribute starting with `on`, the `style` attribute, and any address that leaves the site (a plain link in an `a` may point elsewhere). For looks, use the native attributes listed under "The base".
+
+### Shaping what is built
+
+What is built is clay. Every piece has a name: the `id` it came with, or one the engine gives it, such as `h1-1` or `li-3`.
+
+1. Touch **Shape**, then **Show names**. Each name appears at the right-hand end of its piece. **All pieces** lists them as an outline.
+2. Pick a piece by touching its name, or by typing the name into **Piece**. `page` means the whole page.
+3. Reshape it:
+
+| Control | Does |
+|---|---|
+| **Move up**, **Move down** | Moves the piece among its neighbours |
+| **Put before other**, **Put after other**, **Put inside other** | Moves the piece next to or into the piece named in **Other piece** |
+| **Set text** | Replaces the piece's own words with what is in **Text** |
+| **Set attribute** | Sets **Attribute** to **Value** on the piece; an empty value takes the attribute away |
+| **Add inside** | Adds a new piece of the kind in **New piece** (`p`, `li`, `details` …) inside it, holding the words in **Text** |
+| **Copy**, **Remove** | Copies the piece after itself, or takes it away |
+
+The same refusals apply: no `script`, no handlers, no `style`, nothing from another site. The status line says what was done or refused.
+
+After the first reshaping the engine writes the page down as it stands, piece by piece, with every name in it. From then on the page is changed under **Shape**, not through fields, and its link carries the shaped page.
 
 A page built this way lives in its link and in your own browser. It becomes a published page of the site only when its data is placed and merged as described above; a page opened from a link says so.
 
