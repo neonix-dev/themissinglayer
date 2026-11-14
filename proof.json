@@ -1,27 +1,61 @@
 {
-  "every menu starts closed": [
-    ["closed", "File"], ["closed", "Open"], ["closed", "Edit"], ["closed", "View"], ["closed", "Help"]
+  "the whole board is on one screen": [
+    ["fits"]
   ],
-  "touching a menu opens it": [
-    ["touch", "File"], ["open", "File"]
+  "every store is a knob and shows its own verbs": [
+    ["touch", "history"], ["shows", "forward"],
+    ["touch", "dom"], ["shows", "make"],
+    ["touch", "session"], ["shows", "remove"],
+    ["touch", "indexed"], ["touch", "cookie"], ["touch", "cache"], ["touch", "local"], ["shows", "clear"],
+    ["fits"]
   ],
-  "opening another menu closes the first": [
-    ["touch", "File"], ["touch", "Help"], ["open", "Help"], ["closed", "File"]
+  "local storage keeps a thing across a reload": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "sun"], ["touch", "Value"], ["type", "yellow"], ["touch", "Do"],
+    ["shows", "sun = yellow"], ["again"], ["touch", "local"], ["shows", "sun = yellow"]
   ],
-  "Open reveals four destinations and each one exists": [
-    ["touch", "File"], ["touch", "Open"],
-    ["exists", "Claude Code"], ["exists", "ChatGPT"], ["exists", "Muse"], ["exists", "Claude Chat"]
+  "session storage keeps a thing across a reload": [
+    ["touch", "session"], ["touch", "put"], ["touch", "Name"], ["type", "tab"], ["touch", "Value"], ["type", "only this one"], ["touch", "Do"],
+    ["shows", "tab = only this one"], ["again"], ["touch", "session"], ["shows", "tab = only this one"]
   ],
-  "choosing a destination goes there": [
-    ["touch", "File"], ["touch", "Open"], ["touch", "Claude Code"], ["at", "candidates/claude-code/"]
+  "the database keeps a thing across a reload": [
+    ["touch", "indexed"], ["touch", "put"], ["touch", "Name"], ["type", "seed"], ["touch", "Value"], ["type", "kept"], ["touch", "Do"],
+    ["shows", "seed = kept"], ["again"], ["touch", "indexed"], ["shows", "seed = kept"]
   ],
-  "the scratch line takes typed text and Clear empties it": [
-    ["touch", "Edit"], ["touch", "Scratch line"], ["type", "intent travels"],
-    ["holds", "Scratch line", "intent travels"], ["touch", "Clear"], ["holds", "Scratch line", ""]
+  "a cookie is kept across a reload": [
+    ["touch", "cookie"], ["touch", "put"], ["touch", "Name"], ["type", "crumb"], ["touch", "Value"], ["type", "sweet"], ["touch", "Do"],
+    ["shows", "crumb = sweet"], ["again"], ["touch", "cookie"], ["shows", "crumb = sweet"]
   ],
-  "About appears when asked for and goes away when dismissed": [
-    ["touch", "Help"], ["hides", "@menus.3.items.0.shows"],
-    ["touch", "About"], ["shows", "@menus.3.items.0.shows"],
-    ["touch", "OK"], ["hides", "@menus.3.items.0.shows"]
+  "the cache keeps a thing across a reload": [
+    ["touch", "cache"], ["touch", "put"], ["touch", "Name"], ["type", "page"], ["touch", "Value"], ["type", "saved"], ["touch", "Do"],
+    ["shows", "page = saved"], ["again"], ["touch", "cache"], ["shows", "page = saved"]
+  ],
+  "a thing made in the page is real, and is gone after a reload": [
+    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "button"], ["touch", "Do"],
+    ["touch", "say"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "ring me"], ["touch", "Do"],
+    ["touch", "ring me"], ["shows", "ring me"], ["again"], ["touch", "dom"], ["hides", "ring me"]
+  ],
+  "get reads a thing back and remove takes it away": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "star"], ["touch", "Value"], ["type", "far"], ["touch", "Do"],
+    ["touch", "get"], ["touch", "Name"], ["type", "star"], ["touch", "Do"], ["shows", "star holds far"],
+    ["touch", "remove"], ["touch", "Name"], ["type", "star"], ["touch", "Do"], ["hides", "star = far"], ["hides", "star holds far"]
+  ],
+  "what was done can be undone": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "moon"], ["touch", "Value"], ["type", "1"], ["touch", "Do"],
+    ["shows", "moon = 1"], ["touch", "Undo"], ["hides", "moon = 1"]
+  ],
+  "clear empties a store and undo brings it back": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "one"], ["touch", "Value"], ["type", "first"], ["touch", "Do"],
+    ["touch", "Name"], ["type", "two"], ["touch", "Value"], ["type", "second"], ["touch", "Do"],
+    ["touch", "clear"], ["touch", "Do"], ["hides", "one = first"], ["hides", "two = second"],
+    ["touch", "Undo"], ["shows", "one = first"], ["shows", "two = second"]
+  ],
+  "history moves the address and loads nothing": [
+    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "mark"], ["touch", "Value"], ["type", "p"], ["touch", "Do"],
+    ["touch", "say"], ["touch", "Name"], ["type", "mark"], ["touch", "Value"], ["type", "still here"], ["touch", "Do"],
+    ["touch", "history"], ["touch", "push"], ["touch", "Name"], ["type", "one"], ["touch", "Do"], ["at", "#one"],
+    ["touch", "Name"], ["type", "two"], ["touch", "Do"], ["at", "#two"],
+    ["touch", "back"], ["touch", "Do"], ["at", "#one"],
+    ["touch", "forward"], ["touch", "Do"], ["at", "#two"],
+    ["touch", "dom"], ["shows", "still here"], ["fits"]
   ]
 }

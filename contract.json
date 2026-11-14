@@ -1,59 +1,103 @@
 {
-  "application": "The Missing Layer",
-  "base": "a desktop application window: a title, a menu bar, a work area, a status line",
-  "rule": "placed with the browser's own verbs; no markup, style or script is handed to it",
-  "layers": ["menu bar", "menu", "item"],
   "title": "The Missing Layer",
-  "work area": "Four independent interpretations of The Missing Layer. Open one from the File menu.",
-  "status line": "Ready. Every piece on this page was placed through the engine, from contract.json.",
-  "menus": [
+  "says": "A busy board for the browser. Pick a store, pick a verb, name a thing, touch Do.",
+  "what": "Every knob is something this tab can already do. The site holds no application and no data; it gives the grammar, and each browser that opens it is one live state.",
+  "rule": "One screen: no scroll, no navigation. Nothing goes out: the page asks the browser to refuse every address but this site's own, and the board sends nothing anywhere.",
+  "how": "Touch a store, touch a verb, type into Name and Value, touch Do. The line under the buttons says what happened; the box under it shows what the store holds now. Touching a held thing puts it back into Name and Value. Undo takes back the last thing done, then the one before it.",
+  "knobs": ["store", "verb", "Name", "Value", "Do and Undo"],
+  "stores": [
     {
-      "menu": "File",
-      "items": [
-        {
-          "item": "Open",
-          "opens": [
-            { "item": "Claude Code", "goes": "candidates/claude-code/" },
-            { "item": "ChatGPT", "goes": "candidates/chatgpt/" },
-            { "item": "Muse", "goes": "candidates/muse/" },
-            { "item": "Claude Chat", "goes": "candidates/claude-chat/" }
-          ]
-        },
-        { "item": "Save contract", "saves": "contract.json" }
+      "store": "dom",
+      "is": "The page itself. Things made here are real elements, shown in the box. They are gone on reload.",
+      "verbs": [
+        { "verb": "make", "needs": ["Name", "Value"], "does": "Makes an element of the kind in Value (p, button, input, details, ul ...) and gives it the name." },
+        { "verb": "say", "needs": ["Name", "Value"], "does": "Sets the thing's words to Value." },
+        { "verb": "set", "needs": ["Name", "Value"], "does": "Sets an attribute, written attribute=value. With nothing after the = the attribute is taken away." },
+        { "verb": "move", "needs": ["Name"], "may": ["Value"], "does": "Puts the thing inside the thing named in Value, or at the end of the box when Value is empty." },
+        { "verb": "read", "needs": ["Name"], "does": "Says what the thing is: its kind, its words, its attributes." },
+        { "verb": "remove", "needs": ["Name"], "does": "Takes the thing out of the page." },
+        { "verb": "clear", "needs": [], "does": "Takes out everything made here." }
       ]
     },
     {
-      "menu": "Edit",
-      "items": [
-        { "item": "Scratch line", "accepts": "text" },
-        { "item": "Clear", "clears": "Scratch line" }
+      "store": "local",
+      "is": "localStorage. Kept by this browser for this site until cleared; every tab of the site sees it.",
+      "verbs": [
+        { "verb": "put", "needs": ["Name", "Value"], "does": "Keeps Value under Name." },
+        { "verb": "get", "needs": ["Name"], "does": "Reads back what is kept under Name." },
+        { "verb": "remove", "needs": ["Name"], "does": "Forgets Name." },
+        { "verb": "clear", "needs": [], "does": "Forgets everything in this store, including what other pages of this site kept." }
       ]
     },
     {
-      "menu": "View",
-      "items": [
-        { "item": "Contract", "goes": "contract.json" },
-        { "item": "Card selector", "goes": "selector.html" }
+      "store": "session",
+      "is": "sessionStorage. Kept for this tab only; survives a reload, gone when the tab closes.",
+      "verbs": [
+        { "verb": "put", "needs": ["Name", "Value"], "does": "Keeps Value under Name." },
+        { "verb": "get", "needs": ["Name"], "does": "Reads back what is kept under Name." },
+        { "verb": "remove", "needs": ["Name"], "does": "Forgets Name." },
+        { "verb": "clear", "needs": [], "does": "Forgets everything in this store." }
       ]
     },
     {
-      "menu": "Help",
-      "items": [
-        {
-          "item": "About",
-          "shows": "The Missing Layer. A menu bar with no markup, style or script written for it. The contract states intent; the browser's engine did the rest.",
-          "dismiss": "OK"
-        }
+      "store": "indexed",
+      "is": "IndexedDB. A database in this browser, here one table called things.",
+      "verbs": [
+        { "verb": "put", "needs": ["Name", "Value"], "does": "Keeps Value under Name." },
+        { "verb": "get", "needs": ["Name"], "does": "Reads back what is kept under Name." },
+        { "verb": "remove", "needs": ["Name"], "does": "Forgets Name." },
+        { "verb": "clear", "needs": [], "does": "Empties the table." }
+      ]
+    },
+    {
+      "store": "cookie",
+      "is": "Cookies this page can see. Kept by this browser for a year unless removed. The board never sends them; a browser attaches cookies to its own requests to the site.",
+      "verbs": [
+        { "verb": "put", "needs": ["Name", "Value"], "does": "Sets a cookie called Name holding Value." },
+        { "verb": "get", "needs": ["Name"], "does": "Reads the cookie called Name." },
+        { "verb": "remove", "needs": ["Name"], "does": "Expires the cookie called Name." },
+        { "verb": "clear", "needs": [], "does": "Expires every cookie this page can see." }
+      ]
+    },
+    {
+      "store": "cache",
+      "is": "The Cache store. Normally holds fetched pages; here each entry is made on the spot from Value, and nothing is fetched.",
+      "verbs": [
+        { "verb": "put", "needs": ["Name", "Value"], "does": "Stores a response holding Value at an address ending in Name." },
+        { "verb": "get", "needs": ["Name"], "does": "Reads the stored response back." },
+        { "verb": "remove", "needs": ["Name"], "does": "Deletes the stored response." },
+        { "verb": "clear", "needs": [], "does": "Deletes the board's whole cache." }
+      ]
+    },
+    {
+      "store": "history",
+      "is": "This tab's history. The address changes and nothing loads; the board only moves among entries it made in this visit.",
+      "verbs": [
+        { "verb": "push", "needs": ["Name"], "may": ["Value"], "does": "Adds an entry: the address ends in #Name and the entry carries Value." },
+        { "verb": "replace", "needs": ["Name"], "may": ["Value"], "does": "Rewrites the current entry in place." },
+        { "verb": "back", "needs": [], "does": "Steps back one entry, never past where this visit began." },
+        { "verb": "forward", "needs": [], "does": "Steps forward one entry, if there is one." },
+        { "verb": "peek", "needs": [], "does": "Says where the tab is and what the current entry carries." }
       ]
     }
   ],
+  "not wired": [
+    { "thing": "clipboard, notifications, location, camera, microphone", "why": "The browser asks the visitor first." },
+    { "thing": "service worker", "why": "The browser must fetch a file to register one." },
+    { "thing": "fetch, sockets, beacons, forms", "why": "They send something out." }
+  ],
   "proves": [
-    "every menu starts closed",
-    "touching a menu opens it",
-    "opening another menu closes the first",
-    "Open reveals four destinations and each one exists",
-    "choosing a destination goes there",
-    "the scratch line takes typed text and Clear empties it",
-    "About appears when asked for and goes away when dismissed"
+    "the whole board is on one screen",
+    "every store is a knob and shows its own verbs",
+    "local storage keeps a thing across a reload",
+    "session storage keeps a thing across a reload",
+    "the database keeps a thing across a reload",
+    "a cookie is kept across a reload",
+    "the cache keeps a thing across a reload",
+    "a thing made in the page is real, and is gone after a reload",
+    "get reads a thing back and remove takes it away",
+    "what was done can be undone",
+    "clear empties a store and undo brings it back",
+    "history moves the address and loads nothing"
   ]
 }

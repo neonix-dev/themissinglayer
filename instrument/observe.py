@@ -93,6 +93,11 @@ def before(first, second):
     order = [n["backendNodeId"] for n in nodes()]
     return order.index(named(first)["backendNodeId"]) < order.index(named(second)["backendNodeId"])
 
+# One screen: nothing on the page reaches past the window, so there is nothing to scroll to.
+def fits():
+    m = h.say("Page.getLayoutMetrics")
+    return m["cssContentSize"]["height"] <= m["cssLayoutViewport"]["clientHeight"] and m["cssContentSize"]["width"] <= m["cssLayoutViewport"]["clientWidth"]
+
 def again():
     h.say("Page.reload")
     time.sleep(1)
@@ -109,13 +114,14 @@ def given(value):
 moves = {
     "touch": touch,
     "again": again,
+    "fits": fits,
     "type": type_in,
     "open": lambda name: "open" in within(named(name), "DETAILS")["has"],
     "closed": lambda name: "open" not in within(named(name), "DETAILS")["has"],
     "before": before,
     "at": lambda path: here() == urljoin(site, path),
     "exists": exists,
-    "holds": lambda name, text: any(said(n, "name") == name and said(n, "value") == text for n in heard() if said(n, "role") == "textbox"),
+    "holds": lambda name, text: any(said(n, "name").strip() == name and said(n, "value") == text for n in heard() if said(n, "role") == "textbox"),
     "shows": lambda text: any(text in said(n, "name") for n in heard()),
     "hides": lambda text: not any(text in said(n, "name") for n in heard()),
 }

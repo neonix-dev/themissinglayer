@@ -9,7 +9,7 @@
     "removing from a list removes from the page",
     "a whole page given as data is built",
     "data that carries code is refused and the rest is built",
-    "the root page's own contract builds here unchanged",
+    "the menu window's own contract builds here unchanged",
     "every piece has a name, shown where the piece is",
     "touching a name picks the piece",
     "a picked piece can be reworded",

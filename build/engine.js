@@ -30,7 +30,7 @@
   };
   const EXAMPLES = {
     "Empty sheet": null,
-    "Root page": { contract: "../contract.json", base: "../instrument/window.json", at: "../" },
+    "Menu window": { contract: "../window/contract.json", base: "../instrument/window.json", at: "../window/" },
     "Four paths": { contract: "../second/contract.json", base: "../second/sheet.json", at: "../second/" }
   };
 

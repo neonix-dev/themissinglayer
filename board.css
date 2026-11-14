@@ -1,0 +1,32 @@
+/* One screen. The board is a grid as tall as the window; only the last row stretches. */
+html, body { height: 100%; margin: 0; }
+body { font: 16px/1.25 system-ui, sans-serif; overflow: hidden; }
+.board {
+  box-sizing: border-box; height: 100vh; height: 100dvh; max-width: 46rem; margin: 0 auto;
+  padding: .5rem; display: grid; gap: .4rem; overflow: hidden;
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr);
+}
+h1 { font-size: 1.1rem; margin: 0; }
+.says { margin: 0; font-size: .8rem; opacity: .8; }
+.knob { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
+.fields label { display: grid; font-size: .75rem; }
+.act { display: grid; grid-template-columns: 2fr 1fr; gap: .3rem; }
+button, input {
+  font: inherit; min-height: 2.25rem; box-sizing: border-box; min-width: 0; margin: 0;
+  border: 1px solid GrayText; border-radius: .3rem; background: ButtonFace; color: ButtonText;
+}
+input { background: Field; color: FieldText; padding: 0 .4rem; }
+button { padding: 0 .2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button[aria-pressed="true"] { background: Highlight; color: HighlightText; border-color: Highlight; }
+button:disabled, input:disabled { opacity: .45; }
+.said { display: block; font-size: .85rem; height: 3.2em; overflow: hidden; }
+.held {
+  min-height: 0; overflow: hidden; border: 1px solid GrayText; border-radius: .3rem; padding: .4rem;
+  display: flex; flex-direction: column; gap: .25rem;
+}
+.held h2 { font-size: .8rem; margin: 0; font-weight: 600; }
+.rows, .stage { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: .2rem; flex: 1; }
+.rows button { text-align: left; padding: 0 .4rem; flex: none; }
+.stage > * { margin: 0; flex: none; }
+[hidden] { display: none !important; }
