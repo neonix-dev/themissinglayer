@@ -1,0 +1,134 @@
+{
+  "id": "email.stub",
+  "says": "A stub on the other end. When the sent box changes it waits ten seconds and puts an answer in the inbox under the same subject. Unload it and nothing answers: that is then the reader's part.",
+  "parts": {
+    "inbox": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "email.inbox",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "mail",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "mail",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "mail"
+        ]
+      }
+    ],
+    "sent": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "email.sent",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "mail",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "mail",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "mail"
+        ]
+      }
+    ]
+  },
+  "stores": [
+    {
+      "store": "sent",
+      "is": "The sent box, as the stub sees it. Not kept by the stub.",
+      "holds": [
+        {
+          "part": "sent"
+        },
+        {
+          "call": "getAll"
+        }
+      ]
+    }
+  ],
+  "things": {
+    "answer": [
+      {
+        "changed": "email.stub.sent",
+        "then": [
+          {
+            "part": "sent"
+          },
+          {
+            "call": "getAll"
+          },
+          {
+            "each": [
+              {
+                "get": "name"
+              },
+              {
+                "as": "n"
+              },
+              {
+                "after": 10000,
+                "then": [
+                  {
+                    "part": "inbox"
+                  },
+                  {
+                    "call": "put",
+                    "with": [
+                      {
+                        "name": "$n",
+                        "value": "The stub got this and is answering. Nothing read it."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

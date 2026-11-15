@@ -51,6 +51,19 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .field p, .field dl, .field dd { margin: 0; }
 .field dt { font-weight: 600; float: left; margin-right: .3em; }
 .field dt::after { content: ":"; }
+/* What the loaded JSONs make. The generator gives every thing a place and its address;
+   how it looks beyond that is no JSON's field yet. This page scrolls. */
+.made { box-sizing: border-box; height: 100vh; height: 100dvh; padding: .6rem; overflow: hidden auto; display: flex; flex-direction: column; gap: .6rem; }
+.made header { align-items: center; flex: none; }
+.made header button { padding: 0 .8rem; }
+.made section { border: 1px solid GrayText; border-radius: .3rem; padding: .5rem; display: flex; flex-wrap: wrap; gap: .4rem; align-items: flex-start; flex: none; }
+.made section h2 { flex-basis: 100%; font-family: ui-monospace, monospace; font-weight: 400; opacity: .7; }
+.made section p { margin: 0; flex-basis: 100%; overflow-wrap: anywhere; }
+.made section div { flex-basis: 100%; display: flex; flex-direction: column; gap: .2rem; }
+.made section div button { text-align: left; padding: 0 .4rem; }
+.made section button { padding: 0 .8rem; }
+.made label { flex-basis: 100%; }
+.board header button { min-height: 1.6rem; padding: 0 .8rem; }
 [hidden] { display: none !important; }
 @media (max-aspect-ratio: 1/1) {
   html { font-size: min(3.3vw, 1.45vh); }

@@ -1,0 +1,548 @@
+{
+  "id": "email.touch",
+  "says": "The interaction of the email: what a touch does. One layout shows at a time, compose opens, send puts the mail in sent, a row opens. It makes nothing of its own.",
+  "parts": {
+    "inbox": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "email.inbox",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "mail",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "mail",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "mail"
+        ]
+      }
+    ],
+    "sent": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "email.sent",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "mail",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "mail",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "mail"
+        ]
+      }
+    ],
+    "only inbox": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.inbox"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": false
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.sent"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.compose"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.message"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      }
+    ],
+    "only sent": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.inbox"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.sent"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": false
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.compose"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.message"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      }
+    ],
+    "only compose": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.inbox"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.sent"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.compose"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": false
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.message"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      }
+    ],
+    "only message": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.inbox"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.sent"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.compose"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": true
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.message"
+        ]
+      },
+      {
+        "set": "hidden",
+        "to": false
+      }
+    ]
+  },
+  "things": {
+    "start": [
+      {
+        "after": 0,
+        "then": [
+          {
+            "part": "only inbox"
+          }
+        ]
+      }
+    ],
+    "compose": [
+      {
+        "touched": "email.wire.new",
+        "then": [
+          {
+            "part": "only compose"
+          }
+        ]
+      }
+    ],
+    "cancel": [
+      {
+        "touched": "email.wire.cancel",
+        "then": [
+          {
+            "part": "only inbox"
+          }
+        ]
+      }
+    ],
+    "to-sent": [
+      {
+        "touched": "email.wire.to-sent",
+        "then": [
+          {
+            "part": "only sent"
+          }
+        ]
+      }
+    ],
+    "to-inbox": [
+      {
+        "touched": "email.wire.to-inbox",
+        "then": [
+          {
+            "part": "only inbox"
+          }
+        ]
+      }
+    ],
+    "back": [
+      {
+        "touched": "email.wire.back",
+        "then": [
+          {
+            "part": "only inbox"
+          }
+        ]
+      }
+    ],
+    "send": [
+      {
+        "touched": "email.wire.send",
+        "then": [
+          {
+            "from": "document"
+          },
+          {
+            "call": "getElementById",
+            "with": [
+              "email.wire.subject"
+            ]
+          },
+          {
+            "as": "s"
+          },
+          {
+            "get": "value"
+          },
+          {
+            "as": "n"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "getElementById",
+            "with": [
+              "email.wire.body"
+            ]
+          },
+          {
+            "as": "b"
+          },
+          {
+            "get": "value"
+          },
+          {
+            "as": "v"
+          },
+          {
+            "part": "sent"
+          },
+          {
+            "call": "put",
+            "with": [
+              {
+                "name": "$n",
+                "value": "$v"
+              }
+            ]
+          },
+          {
+            "use": "s"
+          },
+          {
+            "set": "value",
+            "to": ""
+          },
+          {
+            "use": "b"
+          },
+          {
+            "set": "value",
+            "to": ""
+          },
+          {
+            "part": "only sent"
+          }
+        ]
+      }
+    ],
+    "open": [
+      {
+        "touched": "email.wire.inbox-list",
+        "then": [
+          {
+            "use": "touched"
+          },
+          {
+            "get": "textContent"
+          },
+          {
+            "as": "n"
+          },
+          {
+            "part": "inbox"
+          },
+          {
+            "call": "get",
+            "with": [
+              "$n"
+            ]
+          },
+          {
+            "get": "value"
+          },
+          {
+            "as": "v"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "getElementById",
+            "with": [
+              "email.wire.read-subject"
+            ]
+          },
+          {
+            "set": "textContent",
+            "to": "$n"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "getElementById",
+            "with": [
+              "email.wire.read-body"
+            ]
+          },
+          {
+            "set": "textContent",
+            "to": "$v"
+          },
+          {
+            "part": "only message"
+          }
+        ]
+      }
+    ],
+    "open-sent": [
+      {
+        "touched": "email.wire.sent-list",
+        "then": [
+          {
+            "use": "touched"
+          },
+          {
+            "get": "textContent"
+          },
+          {
+            "as": "n"
+          },
+          {
+            "part": "sent"
+          },
+          {
+            "call": "get",
+            "with": [
+              "$n"
+            ]
+          },
+          {
+            "get": "value"
+          },
+          {
+            "as": "v"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "getElementById",
+            "with": [
+              "email.wire.read-subject"
+            ]
+          },
+          {
+            "set": "textContent",
+            "to": "$n"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "getElementById",
+            "with": [
+              "email.wire.read-body"
+            ]
+          },
+          {
+            "set": "textContent",
+            "to": "$v"
+          },
+          {
+            "part": "only message"
+          }
+        ]
+      }
+    ]
+  }
+}

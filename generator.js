@@ -23,7 +23,7 @@
     indexedDB: () => indexedDB, cookieStore: () => cookieStore, caches: () => caches, history: () => history, location: () => location,
   };
   const MAKES = { Response: (...a) => new Response(...a), URL: (...a) => new URL(...a) };
-  const STEPS = ["from", "use", "as", "new", "gather", "each", "entries", "part", "call", "get", "set"];
+  const STEPS = ["touched", "changed", "after", "from", "use", "as", "new", "gather", "each", "entries", "part", "call", "get", "set"];
   const NEVER = /^(constructor|__proto__|prototype|defaultView|insertAdjacentHTML|write|writeln|setHTMLUnsafe|parseHTMLUnsafe)$/;
   const NEVER_SET = /^(innerHTML|outerHTML|srcdoc)$/;
   const NAMED = /^\$\w+$/;
@@ -35,6 +35,8 @@
     return steps.flatMap((s) => {
       const kind = s && typeof s === "object" && !Array.isArray(s) && STEPS.find((k) => k in s);
       if (!kind) refuse(`not a step the generator knows: ${JSON.stringify(s)}`);
+      if (kind === "touched" || kind === "changed") return typeof s[kind] === "string" ? [{ [kind]: s[kind], then: known(s.then || [], parts, depth + 1) }] : refuse(`${kind} needs the address it waits on`);
+      if (kind === "after") return Number(s.after) >= 0 ? [{ after: Number(s.after), then: known(s.then || [], parts, depth + 1) }] : refuse("after needs a time in milliseconds");
       if (kind === "part") return s.part in parts ? known(parts[s.part], parts, depth + 1) : refuse(`no part called ${s.part}`);
       if (kind === "from" && !(s.from in ROOTS)) refuse(`the generator does not start from ${s.from}`);
       if (kind === "new" && !(s.new in MAKES)) refuse(`the generator does not make a ${s.new}`);
@@ -77,6 +79,8 @@
       else if ("as" in s) env.named[s.as] = it;
       else if ("new" in s) it = MAKES[s.new](...given(s.with || [], env));
       else if ("gather" in s) { const all = {}; for (const [k, p] of Object.entries(s.gather)) all[k] = await walk(p, env); it = all; }
+      else if ("touched" in s || "changed" in s) (env.hooks || refuse("only a loaded JSON can wait for a touch or a change"))["touched" in s ? "touched" : "changed"].push({ on: s.touched || s.changed, then: s.then, named: { ...env.named }, by: env.by, at: env.at });
+      else if ("after" in s) later(s.after, s.then, env, it);
       else if (it == null) { env.missing = true; return null; }
       else if ("entries" in s) it = Object.entries(it);
       else if ("each" in s) { const all = []; for (const one of it) all.push(await walk(s.each, env, one)); it = all; }
@@ -105,6 +109,9 @@
       if ("from" in s) { flush(); cur = s.from; bare = true; }
       else if ("use" in s) { flush(); cur = s.use; bare = true; }
       else if ("as" in s) { if (!bare) lines.push(`const ${s.as} = ${cur}`); else if (cur !== s.as) lines.push(`const ${s.as} = ${cur}`); cur = s.as; bare = true; }
+      else if ("touched" in s) { flush(); lines.push(`when ${s.touched} is touched: { ${code(s.then, env, "it")} }`); cur = ""; bare = true; }
+      else if ("changed" in s) { flush(); lines.push(`when ${s.changed} changes: { ${code(s.then, env)} }`); cur = ""; bare = true; }
+      else if ("after" in s) { flush(); lines.push(`after ${s.after} ms: { ${code(s.then, env, cur || "it")} }`); bare = true; }
       else if ("new" in s) { flush(); cur = `new ${s.new}(${passed(s, env)})`; bare = false; }
       else if ("gather" in s) { flush(); cur = `{${Object.entries(s.gather).map(([k, p]) => `${k}: ${code(p, env)}`).join(", ")}}`; bare = false; }
       else if ("entries" in s) { cur = `Object.entries(${cur})`; bare = false; }
@@ -122,14 +129,113 @@
     : r && typeof r === "object" && "name" in r && "value" in r ? [word(r.name), word(r.value)] : [word(r)]))
     : typeof x === "object" ? Object.entries(x).map(([k, v]) => [k, word(v)]) : [[word(x)]]);
 
-  // ---- running a shape ----------------------------------------------------------------
+  // ---- the matrix: JSONs loaded beside the board, in any order -------------------------
+  // A loaded JSON has an id of two levels and brings named things, each a list of steps,
+  // and may bring its own stores and parts. Every address has three levels: id and name.
+  // Nothing in a JSON runs because it was loaded. Each time the loaded set changes the
+  // page is drawn again from all of it, in the order of the addresses, so the order of
+  // loading never matters. A step that waits (touched, changed, after) runs later.
   let contract;
+  const loaded = new Map(), hooks = { touched: [], changed: [] }, timers = new Set(), seen = new Map();
+  let drawing = false, queue = Promise.resolve();
+  const allStores = () => [
+    ...(contract ? contract.stores.map((s) => ({ name: s.store, s, parts: contract.parts || {} })) : []),
+    ...[...loaded.keys()].sort().flatMap((id) => (loaded.get(id).stores || []).map((s) => ({ name: `${id}.${s.store}`, s, parts: loaded.get(id).parts || {} }))),
+  ];
+  const storeOf = (name) => allStores().find((x) => x.name === name);
+  const sign = async (name) => {
+    const found = storeOf(name);
+    if (!found) return null;
+    try { return JSON.stringify(rowsOf(await walk(known(found.s.holds || [], found.parts), { words: {}, named: {}, missing: false }))); } catch { return null; }
+  };
+  // After anything the generator runs, it looks at the stores someone waits on, and
+  // tells those who wait if what a store holds is no longer what it was.
+  const sweep = async () => {
+    for (let round = 0; round < 8; round++) {
+      let any = false;
+      for (const name of new Set(hooks.changed.map((h) => h.on))) {
+        const now = await sign(name);
+        if (now === seen.get(name)) continue;
+        seen.set(name, now);
+        any = true;
+        for (const h of hooks.changed.filter((x) => x.on === name)) { try { await walk(h.then, { words: {}, named: { ...h.named }, missing: false, by: h.by }); } catch { /* one that fails does not stop the rest */ } }
+      }
+      if (!any) return;
+    }
+  };
+  const act = (fn) => (queue = queue.then(fn).catch(() => {}).then(sweep));
+  const later = (ms, then, env, it) => {
+    const named = { ...env.named };
+    const t = { by: env.by || "", ms, run: () => { timers.delete(t); act(() => walk(then, { words: env.words, named, missing: false, by: env.by }, it)); } };
+    timers.add(t);
+    if (!drawing) t.id = setTimeout(t.run, ms);
+  };
+  const checked = (j) => {
+    if (!j || typeof j !== "object" || Array.isArray(j) || typeof j.id !== "string" || !/^[^./\\]+\.[^./\\]+$/.test(j.id)) refuse("a JSON needs an id of two levels, like email.wire");
+    const parts = j.parts || {};
+    if (j.things != null && (typeof j.things !== "object" || Array.isArray(j.things))) refuse(`${j.id}: things must be named lists of steps`);
+    for (const steps of Object.values(j.things || {})) known(steps, parts);
+    for (const st of j.stores || []) {
+      if (!st || typeof st.store !== "string") refuse(`${j.id}: every store needs a name`);
+      known(st.holds || [], parts);
+      for (const v of st.verbs || []) { known(v.steps, parts); if (v.was) known(v.was, parts); }
+    }
+    return j;
+  };
+  // The dot is the folder: email.wire is the file email/wire.json on this site.
+  const fetched = async (id) => {
+    if (!/^[\w-]+\.[\w-]+$/.test(id)) refuse(`${id} is not the address of a JSON on this site`);
+    const got = await fetch(new URL(`${id.replace(".", "/")}.json`, document.baseURI), { cache: "no-store" });
+    const j = got.ok ? await got.json().catch(() => null) : null;
+    if (!j || j.id !== id) refuse(`the site has no JSON called ${id}`);
+    return j;
+  };
+  const made = el("main", null, { class: "made", hidden: "" });
+  const bar = el("header"), loadedLine = el("p", "nothing is loaded", { class: "says" }), heard = el("output", null, { class: "says", "aria-live": "polite" });
+  const toBoard = el("button", "Board", { type: "button", title: "The board, where JSONs are loaded and unloaded" });
+  bar.append(toBoard, loadedLine, heard);
+  made.append(bar);
+  made.addEventListener("click", (e) => {
+    for (const h of hooks.touched) {
+      const at = document.getElementById(h.on);
+      if (at && at.contains(e.target)) act(() => walk(h.then, { words: {}, named: { ...h.named, touched: e.target }, missing: false, by: h.by }, at));
+    }
+  });
+  const draw = async () => {
+    drawing = true;
+    for (const t of [...timers]) if (!loaded.has(t.by)) { clearTimeout(t.id); timers.delete(t); }
+    hooks.touched.length = hooks.changed.length = 0;
+    const ids = [...loaded.keys()].sort(), all = [];
+    loadedLine.textContent = ids.length ? `loaded: ${ids.join(", ")}` : "nothing is loaded";
+    for (const id of ids) for (const name of Object.keys(loaded.get(id).things || {}).sort()) {
+      const at = `${id}.${name}`, sec = el("section", null, { id: at });
+      sec.append(el("h2", at));
+      all.push({ id, name, at, sec });
+    }
+    made.replaceChildren(bar, ...all.map((x) => x.sec));   // every thing has its place before any thing is drawn
+    for (const { id, name, at, sec } of all) {
+      const j = loaded.get(id);
+      try { await walk(known(j.things[name], j.parts || {}), { words: {}, named: { here: sec }, missing: false, by: id, at, hooks }, sec); }
+      catch (e) { sec.append(el("p", `could not: ${e && e.message ? e.message : "not available in this browser"}`)); }
+    }
+    // What waits on something that is not loaded says so, and does nothing.
+    const waits = (h, kind) => { const sec = document.getElementById(h.at); if (sec) sec.append(el("p", `waits for ${h.on}, which is not loaded. ${kind}: ${code(h.then, { words: {} }, "it")}`)); };
+    for (const h of hooks.touched) if (!document.getElementById(h.on)) waits(h, "When it is touched");
+    for (const h of hooks.changed) if (!storeOf(h.on)) waits(h, "When it changes");
+    for (const { sec } of all) if (sec.children.length === 1) sec.hidden = true;
+    seen.clear();
+    for (const name of new Set(hooks.changed.map((h) => h.on))) seen.set(name, await sign(name));
+    drawing = false;
+    for (const t of timers) if (t.id == null) t.id = setTimeout(t.run, t.ms);
+  };
+
+  // ---- running a shape ----------------------------------------------------------------
   const envOf = (words) => ({ words, named: {}, missing: false });
   const runVerb = async (shape, undoing) => {
-    const store = contract.stores.find((s) => s.store === shape.store) || refuse(`no store is called ${shape.store}`);
-    const verb = store.verbs.find((v) => v.verb === shape.verb) || refuse(`${shape.store} has no verb called ${shape.verb}`);
+    const found = storeOf(shape.store) || refuse(`no store is called ${shape.store}`), store = found.s;
+    const verb = (store.verbs || []).find((v) => v.verb === shape.verb) || refuse(`${shape.store} has no verb called ${shape.verb}`);
     const words = { Name: word(shape.Name), Value: word(shape.Value) };
-    const parts = contract.parts || {};
+    const parts = found.parts;
     let was = null;
     if (verb.was && !undoing) {
       const before = envOf(words);
@@ -147,7 +253,7 @@
       else if (verb.was && was == null) back = verb["undo if none"] ? [plain(verb["undo if none"])] : null;
       else if (verb.undo) back = [plain(verb.undo)];
     }
-    return { what: `${store.store} ${verb.verb}`, said, code: code(steps, env), back };
+    return { what: `${shape.store} ${verb.verb}`, said, code: code(steps, env), back };
   };
   const runSteps = async (shape) => {
     const steps = known(shape.steps, (contract && contract.parts) || {}), env = envOf({ Name: word(shape.Name), Value: word(shape.Value) });
@@ -158,7 +264,8 @@
   // ---- the board ----------------------------------------------------------------------
   const board = el("main", null, { class: "board" });
   const head = el("header"), title = el("h1"), says = el("p", null, { class: "says" });
-  head.append(title, says);
+  const toPage = el("button", "Page", { type: "button", title: "What the loaded JSONs make", hidden: "" });
+  head.append(title, toPage, says);
   const stores = el("section", null, { class: "knob", "aria-label": "Store" });
   const verbs = el("section", null, { class: "knob", "aria-label": "Verb" });
   const field = (label) => { const input = el("input", null, { autocomplete: "off", autocapitalize: "off", spellcheck: "false" }); const wrap = el("label", label + " "); wrap.append(input); return [wrap, input]; };
@@ -196,11 +303,11 @@
   const way = cover.querySelector("button") || cover.appendChild(el("h1")).appendChild(el("button", "The Missing Layer", { type: "button" }));
   const line = cover.querySelector("p") || cover.appendChild(el("p"));
   board.hidden = true;
-  document.body.append(cover, board);
+  document.body.append(cover, board, made);
 
   let store, verb, original;
   const log = [], undone = [];
-  const tell = (text) => { said.textContent = text; };
+  const tell = (text) => { said.textContent = heard.textContent = text; };
   const pressed = (group, button) => { for (const b of group.children) b.setAttribute("aria-pressed", String(b === button)); };
   // Only what fits is shown and the rest is counted, so nothing scrolls.
   const fit = (list) => {
@@ -282,7 +389,7 @@
   // What the board is and what its stores hold, written as plain records: the board,
   // each store, each thing held. No code is ever written out; a record is data, and
   // the generator rebuilds from it. The contract says, per store, how it is kept.
-  const ENGINE = "1", FLOPPY = 1474560;
+  const ENGINE = "2", FLOPPY = 1474560;
   const bytes = (text) => new TextEncoder().encode(text).length;
   const labelOf = (recs, engine) => {
     const text = engine + JSON.stringify(recs);
@@ -311,14 +418,14 @@
   };
   const records = async () => {
     const { stores: all, ...rest } = contract;
-    const recs = [{ board: rest }, ...all.map((s) => ({ store: s }))];
-    for (const s of all) {
+    const recs = [{ board: rest }, ...all.map((s) => ({ store: s })), ...[...loaded.keys()].sort().map((id) => ({ json: loaded.get(id) }))];
+    for (const { name: where, s, parts } of allStores()) {
       if (!s.keep) continue;
       let got;
-      try { got = await walk(known(s.holds || [], contract.parts || {}), envOf({})); } catch { recs.push({ left: s.store }); continue; }
-      if (got instanceof Element) { for (const n of got.childNodes) { const thing = tree(n); if (thing != null) recs.push({ in: s.store, thing }); } continue; }
+      try { got = await walk(known(s.holds || [], parts), envOf({})); } catch { recs.push({ left: where }); continue; }
+      if (got instanceof Element) { for (const n of got.childNodes) { const thing = tree(n); if (thing != null) recs.push({ in: where, thing }); } continue; }
       const pairs = rowsOf(got).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
-      for (const [name, value] of pairs) recs.push(value === undefined ? { in: s.store, name } : { in: s.store, name, value });
+      for (const [name, value] of pairs) recs.push(value === undefined ? { in: where, name } : { in: where, name, value });
     }
     return recs;
   };
@@ -361,26 +468,33 @@
     const c = { ...head.board, stores: of("store").map((r) => r.store) };
     const left = new Set(of("left").map((r) => r.left));
     const grown = of("thing").map((r) => [r.in, grow(r.thing)]);
+    const sheets = of("json").map((r) => checked(r.json));
     await build(c);   // refused here, before anything is wiped, if the board on the floppy is not one the generator knows
-    // Everything goes first: the site is brought back to the board it shipped with, with
-    // every kept store empty, and only then rebuilt from the floppies.
+    // Everything goes first: every kept store is emptied, every loaded JSON is taken out,
+    // the site is brought back to the board it shipped with, and only then is it rebuilt.
+    const empty = async () => { for (const { s } of allStores()) if (s.keep && s.keep.empty) { try { await quiet(s.keep.empty); } catch { /* not in this browser */ } } };
+    await empty();
+    loaded.clear();
     if (original) {
       await build(original);
-      for (const s of original.stores) if (s.keep && s.keep.empty) { try { await quiet(s.keep.empty); } catch { /* not in this browser */ } }
+      await empty();
       await build(c);
     }
+    for (const j of sheets) loaded.set(j.id, j);
     log.length = undone.length = 0;
     codeLine.textContent = "";
     const failed = [];
-    for (const s of c.stores) {
-      if (!s.keep || left.has(s.store)) continue;
+    for (const { name: where, s, parts } of allStores()) {
+      if (!s.keep || left.has(where)) continue;
       try {
         if (s.keep.empty) await quiet(s.keep.empty);
-        const mine = grown.filter(([where]) => where === s.store);
-        if (mine.length) (await walk(known(s.holds || [], c.parts || {}), envOf({}))).append(...mine.map(([, node]) => node));
-        if (s.keep.each) for (const r of of("name")) if (r.in === s.store) await quiet(given(s.keep.each, envOf({ name: word(r.name), value: word(r.value) })));
-      } catch { failed.push(s.store); }
+        const mine = grown.filter(([w]) => w === where);
+        if (mine.length) (await walk(known(s.holds || [], parts), envOf({}))).append(...mine.map(([, node]) => node));
+        if (s.keep.each) for (const r of of("name")) if (r.in === where) await quiet(given(s.keep.each, envOf({ name: word(r.name), value: word(r.value) })));
+      } catch { failed.push(where); }
     }
+    await draw();
+    toPage.hidden = !loaded.size;
     const same = labelOf(await records(), ENGINE) === labelOf(recs, ENGINE);
     return `rebuilt from ${set.of} ${set.of === 1 ? "floppy" : "floppies"}: ${same ? "the board keeps the same as what was handed in" : "this browser keeps it differently from what was handed in"}`
       + (failed.length ? `; could not rebuild ${failed.join(", ")}` : "")
@@ -412,7 +526,22 @@
     if (Array.isArray(given)) { for (const one of given) await give(one, undoing); return; }
     try {
       if (!given || typeof given !== "object") refuse("not a shape the generator knows");
-      if ("stores" in given) {
+      if ("load" in given || ("id" in given && ("things" in given || "stores" in given || "parts" in given))) {
+        const j = checked(!("load" in given) ? given : typeof given.load === "string" ? await fetched(given.load) : given.load);
+        loaded.set(j.id, j);
+        await draw();
+        log.push(JSON.stringify(given));
+        tell(`loaded ${j.id}`);
+        codeLine.textContent = "";
+        if (!board.hidden || !cover.hidden) page();
+      } else if ("unload" in given) {
+        if (!loaded.delete(given.unload)) refuse(`${word(given.unload)} is not loaded`);
+        await draw();
+        log.push(JSON.stringify(given));
+        tell(`unloaded ${given.unload}`);
+        codeLine.textContent = "";
+        if (!loaded.size && !made.hidden) await enter();
+      } else if ("stores" in given) {
         await build(given);
         log.push(JSON.stringify(given));
         tell("the board was generated from the contract handed in");
@@ -433,8 +562,10 @@
     } catch (e) {
       tell(e instanceof Refused ? `refused: ${e.message}` : `could not: ${e && e.message ? e.message : "not available in this browser"}`);
     }
+    toPage.hidden = !loaded.size;
     showRan();
     await show();
+    await act(() => {});
   };
 
   doIt.onclick = async () => {
@@ -488,14 +619,21 @@
     line.textContent = said.textContent;
     if (asking && /^rebuilt/.test(said.textContent)) { history.replaceState(history.state, "", "./"); enter(); }
   };
-  const enter = async () => { cover.hidden = true; board.hidden = false; showRan(); await show(); };
+  const enter = async () => { cover.hidden = made.hidden = true; board.hidden = false; showRan(); await show(); };
+  const page = () => { cover.hidden = board.hidden = true; made.hidden = false; };
   way.onclick = enter;
+  toBoard.onclick = enter;
+  toPage.onclick = page;
   // The same two things for a script or another seat: serialize gives the floppies as
   // JSON text, deserialize takes them back, as text or parsed, one or many, in any order.
   const parsed = (x) => (typeof x === "string" ? JSON.parse(x) : x);
   globalThis.board = Object.freeze({
     engine: ENGINE,
     enter,
+    page,
+    load: async (what) => { await give({ load: what }); return said.textContent; },
+    unload: async (id) => { await give({ unload: id }); return said.textContent; },
+    loaded: () => [...loaded.keys()].sort(),
     serialize: async (size) => (await kept(size)).disks,
     deserialize: async (handed) => {
       const disks = [parsed(handed)].flat().map(parsed).flat();

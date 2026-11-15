@@ -1,0 +1,812 @@
+{
+  "id": "email.wire",
+  "says": "The wireframe of an email with an inbox and a sent box: what exists, with ids. It also names the two stores the mail is kept in. It says nothing about what a touch does.",
+  "parts": {
+    "inbox": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "email.inbox",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "mail",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "mail",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "mail"
+        ]
+      }
+    ],
+    "sent": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "email.sent",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "mail",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "mail",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "mail"
+        ]
+      }
+    ],
+    "inbox rows": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.inbox-list"
+        ]
+      },
+      {
+        "as": "list"
+      },
+      {
+        "call": "replaceChildren"
+      },
+      {
+        "part": "inbox"
+      },
+      {
+        "call": "getAll"
+      },
+      {
+        "each": [
+          {
+            "get": "name"
+          },
+          {
+            "as": "n"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "createElement",
+            "with": [
+              "button"
+            ]
+          },
+          {
+            "as": "row"
+          },
+          {
+            "set": "textContent",
+            "to": "$n"
+          },
+          {
+            "use": "list"
+          },
+          {
+            "call": "append",
+            "with": [
+              "$row"
+            ]
+          }
+        ]
+      }
+    ],
+    "sent rows": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "email.wire.sent-list"
+        ]
+      },
+      {
+        "as": "list"
+      },
+      {
+        "call": "replaceChildren"
+      },
+      {
+        "part": "sent"
+      },
+      {
+        "call": "getAll"
+      },
+      {
+        "each": [
+          {
+            "get": "name"
+          },
+          {
+            "as": "n"
+          },
+          {
+            "from": "document"
+          },
+          {
+            "call": "createElement",
+            "with": [
+              "button"
+            ]
+          },
+          {
+            "as": "row"
+          },
+          {
+            "set": "textContent",
+            "to": "$n"
+          },
+          {
+            "use": "list"
+          },
+          {
+            "call": "append",
+            "with": [
+              "$row"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "stores": [
+    {
+      "store": "inbox",
+      "is": "Mail that came in. Kept in this browser.",
+      "holds": [
+        {
+          "part": "inbox"
+        },
+        {
+          "call": "getAll"
+        }
+      ],
+      "keep": {
+        "empty": {
+          "store": "email.wire.inbox",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "email.wire.inbox",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
+      "verbs": [
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Keeps a mail: Name is its subject, Value is what it says.",
+          "steps": [
+            {
+              "part": "inbox"
+            },
+            {
+              "call": "put",
+              "with": [
+                {
+                  "name": "{Name}",
+                  "value": "{Value}"
+                }
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}"
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads the mail with that subject.",
+          "steps": [
+            {
+              "part": "inbox"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Deletes the mail with that subject.",
+          "steps": [
+            {
+              "part": "inbox"
+            },
+            {
+              "call": "delete",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten"
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Deletes every mail here.",
+          "steps": [
+            {
+              "part": "inbox"
+            },
+            {
+              "call": "clear"
+            }
+          ],
+          "says": "all forgotten"
+        }
+      ]
+    },
+    {
+      "store": "sent",
+      "is": "Mail that was sent. Kept in this browser.",
+      "holds": [
+        {
+          "part": "sent"
+        },
+        {
+          "call": "getAll"
+        }
+      ],
+      "keep": {
+        "empty": {
+          "store": "email.wire.sent",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "email.wire.sent",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
+      "verbs": [
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Keeps a mail: Name is its subject, Value is what it says.",
+          "steps": [
+            {
+              "part": "sent"
+            },
+            {
+              "call": "put",
+              "with": [
+                {
+                  "name": "{Name}",
+                  "value": "{Value}"
+                }
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}"
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads the mail with that subject.",
+          "steps": [
+            {
+              "part": "sent"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Deletes the mail with that subject.",
+          "steps": [
+            {
+              "part": "sent"
+            },
+            {
+              "call": "delete",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten"
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Deletes every mail here.",
+          "steps": [
+            {
+              "part": "sent"
+            },
+            {
+              "call": "clear"
+            }
+          ],
+          "says": "all forgotten"
+        }
+      ]
+    }
+  ],
+  "things": {
+    "inbox": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "button"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.new"
+      },
+      {
+        "set": "textContent",
+        "to": "Compose"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "button"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.to-sent"
+      },
+      {
+        "set": "textContent",
+        "to": "Sent"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "div"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.inbox-list"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "part": "inbox rows"
+      },
+      {
+        "changed": "email.wire.inbox",
+        "then": [
+          {
+            "part": "inbox rows"
+          }
+        ]
+      }
+    ],
+    "sent": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "button"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.to-inbox"
+      },
+      {
+        "set": "textContent",
+        "to": "Inbox"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "div"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.sent-list"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "part": "sent rows"
+      },
+      {
+        "changed": "email.wire.sent",
+        "then": [
+          {
+            "part": "sent rows"
+          }
+        ]
+      }
+    ],
+    "compose": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "label"
+        ]
+      },
+      {
+        "as": "l"
+      },
+      {
+        "set": "textContent",
+        "to": "Subject"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$l"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "input"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.subject"
+      },
+      {
+        "use": "l"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "label"
+        ]
+      },
+      {
+        "as": "l"
+      },
+      {
+        "set": "textContent",
+        "to": "Body"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$l"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "textarea"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.body"
+      },
+      {
+        "use": "l"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "button"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.send"
+      },
+      {
+        "set": "textContent",
+        "to": "Send"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "button"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.cancel"
+      },
+      {
+        "set": "textContent",
+        "to": "Cancel"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      }
+    ],
+    "message": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "p"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.read-subject"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "p"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.read-body"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      },
+      {
+        "from": "document"
+      },
+      {
+        "call": "createElement",
+        "with": [
+          "button"
+        ]
+      },
+      {
+        "as": "e"
+      },
+      {
+        "set": "id",
+        "to": "email.wire.back"
+      },
+      {
+        "set": "textContent",
+        "to": "Back"
+      },
+      {
+        "use": "here"
+      },
+      {
+        "call": "append",
+        "with": [
+          "$e"
+        ]
+      }
+    ]
+  }
+}

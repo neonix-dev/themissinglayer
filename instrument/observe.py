@@ -93,6 +93,7 @@ def given(value):
 moves = {
     "touch": touch,
     "again": again,
+    "wait": lambda seconds: time.sleep(float(seconds)),
     "go": go,
     "fits": fits,
     "type": type_in,

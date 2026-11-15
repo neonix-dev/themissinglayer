@@ -33,6 +33,42 @@ Both doors hand their shape to the same place in the generator.
 
 Everything that runs is listed under Ran as the shape it was, with the code it stood for underneath. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate. The result must be the same both ways.
 
+## The matrix: JSONs loaded beside the board
+
+The site ships JSONs of its own. Each can be loaded alone, first or last, and unloaded again.
+
+| File | Id | What it brings |
+|---|---|---|
+| `email/wire.json` | `email.wire` | The wireframe of an email with an inbox and a sent box, and the two stores the mail is kept in. |
+| `email/touch.json` | `email.touch` | The interaction: one layout at a time, compose opens, send sends, a row opens. |
+| `email/stub.json` | `email.stub` | A stub on the other end: ten seconds after a mail is sent, it answers. |
+
+The id is the address: the dot is the folder, so `email.wire` is `email/wire.json`, and `email.wire.inbox` is the thing called `inbox` in it.
+
+- Through Shape: `{"load": "email.wire"}`, `{"unload": "email.wire"}`, or paste a JSON whole.
+- From a script: `board.load(id or JSON)`, `board.unload(id)`, `board.loaded()`, `board.page()`.
+- **Page** shows what the loaded JSONs make. **Board** comes back.
+
+A JSON holds named things, each a list of steps, and may bring stores and parts. It carries no script. Nothing runs because a JSON was loaded: each time the loaded set changes, the generator draws the page again from all of it, in the order of the addresses. So any order of loading gives the same page and the same floppy.
+
+Every thing gets its place on the page under its address. A thing that waits on something not loaded says what it waits for and does nothing. That part is left to the reader.
+
+The email, step by step:
+
+1. Load `email.wire` alone. Every layout is laid out, one after the other, with its id. Nothing happens on a touch.
+2. Load `email.touch`. One layout shows at a time; Compose opens, Send sends, a row opens.
+3. Load `email.stub`. Ten seconds after Send, an answer is in the inbox under the same subject.
+4. Unload `email.stub`. Nothing answers. A reader outside the page (Claude's extension) answers through Shape: `{"store": "email.wire.inbox", "verb": "put", "Name": "<subject>", "Value": "<answer>"}`.
+5. Save. The floppy carries the three JSONs and the mail. Load it in any browser and the email is back.
+
+The grammar of a step grew by three, and the engine number is now 2:
+
+- `{"touched": "<address>", "then": [...]}` waits for a touch on the thing at that address.
+- `{"changed": "<store address>", "then": [...]}` waits for a store to hold something else. The generator looks after everything it runs itself; a write that does not come through it is not seen.
+- `{"after": <milliseconds>, "then": [...]}` waits a time.
+
+A reload forgets what was loaded. What the stores hold stays.
+
 ## Floppies: keeping the board and rebuilding it
 
 What the board is and what its stores hold can be written out as plain JSON and read back.
@@ -42,7 +78,7 @@ What the board is and what its stores hold can be written out as plain JSON and 
 - By address: `/serialize` downloads the floppies. `/deserialize` asks whether to download a copy first, then takes the files, rebuilds, and opens the board at `/`.
 - From a script: `await board.serialize(size)` gives a list of JSON texts, one per floppy; `await board.deserialize(floppies)` takes them back, as text or parsed, one or many.
 
-A floppy holds records and nothing else: the board, each store, each row a store holds, each element in the page as its kind, attributes and children. It never holds code. The generator rebuilds everything from the records, the same way it builds the board from `contract.json`.
+A floppy holds records and nothing else: the board, each store, each loaded JSON, each row a store holds, each element in the page as its kind, attributes and children. It never holds code. The generator rebuilds everything from the records, the same way it builds the board from `contract.json`.
 
 A floppy has a size, 1,474,560 bytes unless one is given: `{"keep": {"size": 4000}}` or `board.serialize(4000)`. What does not fit on one goes on the next, numbered `disk` of `of`. No floppy is larger than its size; a record too large for one is cut across several. Floppies go back in any order, one at a time or together, and the board is rebuilt when the set is whole.
 

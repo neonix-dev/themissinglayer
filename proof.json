@@ -82,5 +82,23 @@
   ],
   "the word explore on the cover leads to /explore": [
     ["touch", "explore"], ["at", "explore.html"], ["shows", "store: dom"]
+  ],
+  "the wireframe alone lays out every layout, one after the other, with its id": [
+    ["touch", "The Missing Layer"], ["touch", "Shape"], ["type", "[{\"load\":\"email.wire\"},{\"store\":\"email.wire.inbox\",\"verb\":\"clear\"},{\"store\":\"email.wire.sent\",\"verb\":\"clear\"},{\"load\":\"email.wire\"}]"], ["touch", "Generate"], ["shows", "loaded: email.wire"], ["shows", "email.wire.compose"], ["shows", "email.wire.inbox"], ["shows", "email.wire.message"], ["shows", "email.wire.sent"], ["shows", "Send"], ["shows", "Back"], ["touch", "Compose"], ["shows", "email.wire.inbox"], ["shows", "Back"]
+  ],
+  "with the interaction loaded, compose opens, a mail is sent, and a row opens": [
+    ["touch", "The Missing Layer"], ["touch", "Shape"], ["type", "[{\"load\":\"email.wire\"},{\"store\":\"email.wire.inbox\",\"verb\":\"clear\"},{\"store\":\"email.wire.sent\",\"verb\":\"clear\"},{\"load\":\"email.touch\"}]"], ["touch", "Generate"], ["shows", "loaded: email.touch, email.wire"], ["shows", "email.wire.inbox"], ["hides", "email.wire.compose"], ["hides", "email.wire.message"], ["touch", "Compose"], ["shows", "email.wire.compose"], ["hides", "email.wire.inbox"], ["touch", "Subject"], ["type", "hello"], ["touch", "Body"], ["type", "first words"], ["touch", "Send"], ["shows", "email.wire.sent"], ["shows", "hello"], ["touch", "hello"], ["shows", "email.wire.message"], ["shows", "first words"], ["touch", "Back"], ["shows", "email.wire.inbox"], ["hides", "first words"]
+  ],
+  "the stub answers a sent mail after ten seconds": [
+    ["touch", "The Missing Layer"], ["touch", "Shape"], ["type", "[{\"load\":\"email.wire\"},{\"store\":\"email.wire.inbox\",\"verb\":\"clear\"},{\"store\":\"email.wire.sent\",\"verb\":\"clear\"},{\"load\":\"email.stub\"},{\"load\":\"email.touch\"}]"], ["touch", "Generate"], ["touch", "Compose"], ["touch", "Subject"], ["type", "ping"], ["touch", "Body"], ["type", "are you there"], ["touch", "Send"], ["touch", "Inbox"], ["wait", "6"], ["hides", "ping"], ["wait", "6"], ["shows", "ping"], ["touch", "ping"], ["shows", "The stub got this and is answering."]
+  ],
+  "with the stub unloaded nothing answers, and a reader answers through Shape": [
+    ["touch", "The Missing Layer"], ["touch", "Shape"], ["type", "[{\"load\":\"email.wire\"},{\"store\":\"email.wire.inbox\",\"verb\":\"clear\"},{\"store\":\"email.wire.sent\",\"verb\":\"clear\"},{\"load\":\"email.stub\"},{\"load\":\"email.touch\"}]"], ["touch", "Generate"], ["touch", "Board"], ["touch", "Shape"], ["type", "{\"unload\":\"email.stub\"}"], ["touch", "Generate"], ["shows", "unloaded email.stub"], ["touch", "Page"], ["shows", "loaded: email.touch, email.wire"], ["touch", "Compose"], ["touch", "Subject"], ["type", "ask"], ["touch", "Body"], ["type", "is anyone there"], ["touch", "Send"], ["touch", "Inbox"], ["wait", "12"], ["hides", "ask"], ["touch", "Board"], ["touch", "Shape"], ["type", "{\"store\":\"email.wire.inbox\",\"verb\":\"put\",\"Name\":\"ask\",\"Value\":\"an answer from outside\"}"], ["touch", "Generate"], ["touch", "Page"], ["shows", "ask"], ["touch", "ask"], ["shows", "an answer from outside"]
+  ],
+  "one floppy carries the layouts, the interaction and the mail": [
+    ["touch", "The Missing Layer"], ["touch", "Shape"], ["type", "[{\"load\":\"email.wire\"},{\"store\":\"email.wire.inbox\",\"verb\":\"clear\"},{\"store\":\"email.wire.sent\",\"verb\":\"clear\"},{\"load\":\"email.touch\"}]"], ["touch", "Generate"], ["touch", "Compose"], ["touch", "Subject"], ["type", "kept"], ["touch", "Body"], ["type", "on a pen drive"], ["touch", "Send"], ["touch", "Board"], ["touch", "Shape"], ["type", "{\"keep\":true}"], ["touch", "Generate"], ["shows", "kept on 1 floppy"], ["touch", "Generate"], ["shows", "rebuilt from 1 floppy: the board keeps the same"], ["touch", "Page"], ["shows", "loaded: email.touch, email.wire"], ["touch", "Sent"], ["touch", "kept"], ["shows", "on a pen drive"]
+  ],
+  "the interaction alone says what it waits for and does nothing": [
+    ["touch", "The Missing Layer"], ["touch", "Shape"], ["type", "{\"load\":\"email.touch\"}"], ["touch", "Generate"], ["shows", "loaded: email.touch"], ["shows", "waits for email.wire.new, which is not loaded"], ["hides", "Compose"]
   ]
 }
