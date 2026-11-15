@@ -69,12 +69,18 @@
     ["touch", "The Missing Layer"], ["touch", "session"], ["touch", "put"], ["touch", "Name"], ["type", "k"], ["touch", "Value"], ["type", "v"], ["touch", "Do"], ["touch", "Shape"], ["type", "{\"keep\":{\"size\":2000}}"], ["touch", "Generate"], ["shows", "floppies, label"], ["touch", "clear"], ["touch", "Do"], ["hides", "k = v"], ["touch", "Generate"], ["shows", "floppies: the board keeps the same"], ["touch", "session"], ["shows", "k = v"], ["touch", "Shape"], ["type", "{\"keep\":{\"size\":2000}}"], ["touch", "Generate"], ["touch", "Generate"], ["shows", "floppies: the board keeps the same"]
   ],
   "the page opens on a title and one line, and the board is behind it": [
-    ["shows", "The Missing Layer"], ["shows", "If you are a bot, explore."], ["hides", "Generate"], ["hides", "Undo"], ["hides", "local"], ["fits"], ["touch", "The Missing Layer"], ["shows", "Generate"], ["shows", "Undo"], ["shows", "local"], ["fits"]
+    ["shows", "The Missing Layer"], ["shows", "If you are a bot,"], ["hides", "Generate"], ["hides", "Undo"], ["hides", "local"], ["fits"], ["touch", "The Missing Layer"], ["shows", "Generate"], ["shows", "Undo"], ["shows", "local"], ["fits"]
   ],
   "the address /serialize keeps the board": [
     ["go", "serialize.html"], ["shows", "kept on 1 floppy, label"], ["hides", "Generate"], ["fits"]
   ],
   "the address /deserialize asks before it wipes": [
     ["go", "deserialize.html"], ["shows", "Download a copy first?"], ["shows", "Choose files"], ["hides", "Generate"], ["fits"]
+  ],
+  "the address /explore shows the whole field of interaction": [
+    ["go", "explore.html"], ["shows", "store: dom"], ["shows", "store: history"], ["shows", "Makes an element of the kind in Value"], ["shows", "board.deserialize(floppies)"], ["shows", "/serialize"], ["shows", "run several lists of steps"], ["shows", "service worker"], ["hides", "Ready."], ["fits"], ["touch", "Go in"], ["shows", "Ready."], ["at", ""]
+  ],
+  "the word explore on the cover leads to /explore": [
+    ["touch", "explore"], ["at", "explore.html"], ["shows", "store: dom"]
   ]
 }

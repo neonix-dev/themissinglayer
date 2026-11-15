@@ -9,7 +9,9 @@ The board is built when the page loads and is not shown. There are two ways in:
 - Touch the title.
 - From a script or an extension: `board.enter()`. The board's buttons and fields are in the page and can also be operated through the DOM without going in.
 
-The cover says only that a bot should explore. `contract.json` describes everything and is not linked from the page.
+`/explore` is the whole field of interaction on one page: every door, address, script call, store and verb, and the grammar, written out from `contract.json` by the generator. It is for reading; Go in opens the board.
+
+The cover says only that a bot should explore, and the word explore links to `/explore`. `contract.json` describes everything and is not linked from the page.
 
 ## What is here
 
@@ -18,7 +20,7 @@ The cover says only that a bot should explore. `contract.json` describes everyth
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
 | `index.html`, `board.css` | The cover and the layout. |
-| `serialize.html`, `deserialize.html` | The same page at the addresses `/serialize` and `/deserialize`. |
+| `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
 | `proof.json` | How each claim in the contract is played and checked. |
 | `instrument/` | The checker: it opens the page in a browser, plays it with real clicks and typing, and prints HELD or FAILED per claim. |
 

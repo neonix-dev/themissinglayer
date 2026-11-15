@@ -37,10 +37,21 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .cover h1 { font-size: 2.4rem; }
 .cover h1 button { border: 0; background: none; color: inherit; font-size: inherit; font-weight: inherit; min-height: 0; padding: 0; cursor: pointer; }
 .cover p { margin: 0; max-width: 34rem; opacity: .8; }
+.cover a { color: inherit; }
 .cover .act { grid-template-columns: 1fr 1fr; width: 24rem; max-width: 100%; }
+.field { box-sizing: border-box; height: 100vh; height: 100dvh; padding: .6rem; overflow: auto; columns: 5; column-gap: 1rem; font-size: .66rem; line-height: 1.22; }
+.field header { align-items: center; margin-bottom: .3rem; }
+.field h1 { font-size: 1.1rem; }
+.field header button { font-size: .7rem; min-height: 1.4rem; padding: 0 .5rem; }
+.field section { margin: 0 0 .4rem; }
+.field h2 { font-size: .74rem; break-after: avoid; }
+.field p, .field dl, .field dd { margin: 0; }
+.field dt { font-weight: 600; float: left; margin-right: .3em; }
+.field dt::after { content: ":"; }
 [hidden] { display: none !important; }
 @media (max-aspect-ratio: 1/1) {
   html { font-size: min(3.3vw, 1.45vh); }
   .board { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1.6fr); }
   header { display: block; }
+  .field { columns: 2; }
 }
