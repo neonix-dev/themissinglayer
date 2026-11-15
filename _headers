@@ -1,0 +1,3 @@
+# Every visit checks for the current files, so a page never runs beside an older script.
+/*
+  Cache-Control: no-cache
