@@ -25,11 +25,6 @@ def nodes(node=None, parent=None):
 def words(node):
     return node.get("nodeValue", "") if node["nodeName"] == "#text" else "".join(map(words, node.get("children", [])))
 
-def within(node, kind):
-    while node and node["nodeName"] != kind:
-        node = node["parent"]
-    return node
-
 def inside(node, other):
     while node and node is not other:
         node = node["parent"]
@@ -73,29 +68,6 @@ def touch(name):
 def type_in(text):
     h.say("Input.insertText", text=text)
 
-# Asked of the browser itself, so the answer is the one a visitor would get. A site
-# that answers every address with some page is caught by asking for one that cannot exist.
-def served(url):
-    frame = h.say("Page.getFrameTree")["frameTree"]["frame"]["id"]
-    got = h.say("Network.loadNetworkResource", frameId=frame, url=url, options={"disableCache": True, "includeCredentials": False})["resource"]
-    if not got.get("success") or got.get("httpStatusCode") != 200:
-        return None
-    body = ""
-    while True:
-        part = h.say("IO.read", handle=got["stream"])
-        body += part["data"]
-        if part["eof"]:
-            h.say("IO.close", handle=got["stream"])
-            return body
-
-def exists(name):
-    there = served(urljoin(here(), named(name)["has"]["href"]))
-    return bool(middle(name)) and there is not None and there != served(urljoin(site, "no-such-page-7f3a/"))
-
-def before(first, second):
-    order = [n["backendNodeId"] for n in nodes()]
-    return order.index(named(first)["backendNodeId"]) < order.index(named(second)["backendNodeId"])
-
 # One screen: nothing on the page reaches past the window, so there is nothing to scroll to.
 def fits():
     m = h.say("Page.getLayoutMetrics")
@@ -119,11 +91,7 @@ moves = {
     "again": again,
     "fits": fits,
     "type": type_in,
-    "open": lambda name: "open" in within(named(name), "DETAILS")["has"],
-    "closed": lambda name: "open" not in within(named(name), "DETAILS")["has"],
-    "before": before,
     "at": lambda path: here() == urljoin(site, path),
-    "exists": exists,
     "holds": lambda name, text: any(said(n, "name").strip() == name and said(n, "value") == text for n in heard() if said(n, "role") == "textbox"),
     "shows": lambda text: any(text in said(n, "name") for n in heard()),
     "hides": lambda text: not any(text in said(n, "name") for n in heard()),

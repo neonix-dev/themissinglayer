@@ -49,11 +49,3 @@ class Hand:
 
     def away(self):
         self.sock.close()
-
-def find(node, name):
-    if node["nodeName"].lower() == name:
-        return node
-    for child in node.get("children", []):
-        hit = find(child, name)
-        if hit:
-            return hit
