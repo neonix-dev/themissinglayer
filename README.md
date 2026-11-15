@@ -11,7 +11,7 @@ The board is built when the page loads and is not shown. There are two ways in:
 
 `/explore` is the whole field of interaction on one page: every door, address, script call, store and verb, and the grammar, written out from `contract.json` by the generator. It is for reading; Go in opens the board.
 
-The cover says only that a bot should explore. `contract.json` describes everything and is not linked from the page.
+The cover says only that a bot should explore, and the word explore links to `/explore`. `contract.json` describes everything and is not linked from the page.
 
 ## What is here
 
