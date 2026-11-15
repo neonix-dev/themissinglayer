@@ -33,6 +33,11 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .ran button { font-family: ui-monospace, monospace; font-size: .75rem; min-height: 1.8rem; }
 .box > * { margin: 0; flex: none; }
 .code { display: block; flex: none; height: 3.6em; overflow: hidden; font-size: .75rem; overflow-wrap: anywhere; border-top: 1px solid GrayText; padding-top: .3rem; }
+.cover { box-sizing: border-box; height: 100vh; height: 100dvh; padding: 1rem; display: grid; place-content: center; justify-items: center; gap: .8rem; text-align: center; }
+.cover h1 { font-size: 2.4rem; }
+.cover h1 button { border: 0; background: none; color: inherit; font-size: inherit; font-weight: inherit; min-height: 0; padding: 0; cursor: pointer; }
+.cover p { margin: 0; max-width: 34rem; opacity: .8; }
+.cover .act { grid-template-columns: 1fr 1fr; width: 24rem; max-width: 100%; }
 [hidden] { display: none !important; }
 @media (max-aspect-ratio: 1/1) {
   html { font-size: min(3.3vw, 1.45vh); }

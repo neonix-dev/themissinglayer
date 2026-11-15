@@ -1,6 +1,15 @@
 # The Missing Layer
 
-The site is one page: a busy board for the browser, on one screen, with no scroll and no navigation.
+The site is one page. On load it shows a title and one line, centred, and nothing else. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
+
+## The way in
+
+The board is built when the page loads and is not shown. There are two ways in:
+
+- Touch the title.
+- From a script or an extension: `board.enter()`. The board's buttons and fields are in the page and can also be operated through the DOM without going in.
+
+The cover says only that a bot should explore. `contract.json` describes everything and is not linked from the page.
 
 ## What is here
 
@@ -8,7 +17,8 @@ The site is one page: a busy board for the browser, on one screen, with no scrol
 |---|---|
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
-| `index.html`, `board.css` | The empty page and its layout. |
+| `index.html`, `board.css` | The cover and the layout. |
+| `serialize.html`, `deserialize.html` | The same page at the addresses `/serialize` and `/deserialize`. |
 | `proof.json` | How each claim in the contract is played and checked. |
 | `instrument/` | The checker: it opens the page in a browser, plays it with real clicks and typing, and prints HELD or FAILED per claim. |
 
@@ -27,6 +37,7 @@ What the board is and what its stores hold can be written out as plain JSON and 
 
 - **Save** downloads it. **Load** takes the files back and rebuilds the board.
 - Through Shape: `{"keep": true}` writes the floppies into Shape, and Generate takes them back.
+- By address: `/serialize` downloads the floppies. `/deserialize` asks whether to download a copy first, then takes the files, rebuilds, and opens the board at `/`.
 - From a script: `await board.serialize(size)` gives a list of JSON texts, one per floppy; `await board.deserialize(floppies)` takes them back, as text or parsed, one or many.
 
 A floppy holds records and nothing else: the board, each store, each row a store holds, each element in the page as its kind, attributes and children. It never holds code. The generator rebuilds everything from the records, the same way it builds the board from `contract.json`.
@@ -37,7 +48,7 @@ Keeping, rebuilding and keeping again gives the same bytes, any number of times,
 
 The contract says how each store is kept: its `keep` names the shape that empties it and the shape that puts one thing back. A store with no `keep` is not kept. History has none, because the browser does not hand over a tab's history. What an element holds only as live state, such as text typed into an input, is not in its attributes and is not kept.
 
-Loading a floppy replaces what the kept stores hold in this browser.
+Rebuilding wipes everything first. The site goes back to the board it shipped with, every kept store is emptied, and only then is it rebuilt from the floppies. Anything not on the floppies is gone, so Load asks before it opens the files (the second touch opens them), and `/deserialize` offers a copy first. `board.deserialize` does not ask.
 
 ## What cannot get in
 

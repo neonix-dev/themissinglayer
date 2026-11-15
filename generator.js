@@ -12,6 +12,7 @@
     return node;
   };
   class Refused extends Error {}
+  const address = location.pathname.replace(/\.html$/, "").split("/").pop(), asking = address === "deserialize";
   const refuse = (why) => { throw new Refused(why); };
   const word = (v) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v));
 
@@ -189,9 +190,15 @@
   doorActs.append(generate, handBack, save, load, files);
   doors.append(ranHead, ran, codeLine, shapeLabel, doorActs);
   board.append(head, knobs, held, doors);
-  document.body.append(board);
+  // The page opens on its cover: a title and one line. The board is built behind it and
+  // is not shown until someone goes in, by touching the title or by calling board.enter().
+  const cover = document.querySelector("main.cover") || el("main", null, { class: "cover" });
+  const way = cover.querySelector("button") || cover.appendChild(el("h1")).appendChild(el("button", "The Missing Layer", { type: "button" }));
+  const line = cover.querySelector("p") || cover.appendChild(el("p"));
+  board.hidden = true;
+  document.body.append(cover, board);
 
-  let store, verb;
+  let store, verb, original;
   const log = [], undone = [];
   const tell = (text) => { said.textContent = text; };
   const pressed = (group, button) => { for (const b of group.children) b.setAttribute("aria-pressed", String(b === button)); };
@@ -354,7 +361,14 @@
     const c = { ...head.board, stores: of("store").map((r) => r.store) };
     const left = new Set(of("left").map((r) => r.left));
     const grown = of("thing").map((r) => [r.in, grow(r.thing)]);
-    await build(c);
+    await build(c);   // refused here, before anything is wiped, if the board on the floppy is not one the generator knows
+    // Everything goes first: the site is brought back to the board it shipped with, with
+    // every kept store empty, and only then rebuilt from the floppies.
+    if (original) {
+      await build(original);
+      for (const s of original.stores) if (s.keep && s.keep.empty) { try { await quiet(s.keep.empty); } catch { /* not in this browser */ } }
+      await build(c);
+    }
     log.length = undone.length = 0;
     codeLine.textContent = "";
     const failed = [];
@@ -458,19 +472,30 @@
       tell(out.said);
     } catch (e) { tell(`could not: ${e && e.message ? e.message : "not available in this browser"}`); }
   };
-  load.onclick = () => files.click();
+  // Loading wipes what is here, so it asks first: the second touch opens the files.
+  let asked = false;
+  load.onclick = () => {
+    if (asked) { asked = false; return files.click(); }
+    asked = true;
+    tell("Load wipes everything here and rebuilds from the files. Touch Save first for a copy. Touch Load again to choose the files.");
+  };
   files.onchange = async () => {
     let handed;
     try { handed = (await Promise.all([...files.files].map((f) => f.text()))).map((text) => JSON.parse(text)); } catch { handed = null; }
     files.value = "";
-    if (!handed) return tell("refused: that is not JSON");
+    if (!handed) { line.textContent = "refused: that is not JSON"; return tell(line.textContent); }
     await give(handed.flat());
+    line.textContent = said.textContent;
+    if (asking && /^rebuilt/.test(said.textContent)) { history.replaceState(history.state, "", "./"); enter(); }
   };
+  const enter = async () => { cover.hidden = true; board.hidden = false; showRan(); await show(); };
+  way.onclick = enter;
   // The same two things for a script or another seat: serialize gives the floppies as
   // JSON text, deserialize takes them back, as text or parsed, one or many, in any order.
   const parsed = (x) => (typeof x === "string" ? JSON.parse(x) : x);
   globalThis.board = Object.freeze({
     engine: ENGINE,
+    enter,
     serialize: async (size) => (await kept(size)).disks,
     deserialize: async (handed) => {
       const disks = [parsed(handed)].flat().map(parsed).flat();
@@ -482,6 +507,20 @@
   for (const input of [name, value]) input.onkeydown = (e) => { if (e.key === "Enter") doIt.onclick(); };
   addEventListener("popstate", () => show());
 
-  try { await build(await (await fetch("contract.json", { cache: "no-store" })).json()); }
-  catch (e) { tell(e instanceof Refused ? `refused: ${e.message}` : "The generator could not read contract.json. Hand it a contract in Shape."); }
+  try { await build(original = await (await fetch("contract.json", { cache: "no-store" })).json()); }
+  catch (e) { original = null; tell(e instanceof Refused ? `refused: ${e.message}` : "The generator could not read contract.json. Hand it a contract in Shape."); }
+
+  // Two addresses do the same as Save and Load: /serialize and /deserialize.
+  if (asking) {
+    line.textContent = "This wipes everything the site holds in this browser and rebuilds it from the files you choose. Download a copy first?";
+    const copy = el("button", "Download a copy", { type: "button" }), choose = el("button", "Choose files", { type: "button" });
+    copy.onclick = async () => { await save.onclick(); line.textContent = `${said.textContent}. Now choose the files.`; };
+    choose.onclick = () => files.click();
+    const acts = el("div", null, { class: "act" });
+    acts.append(copy, choose);
+    cover.append(acts);
+  } else if (address === "serialize") {
+    await save.onclick();
+    line.textContent = said.textContent;
+  }
 })();
