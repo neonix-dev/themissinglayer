@@ -35,7 +35,7 @@ def inside(node, other):
 def named(name):
     hit = None
     for node in nodes():
-        if node["nodeName"] in ("TITLE", "#text") or name not in (words(node).strip(), node["has"].get("value"), node["has"].get("aria-label")):
+        if node["nodeName"] in ("HEAD", "TITLE", "#text") or name not in (words(node).strip(), node["has"].get("value"), node["has"].get("aria-label")):
             continue
         if hit is None or inside(node, hit):
             hit = node
@@ -73,6 +73,10 @@ def fits():
     m = h.say("Page.getLayoutMetrics")
     return m["cssContentSize"]["height"] <= m["cssLayoutViewport"]["clientHeight"] and m["cssContentSize"]["width"] <= m["cssLayoutViewport"]["clientWidth"]
 
+def go(path):
+    h.say("Page.navigate", url=urljoin(site, path))
+    time.sleep(1.5)
+
 def again():
     h.say("Page.reload")
     time.sleep(1)
@@ -89,6 +93,7 @@ def given(value):
 moves = {
     "touch": touch,
     "again": again,
+    "go": go,
     "fits": fits,
     "type": type_in,
     "at": lambda path: here() == urljoin(site, path),

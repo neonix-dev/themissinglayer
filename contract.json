@@ -2,16 +2,17 @@
   "title": "The Missing Layer",
   "says": "A busy board for the browser. Every knob is something this tab can already do.",
   "what": "The site holds no application and no data. It gives a grammar, and each browser that opens it is one live state. This file is the whole board: the one script on the site is a generator that reads it and turns the shapes it knows into running code.",
-  "rule": "One screen: no scroll, no navigation. No text is ever run as code; the page asks the browser to refuse it. Only shapes the generator knows become code.",
+  "rule": "One screen: no scroll, no navigation. On load only the title and one line are visible. No text is ever run as code; the page asks the browser to refuse it. Only shapes the generator knows become code.",
   "screen": {
     "width": 1280,
     "height": 800
   },
   "doors": {
+    "cover": "The page opens on a title and one line. The board is built behind it. Touch the title to go in, or call board.enter().",
     "knobs": "Touch a store, touch a verb, type into Name and Value, touch Do. Undo takes back the last thing done.",
     "shape": "Type or paste JSON into Shape and touch Generate. A shape is one of: a run {\"store\", \"verb\", \"Name\", \"Value\"}; bare steps {\"steps\": [...]}; a list of shapes; or a whole contract like this file, which rebuilds the board.",
     "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate.",
-    "floppy": "Save downloads what the board is and holds as plain JSON; Load takes the files back and rebuilds it. The same through Shape: {\"keep\": true} writes the floppies into Shape, {\"keep\": {\"size\": 4000}} makes each at most that many bytes, and Generate takes them back, in any order. A floppy holds records: the board, each store, each thing held. It never holds code; the generator rebuilds from the records. From a script: board.serialize(size) and board.deserialize(floppies)."
+    "floppy": "Save downloads what the board is and holds as plain JSON; Load takes the files back and rebuilds it. The same through Shape: {\"keep\": true} writes the floppies into Shape, {\"keep\": {\"size\": 4000}} makes each at most that many bytes, and Generate takes them back, in any order. A floppy holds records: the board, each store, each thing held. It never holds code; the generator rebuilds from the records. From a script: board.serialize(size) and board.deserialize(floppies). By address: /serialize downloads the floppies; /deserialize asks whether to download a copy first, then takes the files. Rebuilding wipes everything first: the site goes back to the board it shipped with, every kept store empty, and is then rebuilt from the floppies."
   },
   "grammar": {
     "from": "start at one of: document, box, localStorage, sessionStorage, indexedDB, cookieStore, caches, history, location",
@@ -1334,6 +1335,9 @@
     "a contract handed in generates a different board",
     "what the board holds can be kept as plain JSON and rebuilt from it",
     "a thing made in the page comes back from a floppy as the same thing",
-    "a set of floppies rebuilds the board, and keeping it again gives the same"
+    "a set of floppies rebuilds the board, and keeping it again gives the same",
+    "the page opens on a title and one line, and the board is behind it",
+    "the address /serialize keeps the board",
+    "the address /deserialize asks before it wipes"
   ]
 }
