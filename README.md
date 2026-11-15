@@ -1,20 +1,41 @@
-# Ashwamedh exhibition
+# The Missing Layer
 
-Root `index.html` is the board: a busy board for the browser, on one screen, with no scroll and no navigation. The menu window that used to be the root page is at `window/`. The earlier card selector is kept as `selector.html`.
+The site is one page: a busy board for the browser, on one screen, with no scroll and no navigation.
 
-Building a page here? Read `GUIDE.md` first.
+## What is here
 
-## The board
+| File | What it is |
+|---|---|
+| `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
+| `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step and how to draw a board; it knows nothing about any store or verb. |
+| `index.html`, `board.css` | The empty page and its layout. |
+| `proof.json` | How each claim in the contract is played and checked. |
+| `instrument/` | The checker: it opens the page in a browser, plays it with real clicks and typing, and prints HELD or FAILED per claim. |
 
-`contract.json` names every store this tab has (the page itself, localStorage, sessionStorage, IndexedDB, cookies, the cache, history) and every verb each one takes. `board.js` reads that file and turns each entry into a knob: pick a store, pick a verb, type a Name and a Value, touch Do. The line under the buttons says what happened, the box under it shows what the store holds, and Undo takes back the last thing done.
+## The two doors
 
-- The board is built from the contract. To add or change a knob, change `contract.json` first.
-- Nothing goes out. The page carries a policy that makes the browser refuse every address but this site's own, and the board itself only reads `contract.json`.
-- `proof.json` plays each line under `proves` with real clicks and typing.
+1. **Knobs.** Touch a store, touch a verb, type a Name and a Value, touch Do. Undo takes back the last thing done.
+2. **Shape.** Type or paste JSON into Shape and touch Generate. A shape is a run (`{"store", "verb", "Name", "Value"}`), bare steps (`{"steps": [...]}`), a list of shapes, or a whole contract, which rebuilds the board.
 
-Nobody has to run anything to use it. To check it:
+Both doors hand their shape to the same place in the generator.
 
-1. Any seat with Python 3 and Chromium, from the repository root:
+Everything that runs is listed under Ran as the shape it was, with the code it stood for underneath. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate. The result must be the same both ways.
+
+## What cannot get in
+
+No text is run as code. The page carries a policy that makes the browser refuse inline script and evaluated text, and the generator refuses any step it does not know, and any step that writes markup.
+
+## Changing the board
+
+Change `contract.json`. A knob exists because the contract names it; a verb does what its steps say. The generator changes only when the grammar of a step has to grow.
+
+## Steps
+
+Nobody has to run anything to use the site.
+
+1. **neonix** — merge the pull request. Cloudflare Pages publishes it.
+
+2. **Any seat with Python 3 and Chromium**, to check the board, from the repository root:
 
 ```sh
 chromium --headless=new --remote-debugging-port=9222 "data:text/plain,seed" &
@@ -24,49 +45,8 @@ cd instrument && python3 observe.py http://127.0.0.1:8000/
 
 Every claim must print HELD.
 
-## The instrument
+3. **claude.extn**, to demonstrate: open the site, read `contract.json`, operate the knobs, then hand the lines under Ran back through Shape.
 
-Pages other than the board are not written by anyone. Three plain files say everything, and the instrument knows nothing about any of them:
+## What was here before
 
-- a `contract.json` states the intent and the behaviour the page must show;
-- a base, such as `instrument/window.json`, says which native browser piece each word in the contract becomes;
-- a `proof.json` says how each line under `proves` is played and checked.
-
-`instrument/place.py` reads a contract and a base and places each piece in a running browser using the browser's own DOM verbs (copy a node, rename it, set an attribute, set a text value), then asks the engine to write out the document it holds. No markup, stylesheet or script is sent to the browser, and a placed page contains no style or script.
-
-`instrument/observe.py` opens the served page, plays it with real input events, and prints HELD or FAILED for every claim. A claim with no proof fails.
-
-The instrument needs only Python's standard library and a Chromium browser. With the browser and server above running:
-
-```sh
-python3 place.py ../window/contract.json window.json ../window/index.html
-python3 observe.py http://127.0.0.1:8000/window/ ../window/contract.json ../window/proof.json
-```
-
-To change the menu window, change `window/contract.json` and run both again. Do not edit a placed `index.html` by hand.
-
-## Another page from the same instrument
-
-`second/` is a different page, placed and checked by the same two programs with nothing changed in them: its own contract, its own base (`sheet.json`) and its own proof.
-
-```sh
-python3 place.py ../second/contract.json ../second/sheet.json ../second/index.html
-python3 observe.py http://127.0.0.1:8000/second/ ../second/contract.json ../second/proof.json
-```
-
-A base is a list of pieces. A piece is `[element, {attributes}, children...]`; text in braces is filled from the contract (`{item:slug}` makes it safe for an id). `["each", "menus"]` places every entry of that list using the first entry under `words` that matches it, and `["later", piece]` places a piece at the end of the page.
-
-## Candidates
-
-Place each complete static website into its designated directory, with an `index.html` at the directory root:
-
-- `candidates/claude-code/`
-- `candidates/chatgpt/`
-- `candidates/muse/`
-- `candidates/claude-chat/`
-
-Keep each candidate's assets alongside its entrypoint and ensure relative asset URLs work under its own subpath. For bundled applications, use a subpath-aware build or relative base path.
-
-Run `python3 -m http.server 8000` at the repository root to test. GitHub Pages must be separately enabled in repository Settings > Pages, using `main` and `/(root)` for deployment.
-
-`selector.html` checks for each candidate's `index.html` and enables the corresponding card when it is available. Empty folders are not tracked by Git, so they will appear only when candidates are committed.
+Earlier pages (the candidates, the menu window, `/build/`, `/clay/`, `/second/`, the placing instrument and its guide) were deleted. Git history has them.

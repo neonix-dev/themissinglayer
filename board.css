@@ -1,32 +1,40 @@
-/* One screen. The board is a grid as tall as the window; only the last row stretches. */
-html, body { height: 100%; margin: 0; }
-body { font: 16px/1.25 system-ui, sans-serif; overflow: hidden; }
+/* One screen, like a dashboard: every size is in rem and the rem follows the window,
+   so the whole board is always visible and there is never anything to scroll to. */
+html { font-size: min(1.25vw, 2vh); height: 100%; }
+body { height: 100%; margin: 0; font: 1rem/1.25 system-ui, sans-serif; overflow: hidden; }
 .board {
-  box-sizing: border-box; height: 100vh; height: 100dvh; max-width: 46rem; margin: 0 auto;
-  padding: .5rem; display: grid; gap: .4rem; overflow: hidden;
-  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr);
+  box-sizing: border-box; height: 100vh; height: 100dvh; padding: .6rem; overflow: hidden;
+  display: grid; gap: .6rem; grid-template-columns: 26rem minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: auto minmax(0, 1fr);
 }
-h1 { font-size: 1.1rem; margin: 0; }
-.says { margin: 0; font-size: .8rem; opacity: .8; }
+header { grid-column: 1 / -1; display: flex; gap: 1rem; align-items: baseline; }
+h1 { font-size: 1.2rem; margin: 0; }
+.says { margin: 0; font-size: .85rem; opacity: .8; }
+.panel { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: .4rem; }
+.held, .doors { border: 1px solid GrayText; border-radius: .3rem; padding: .5rem; }
 .knob { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; }
 .fields { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
-.fields label { display: grid; font-size: .75rem; }
+label { display: grid; font-size: .75rem; }
 .act { display: grid; grid-template-columns: 2fr 1fr; gap: .3rem; }
-button, input {
-  font: inherit; min-height: 2.25rem; box-sizing: border-box; min-width: 0; margin: 0;
+button, input, textarea {
+  font: inherit; font-size: 1rem; min-height: 2.25rem; box-sizing: border-box; min-width: 0; margin: 0;
   border: 1px solid GrayText; border-radius: .3rem; background: ButtonFace; color: ButtonText;
 }
-input { background: Field; color: FieldText; padding: 0 .4rem; }
-button { padding: 0 .2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+input, textarea { background: Field; color: FieldText; padding: .2rem .4rem; }
+textarea { height: 9rem; resize: none; font-family: ui-monospace, monospace; font-size: .8rem; }
+button { padding: 0 .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 button[aria-pressed="true"] { background: Highlight; color: HighlightText; border-color: Highlight; }
-button:disabled, input:disabled { opacity: .45; }
-.said { display: block; font-size: .85rem; height: 3.2em; overflow: hidden; }
-.held {
-  min-height: 0; overflow: hidden; border: 1px solid GrayText; border-radius: .3rem; padding: .4rem;
-  display: flex; flex-direction: column; gap: .25rem;
-}
-.held h2 { font-size: .8rem; margin: 0; font-weight: 600; }
-.rows, .stage { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: .2rem; flex: 1; }
+input:disabled { opacity: .45; }
+.said { display: block; font-size: .9rem; height: 6.2em; overflow: hidden; overflow-wrap: anywhere; }
+h2 { font-size: .85rem; margin: 0; font-weight: 600; }
+.rows, .box { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: .2rem; flex: 1; }
 .rows button { text-align: left; padding: 0 .4rem; flex: none; }
-.stage > * { margin: 0; flex: none; }
+.rows p { margin: 0; font-size: .8rem; }
+.ran button { font-family: ui-monospace, monospace; font-size: .75rem; min-height: 1.8rem; }
+.box > * { margin: 0; flex: none; }
+.code { display: block; flex: none; height: 3.6em; overflow: hidden; font-size: .75rem; overflow-wrap: anywhere; border-top: 1px solid GrayText; padding-top: .3rem; }
 [hidden] { display: none !important; }
+@media (max-aspect-ratio: 1/1) {
+  html { font-size: min(3.3vw, 1.45vh); }
+  .board { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1.6fr); }
+  header { display: block; }
+}

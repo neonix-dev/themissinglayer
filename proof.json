@@ -3,59 +3,60 @@
     ["fits"]
   ],
   "every store is a knob and shows its own verbs": [
-    ["touch", "history"], ["shows", "forward"],
-    ["touch", "dom"], ["shows", "make"],
-    ["touch", "session"], ["shows", "remove"],
-    ["touch", "indexed"], ["touch", "cookie"], ["touch", "cache"], ["touch", "local"], ["shows", "clear"],
-    ["fits"]
+    ["touch", "history"], ["shows", "forward"], ["touch", "dom"], ["shows", "make"], ["touch", "session"], ["shows", "remove"], ["touch", "indexed"], ["touch", "cookie"], ["touch", "cache"], ["touch", "local"], ["shows", "clear"], ["fits"]
   ],
   "local storage keeps a thing across a reload": [
-    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "sun"], ["touch", "Value"], ["type", "yellow"], ["touch", "Do"],
-    ["shows", "sun = yellow"], ["again"], ["touch", "local"], ["shows", "sun = yellow"]
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "sun"], ["touch", "Value"], ["type", "yellow"], ["touch", "Do"], ["shows", "sun = yellow"], ["again"], ["touch", "local"], ["shows", "sun = yellow"]
   ],
   "session storage keeps a thing across a reload": [
-    ["touch", "session"], ["touch", "put"], ["touch", "Name"], ["type", "tab"], ["touch", "Value"], ["type", "only this one"], ["touch", "Do"],
-    ["shows", "tab = only this one"], ["again"], ["touch", "session"], ["shows", "tab = only this one"]
+    ["touch", "session"], ["touch", "put"], ["touch", "Name"], ["type", "tab"], ["touch", "Value"], ["type", "only this one"], ["touch", "Do"], ["shows", "tab = only this one"], ["again"], ["touch", "session"], ["shows", "tab = only this one"]
   ],
   "the database keeps a thing across a reload": [
-    ["touch", "indexed"], ["touch", "put"], ["touch", "Name"], ["type", "seed"], ["touch", "Value"], ["type", "kept"], ["touch", "Do"],
-    ["shows", "seed = kept"], ["again"], ["touch", "indexed"], ["shows", "seed = kept"]
+    ["touch", "indexed"], ["touch", "put"], ["touch", "Name"], ["type", "seed"], ["touch", "Value"], ["type", "kept"], ["touch", "Do"], ["shows", "seed = kept"], ["again"], ["touch", "indexed"], ["shows", "seed = kept"]
   ],
   "a cookie is kept across a reload": [
-    ["touch", "cookie"], ["touch", "put"], ["touch", "Name"], ["type", "crumb"], ["touch", "Value"], ["type", "sweet"], ["touch", "Do"],
-    ["shows", "crumb = sweet"], ["again"], ["touch", "cookie"], ["shows", "crumb = sweet"]
+    ["touch", "cookie"], ["touch", "put"], ["touch", "Name"], ["type", "crumb"], ["touch", "Value"], ["type", "sweet"], ["touch", "Do"], ["shows", "crumb = sweet"], ["again"], ["touch", "cookie"], ["shows", "crumb = sweet"]
   ],
   "the cache keeps a thing across a reload": [
-    ["touch", "cache"], ["touch", "put"], ["touch", "Name"], ["type", "page"], ["touch", "Value"], ["type", "saved"], ["touch", "Do"],
-    ["shows", "page = saved"], ["again"], ["touch", "cache"], ["shows", "page = saved"]
+    ["touch", "cache"], ["touch", "put"], ["touch", "Name"], ["type", "page"], ["touch", "Value"], ["type", "saved"], ["touch", "Do"], ["shows", "held/page = saved"], ["again"], ["touch", "cache"], ["shows", "held/page = saved"]
   ],
   "a thing made in the page is real, and is gone after a reload": [
-    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "button"], ["touch", "Do"],
-    ["touch", "say"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "ring me"], ["touch", "Do"],
-    ["touch", "ring me"], ["shows", "ring me"], ["again"], ["touch", "dom"], ["hides", "ring me"]
+    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "button"], ["touch", "Do"], ["touch", "say"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "ring me"], ["touch", "Do"], ["touch", "ring me"], ["shows", "ring me"], ["again"], ["touch", "dom"], ["hides", "ring me"]
   ],
   "get reads a thing back and remove takes it away": [
-    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "star"], ["touch", "Value"], ["type", "far"], ["touch", "Do"],
-    ["touch", "get"], ["touch", "Name"], ["type", "star"], ["touch", "Do"], ["shows", "star holds far"],
-    ["touch", "remove"], ["touch", "Name"], ["type", "star"], ["touch", "Do"], ["hides", "star = far"], ["hides", "star holds far"]
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "star"], ["touch", "Value"], ["type", "far"], ["touch", "Do"], ["touch", "get"], ["touch", "Name"], ["type", "star"], ["touch", "Do"], ["shows", "star holds far"], ["touch", "remove"], ["touch", "Name"], ["type", "star"], ["touch", "Do"], ["hides", "star = far"], ["hides", "star holds far"]
   ],
   "what was done can be undone": [
-    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "moon"], ["touch", "Value"], ["type", "1"], ["touch", "Do"],
-    ["shows", "moon = 1"], ["touch", "Undo"], ["hides", "moon = 1"]
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "moon"], ["touch", "Value"], ["type", "1"], ["touch", "Do"], ["shows", "moon = 1"], ["touch", "Undo"], ["hides", "moon = 1"]
   ],
   "clear empties a store and undo brings it back": [
-    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "one"], ["touch", "Value"], ["type", "first"], ["touch", "Do"],
-    ["touch", "Name"], ["type", "two"], ["touch", "Value"], ["type", "second"], ["touch", "Do"],
-    ["touch", "clear"], ["touch", "Do"], ["hides", "one = first"], ["hides", "two = second"],
-    ["touch", "Undo"], ["shows", "one = first"], ["shows", "two = second"]
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "one"], ["touch", "Value"], ["type", "first"], ["touch", "Do"], ["touch", "Name"], ["type", "two"], ["touch", "Value"], ["type", "second"], ["touch", "Do"], ["touch", "clear"], ["touch", "Do"], ["hides", "one = first"], ["hides", "two = second"], ["touch", "Undo"], ["shows", "one = first"], ["shows", "two = second"]
   ],
   "history moves the address and loads nothing": [
-    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "mark"], ["touch", "Value"], ["type", "p"], ["touch", "Do"],
-    ["touch", "say"], ["touch", "Name"], ["type", "mark"], ["touch", "Value"], ["type", "still here"], ["touch", "Do"],
-    ["touch", "history"], ["touch", "push"], ["touch", "Name"], ["type", "one"], ["touch", "Do"], ["at", "#one"],
-    ["touch", "Name"], ["type", "two"], ["touch", "Do"], ["at", "#two"],
-    ["touch", "back"], ["touch", "Do"], ["at", "#one"],
-    ["touch", "forward"], ["touch", "Do"], ["at", "#two"],
-    ["touch", "dom"], ["shows", "still here"], ["fits"]
+    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "mark"], ["touch", "Value"], ["type", "p"], ["touch", "Do"], ["touch", "say"], ["touch", "Name"], ["type", "mark"], ["touch", "Value"], ["type", "still here"], ["touch", "Do"], ["touch", "history"], ["touch", "push"], ["touch", "Name"], ["type", "one"], ["touch", "Do"], ["at", "#one"], ["touch", "Name"], ["type", "two"], ["touch", "Do"], ["at", "#two"], ["touch", "back"], ["touch", "Do"], ["at", "#one"], ["touch", "forward"], ["touch", "Do"], ["at", "#two"], ["touch", "dom"], ["shows", "still here"], ["fits"]
+  ],
+  "what ran is shown as the shape it was and the code it stood for": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "sun"], ["touch", "Value"], ["type", "yellow"], ["touch", "Do"], ["shows", "{\"store\":\"local\",\"verb\":\"put\",\"Name\":\"sun\",\"Value\":\"yellow\"}"], ["shows", "localStorage.setItem(\"sun\", \"yellow\")"]
+  ],
+  "a shape handed to the generator does what the knobs do": [
+    ["touch", "Shape"], ["type", "{\"store\":\"indexed\",\"verb\":\"put\",\"Name\":\"leaf\",\"Value\":\"green\"}"], ["touch", "Generate"], ["touch", "indexed"], ["shows", "leaf = green"]
+  ],
+  "the round trip gives the same result": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "sun"], ["touch", "Value"], ["type", "yellow"], ["touch", "Do"], ["touch", "clear"], ["touch", "Do"], ["hides", "sun = yellow"], ["touch", "{\"store\":\"local\",\"verb\":\"put\",\"Name\":\"sun\",\"Value\":\"yellow\"}"], ["holds", "Shape", "{\"store\":\"local\",\"verb\":\"put\",\"Name\":\"sun\",\"Value\":\"yellow\"}"], ["touch", "Generate"], ["shows", "sun = yellow"]
+  ],
+  "everything that ran can be handed back at once": [
+    ["touch", "session"], ["touch", "put"], ["touch", "Name"], ["type", "k"], ["touch", "Value"], ["type", "v"], ["touch", "Do"], ["touch", "Hand back"], ["holds", "Shape", "[{\"store\":\"session\",\"verb\":\"put\",\"Name\":\"k\",\"Value\":\"v\"}]"]
+  ],
+  "bare steps run, and a step the generator does not know is refused": [
+    ["touch", "Shape"], ["type", "{\"steps\":[{\"from\":\"localStorage\"},{\"call\":\"setItem\",\"with\":[\"bare\",\"step\"]}]}"], ["touch", "Generate"], ["touch", "local"], ["shows", "bare = step"], ["touch", "Shape"], ["type", "{\"steps\":[{\"eval\":\"1\"}]}"], ["touch", "Generate"], ["shows", "refused: not a step the generator knows"]
+  ],
+  "markup cannot be handed in": [
+    ["touch", "Shape"], ["type", "{\"steps\":[{\"from\":\"box\"},{\"set\":\"innerHTML\",\"to\":\"<b>in</b>\"}]}"], ["touch", "Generate"], ["shows", "refused: the generator does not write innerHTML"]
+  ],
+  "script text handed in does not run": [
+    ["touch", "Shape"], ["type", "{\"steps\":[{\"from\":\"document\"},{\"call\":\"createElement\",\"with\":[\"script\"]},{\"as\":\"s\"},{\"set\":\"textContent\",\"to\":\"document.body.append('RAN'+'-IT')\"},{\"from\":\"box\"},{\"call\":\"append\",\"with\":[\"$s\"]}]}"], ["touch", "Generate"], ["shows", "steps: "], ["hides", "RAN-IT"]
+  ],
+  "a contract handed in generates a different board": [
+    ["touch", "Shape"], ["type", "{\"title\":\"Small\",\"stores\":[{\"store\":\"only\",\"holds\":[{\"from\":\"location\"},{\"get\":\"pathname\"}],\"verbs\":[{\"verb\":\"look\",\"needs\":[],\"steps\":[{\"from\":\"history\"},{\"get\":\"length\"}],\"says\":\"length {result}\"}]}]}"], ["touch", "Generate"], ["shows", "Small"], ["shows", "only"], ["shows", "look"], ["hides", "cookie"], ["touch", "Do"], ["shows", "only look: length"]
   ]
 }

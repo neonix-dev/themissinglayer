@@ -9,7 +9,10 @@ from hand import Hand
 names = sys.argv[2:] + ["../contract.json", "../proof.json"][len(sys.argv) - 2:]
 site, contract, proof = sys.argv[1].rstrip("/") + "/", json.load(open(names[0])), json.load(open(names[1]))
 h = Hand()
-h.say("Emulation.setDeviceMetricsOverride", width=390, height=760, deviceScaleFactor=2, mobile=True)
+# A contract may name the screen its reader uses; otherwise a phone is assumed.
+screen = contract.get("screen")
+h.say("Emulation.setDeviceMetricsOverride", **({"width": screen["width"], "height": screen["height"], "deviceScaleFactor": 1, "mobile": False}
+                                                if screen else {"width": 390, "height": 760, "deviceScaleFactor": 2, "mobile": True}))
 
 def nodes(node=None, parent=None):
     node = node or h.say("DOM.getDocument", depth=-1)["root"]

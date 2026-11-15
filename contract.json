@@ -1,90 +1,1228 @@
 {
   "title": "The Missing Layer",
-  "says": "A busy board for the browser. Pick a store, pick a verb, name a thing, touch Do.",
-  "what": "Every knob is something this tab can already do. The site holds no application and no data; it gives the grammar, and each browser that opens it is one live state.",
-  "rule": "One screen: no scroll, no navigation. Nothing goes out: the page asks the browser to refuse every address but this site's own, and the board sends nothing anywhere.",
-  "how": "Touch a store, touch a verb, type into Name and Value, touch Do. The line under the buttons says what happened; the box under it shows what the store holds now. Touching a held thing puts it back into Name and Value. Undo takes back the last thing done, then the one before it.",
-  "knobs": ["store", "verb", "Name", "Value", "Do and Undo"],
+  "says": "A busy board for the browser. Every knob is something this tab can already do.",
+  "what": "The site holds no application and no data. It gives a grammar, and each browser that opens it is one live state. This file is the whole board: the one script on the site is a generator that reads it and turns the shapes it knows into running code.",
+  "rule": "One screen: no scroll, no navigation. No text is ever run as code; the page asks the browser to refuse it. Only shapes the generator knows become code.",
+  "screen": {
+    "width": 1280,
+    "height": 800
+  },
+  "doors": {
+    "knobs": "Touch a store, touch a verb, type into Name and Value, touch Do. Undo takes back the last thing done.",
+    "shape": "Type or paste JSON into Shape and touch Generate. A shape is one of: a run {\"store\", \"verb\", \"Name\", \"Value\"}; bare steps {\"steps\": [...]}; a list of shapes; or a whole contract like this file, which rebuilds the board.",
+    "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate."
+  },
+  "grammar": {
+    "from": "start at one of: document, box, localStorage, sessionStorage, indexedDB, cookieStore, caches, history, location",
+    "call": "call a method on the current thing; \"with\" lists what is passed",
+    "get": "read a property of the current thing",
+    "set": "write a property of the current thing; \"to\" is the value",
+    "new": "make a Response or a URL; \"with\" lists what is passed",
+    "as": "give the current thing a name; \"$name\" passes it later",
+    "use": "go back to a named thing",
+    "part": "run a named list of steps from \"parts\"",
+    "entries": "turn the current thing into name and value pairs",
+    "each": "run steps on every member of the current list",
+    "gather": "run several lists of steps and keep each result under its own name",
+    "words": "{Name} and {Value} are filled from the run; {Name:uri} makes it safe in an address; {Value:before=} and {Value:after=} split at the first equals sign"
+  },
+  "parts": {
+    "thing": [
+      {
+        "from": "document"
+      },
+      {
+        "call": "getElementById",
+        "with": [
+          "{Name}"
+        ]
+      }
+    ],
+    "things": [
+      {
+        "from": "indexedDB"
+      },
+      {
+        "call": "open",
+        "with": [
+          "board",
+          1
+        ],
+        "upgrade": [
+          {
+            "call": "createObjectStore",
+            "with": [
+              "things",
+              {
+                "keyPath": "name"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "call": "transaction",
+        "with": [
+          "things",
+          "readwrite"
+        ]
+      },
+      {
+        "call": "objectStore",
+        "with": [
+          "things"
+        ]
+      }
+    ],
+    "shelf": [
+      {
+        "from": "caches"
+      },
+      {
+        "call": "open",
+        "with": [
+          "board"
+        ]
+      }
+    ]
+  },
   "stores": [
     {
       "store": "dom",
       "is": "The page itself. Things made here are real elements, shown in the box. They are gone on reload.",
+      "holds": [
+        {
+          "from": "box"
+        }
+      ],
       "verbs": [
-        { "verb": "make", "needs": ["Name", "Value"], "does": "Makes an element of the kind in Value (p, button, input, details, ul ...) and gives it the name." },
-        { "verb": "say", "needs": ["Name", "Value"], "does": "Sets the thing's words to Value." },
-        { "verb": "set", "needs": ["Name", "Value"], "does": "Sets an attribute, written attribute=value. With nothing after the = the attribute is taken away." },
-        { "verb": "move", "needs": ["Name"], "may": ["Value"], "does": "Puts the thing inside the thing named in Value, or at the end of the box when Value is empty." },
-        { "verb": "read", "needs": ["Name"], "does": "Says what the thing is: its kind, its words, its attributes." },
-        { "verb": "remove", "needs": ["Name"], "does": "Takes the thing out of the page." },
-        { "verb": "clear", "needs": [], "does": "Takes out everything made here." }
+        {
+          "verb": "make",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Makes an element of the kind in Value (p, button, input, details, ul ...) and gives it the name.",
+          "steps": [
+            {
+              "from": "document"
+            },
+            {
+              "call": "createElement",
+              "with": [
+                "{Value}"
+              ]
+            },
+            {
+              "as": "it"
+            },
+            {
+              "set": "id",
+              "to": "{Name}"
+            },
+            {
+              "from": "box"
+            },
+            {
+              "call": "append",
+              "with": [
+                "$it"
+              ]
+            }
+          ],
+          "says": "{Name} is a {Value}",
+          "undo": {
+            "store": "dom",
+            "verb": "remove",
+            "Name": "{Name}"
+          }
+        },
+        {
+          "verb": "say",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Sets the thing's words to Value.",
+          "steps": [
+            {
+              "part": "thing"
+            },
+            {
+              "set": "textContent",
+              "to": "{Value}"
+            }
+          ],
+          "says": "{Name} says {Value}",
+          "none": "nothing is called {Name}",
+          "was": [
+            {
+              "part": "thing"
+            },
+            {
+              "get": "textContent"
+            }
+          ],
+          "undo": {
+            "store": "dom",
+            "verb": "say",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          }
+        },
+        {
+          "verb": "set",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Sets an attribute, written attribute=value.",
+          "steps": [
+            {
+              "part": "thing"
+            },
+            {
+              "call": "setAttribute",
+              "with": [
+                "{Value:before=}",
+                "{Value:after=}"
+              ]
+            }
+          ],
+          "says": "{Name} has {Value}",
+          "none": "nothing is called {Name}",
+          "was": [
+            {
+              "part": "thing"
+            },
+            {
+              "call": "getAttribute",
+              "with": [
+                "{Value:before=}"
+              ]
+            }
+          ],
+          "undo": {
+            "store": "dom",
+            "verb": "set",
+            "Name": "{Name}",
+            "Value": "{Value:before=}={Was}"
+          },
+          "undo if none": {
+            "store": "dom",
+            "verb": "unset",
+            "Name": "{Name}",
+            "Value": "{Value:before=}"
+          }
+        },
+        {
+          "verb": "unset",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Takes away the attribute named in Value.",
+          "steps": [
+            {
+              "part": "thing"
+            },
+            {
+              "call": "removeAttribute",
+              "with": [
+                "{Value}"
+              ]
+            }
+          ],
+          "says": "{Name} no longer has {Value}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "move",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Puts the thing inside the thing named in Value.",
+          "steps": [
+            {
+              "part": "thing"
+            },
+            {
+              "as": "it"
+            },
+            {
+              "from": "document"
+            },
+            {
+              "call": "getElementById",
+              "with": [
+                "{Value}"
+              ]
+            },
+            {
+              "call": "append",
+              "with": [
+                "$it"
+              ]
+            }
+          ],
+          "says": "{Name} is inside {Value}",
+          "none": "one of them is not here"
+        },
+        {
+          "verb": "read",
+          "needs": [
+            "Name"
+          ],
+          "does": "Shows the thing as the browser holds it.",
+          "steps": [
+            {
+              "part": "thing"
+            },
+            {
+              "get": "outerHTML"
+            }
+          ],
+          "says": "{result}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Takes the thing out of the page.",
+          "steps": [
+            {
+              "part": "thing"
+            },
+            {
+              "call": "remove"
+            }
+          ],
+          "says": "{Name} is out of the page",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Takes out everything made here.",
+          "steps": [
+            {
+              "from": "box"
+            },
+            {
+              "call": "replaceChildren"
+            }
+          ],
+          "says": "the box is empty"
+        }
       ]
     },
     {
       "store": "local",
       "is": "localStorage. Kept by this browser for this site until cleared; every tab of the site sees it.",
+      "holds": [
+        {
+          "from": "localStorage"
+        },
+        {
+          "entries": true
+        }
+      ],
       "verbs": [
-        { "verb": "put", "needs": ["Name", "Value"], "does": "Keeps Value under Name." },
-        { "verb": "get", "needs": ["Name"], "does": "Reads back what is kept under Name." },
-        { "verb": "remove", "needs": ["Name"], "does": "Forgets Name." },
-        { "verb": "clear", "needs": [], "does": "Forgets everything in this store, including what other pages of this site kept." }
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Keeps Value under Name.",
+          "steps": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "call": "setItem",
+              "with": [
+                "{Name}",
+                "{Value}"
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}",
+          "was": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "call": "getItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "undo": {
+            "store": "local",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          },
+          "undo if none": {
+            "store": "local",
+            "verb": "remove",
+            "Name": "{Name}"
+          }
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads back what is kept under Name.",
+          "steps": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "call": "getItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}",
+          "empty is none": true
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Forgets Name.",
+          "steps": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "call": "removeItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten",
+          "was": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "call": "getItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "undo": {
+            "store": "local",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          }
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Forgets everything in this store.",
+          "steps": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "call": "clear"
+            }
+          ],
+          "says": "all forgotten",
+          "was": [
+            {
+              "from": "localStorage"
+            },
+            {
+              "entries": true
+            }
+          ],
+          "undo each": {
+            "store": "local",
+            "verb": "put",
+            "Name": "{name}",
+            "Value": "{value}"
+          }
+        }
       ]
     },
     {
       "store": "session",
       "is": "sessionStorage. Kept for this tab only; survives a reload, gone when the tab closes.",
+      "holds": [
+        {
+          "from": "sessionStorage"
+        },
+        {
+          "entries": true
+        }
+      ],
       "verbs": [
-        { "verb": "put", "needs": ["Name", "Value"], "does": "Keeps Value under Name." },
-        { "verb": "get", "needs": ["Name"], "does": "Reads back what is kept under Name." },
-        { "verb": "remove", "needs": ["Name"], "does": "Forgets Name." },
-        { "verb": "clear", "needs": [], "does": "Forgets everything in this store." }
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Keeps Value under Name.",
+          "steps": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "call": "setItem",
+              "with": [
+                "{Name}",
+                "{Value}"
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}",
+          "was": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "call": "getItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "undo": {
+            "store": "session",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          },
+          "undo if none": {
+            "store": "session",
+            "verb": "remove",
+            "Name": "{Name}"
+          }
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads back what is kept under Name.",
+          "steps": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "call": "getItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}",
+          "empty is none": true
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Forgets Name.",
+          "steps": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "call": "removeItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten",
+          "was": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "call": "getItem",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "undo": {
+            "store": "session",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          }
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Forgets everything in this store.",
+          "steps": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "call": "clear"
+            }
+          ],
+          "says": "all forgotten",
+          "was": [
+            {
+              "from": "sessionStorage"
+            },
+            {
+              "entries": true
+            }
+          ],
+          "undo each": {
+            "store": "session",
+            "verb": "put",
+            "Name": "{name}",
+            "Value": "{value}"
+          }
+        }
       ]
     },
     {
       "store": "indexed",
       "is": "IndexedDB. A database in this browser, here one table called things.",
+      "holds": [
+        {
+          "part": "things"
+        },
+        {
+          "call": "getAll"
+        }
+      ],
       "verbs": [
-        { "verb": "put", "needs": ["Name", "Value"], "does": "Keeps Value under Name." },
-        { "verb": "get", "needs": ["Name"], "does": "Reads back what is kept under Name." },
-        { "verb": "remove", "needs": ["Name"], "does": "Forgets Name." },
-        { "verb": "clear", "needs": [], "does": "Empties the table." }
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Keeps Value under Name.",
+          "steps": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "put",
+              "with": [
+                {
+                  "name": "{Name}",
+                  "value": "{Value}"
+                }
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}",
+          "was": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "undo": {
+            "store": "indexed",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          },
+          "undo if none": {
+            "store": "indexed",
+            "verb": "remove",
+            "Name": "{Name}"
+          }
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads back what is kept under Name.",
+          "steps": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Forgets Name.",
+          "steps": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "delete",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten",
+          "was": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "undo": {
+            "store": "indexed",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          }
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Empties the table.",
+          "steps": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "clear"
+            }
+          ],
+          "says": "all forgotten",
+          "was": [
+            {
+              "part": "things"
+            },
+            {
+              "call": "getAll"
+            }
+          ],
+          "undo each": {
+            "store": "indexed",
+            "verb": "put",
+            "Name": "{name}",
+            "Value": "{value}"
+          }
+        }
       ]
     },
     {
       "store": "cookie",
-      "is": "Cookies this page can see. Kept by this browser for a year unless removed. The board never sends them; a browser attaches cookies to its own requests to the site.",
+      "is": "Cookies this page can see, through the browser's cookie store. Kept until the browser closes.",
+      "holds": [
+        {
+          "from": "cookieStore"
+        },
+        {
+          "call": "getAll"
+        }
+      ],
       "verbs": [
-        { "verb": "put", "needs": ["Name", "Value"], "does": "Sets a cookie called Name holding Value." },
-        { "verb": "get", "needs": ["Name"], "does": "Reads the cookie called Name." },
-        { "verb": "remove", "needs": ["Name"], "does": "Expires the cookie called Name." },
-        { "verb": "clear", "needs": [], "does": "Expires every cookie this page can see." }
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Sets a cookie called Name holding Value.",
+          "steps": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "set",
+              "with": [
+                "{Name}",
+                "{Value}"
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}",
+          "was": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "undo": {
+            "store": "cookie",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          },
+          "undo if none": {
+            "store": "cookie",
+            "verb": "remove",
+            "Name": "{Name}"
+          }
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads the cookie called Name.",
+          "steps": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Deletes the cookie called Name.",
+          "steps": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "delete",
+              "with": [
+                "{Name}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten",
+          "was": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "get",
+              "with": [
+                "{Name}"
+              ]
+            },
+            {
+              "get": "value"
+            }
+          ],
+          "undo": {
+            "store": "cookie",
+            "verb": "put",
+            "Name": "{Name}",
+            "Value": "{Was}"
+          }
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Deletes every cookie this page can see.",
+          "steps": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "getAll"
+            },
+            {
+              "each": [
+                {
+                  "get": "name"
+                },
+                {
+                  "as": "one"
+                },
+                {
+                  "from": "cookieStore"
+                },
+                {
+                  "call": "delete",
+                  "with": [
+                    "$one"
+                  ]
+                }
+              ]
+            }
+          ],
+          "says": "all forgotten",
+          "was": [
+            {
+              "from": "cookieStore"
+            },
+            {
+              "call": "getAll"
+            }
+          ],
+          "undo each": {
+            "store": "cookie",
+            "verb": "put",
+            "Name": "{name}",
+            "Value": "{value}"
+          }
+        }
       ]
     },
     {
       "store": "cache",
       "is": "The Cache store. Normally holds fetched pages; here each entry is made on the spot from Value, and nothing is fetched.",
+      "holds": [
+        {
+          "part": "shelf"
+        },
+        {
+          "call": "keys"
+        },
+        {
+          "each": [
+            {
+              "as": "one"
+            },
+            {
+              "gather": {
+                "name": [
+                  {
+                    "use": "one"
+                  },
+                  {
+                    "get": "url"
+                  }
+                ],
+                "value": [
+                  {
+                    "part": "shelf"
+                  },
+                  {
+                    "call": "match",
+                    "with": [
+                      "$one"
+                    ]
+                  },
+                  {
+                    "call": "text"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
       "verbs": [
-        { "verb": "put", "needs": ["Name", "Value"], "does": "Stores a response holding Value at an address ending in Name." },
-        { "verb": "get", "needs": ["Name"], "does": "Reads the stored response back." },
-        { "verb": "remove", "needs": ["Name"], "does": "Deletes the stored response." },
-        { "verb": "clear", "needs": [], "does": "Deletes the board's whole cache." }
+        {
+          "verb": "put",
+          "needs": [
+            "Name",
+            "Value"
+          ],
+          "does": "Stores a response holding Value at an address ending in Name.",
+          "steps": [
+            {
+              "new": "Response",
+              "with": [
+                "{Value}"
+              ]
+            },
+            {
+              "as": "body"
+            },
+            {
+              "part": "shelf"
+            },
+            {
+              "call": "put",
+              "with": [
+                "held/{Name:uri}",
+                "$body"
+              ]
+            }
+          ],
+          "says": "{Name} = {Value}",
+          "undo": {
+            "store": "cache",
+            "verb": "remove",
+            "Name": "{Name}"
+          }
+        },
+        {
+          "verb": "get",
+          "needs": [
+            "Name"
+          ],
+          "does": "Reads the stored response back.",
+          "steps": [
+            {
+              "part": "shelf"
+            },
+            {
+              "call": "match",
+              "with": [
+                "held/{Name:uri}"
+              ]
+            },
+            {
+              "call": "text"
+            }
+          ],
+          "says": "{Name} holds {result}",
+          "none": "nothing is called {Name}"
+        },
+        {
+          "verb": "remove",
+          "needs": [
+            "Name"
+          ],
+          "does": "Deletes the stored response.",
+          "steps": [
+            {
+              "part": "shelf"
+            },
+            {
+              "call": "delete",
+              "with": [
+                "held/{Name:uri}"
+              ]
+            }
+          ],
+          "says": "{Name} is forgotten"
+        },
+        {
+          "verb": "clear",
+          "needs": [],
+          "does": "Deletes the board's whole cache.",
+          "steps": [
+            {
+              "from": "caches"
+            },
+            {
+              "call": "delete",
+              "with": [
+                "board"
+              ]
+            }
+          ],
+          "says": "all forgotten"
+        }
       ]
     },
     {
       "store": "history",
-      "is": "This tab's history. The address changes and nothing loads; the board only moves among entries it made in this visit.",
+      "is": "This tab's history. The address changes and nothing loads, as long as the steps stay among entries made since the page loaded.",
+      "holds": [
+        {
+          "gather": {
+            "address": [
+              {
+                "from": "location"
+              },
+              {
+                "get": "href"
+              }
+            ],
+            "carries": [
+              {
+                "from": "history"
+              },
+              {
+                "get": "state"
+              }
+            ],
+            "length": [
+              {
+                "from": "history"
+              },
+              {
+                "get": "length"
+              }
+            ]
+          }
+        }
+      ],
       "verbs": [
-        { "verb": "push", "needs": ["Name"], "may": ["Value"], "does": "Adds an entry: the address ends in #Name and the entry carries Value." },
-        { "verb": "replace", "needs": ["Name"], "may": ["Value"], "does": "Rewrites the current entry in place." },
-        { "verb": "back", "needs": [], "does": "Steps back one entry, never past where this visit began." },
-        { "verb": "forward", "needs": [], "does": "Steps forward one entry, if there is one." },
-        { "verb": "peek", "needs": [], "does": "Says where the tab is and what the current entry carries." }
+        {
+          "verb": "push",
+          "needs": [
+            "Name"
+          ],
+          "may": [
+            "Value"
+          ],
+          "does": "Adds an entry: the address ends in #Name and the entry carries Value.",
+          "steps": [
+            {
+              "from": "history"
+            },
+            {
+              "call": "pushState",
+              "with": [
+                {
+                  "name": "{Name}",
+                  "value": "{Value}"
+                },
+                "",
+                "#{Name:uri}"
+              ]
+            }
+          ],
+          "says": "now at #{Name}",
+          "undo": {
+            "store": "history",
+            "verb": "back"
+          }
+        },
+        {
+          "verb": "replace",
+          "needs": [
+            "Name"
+          ],
+          "may": [
+            "Value"
+          ],
+          "does": "Rewrites the current entry in place.",
+          "steps": [
+            {
+              "from": "history"
+            },
+            {
+              "call": "replaceState",
+              "with": [
+                {
+                  "name": "{Name}",
+                  "value": "{Value}"
+                },
+                "",
+                "#{Name:uri}"
+              ]
+            }
+          ],
+          "says": "this entry is now #{Name}"
+        },
+        {
+          "verb": "back",
+          "needs": [],
+          "does": "Steps back one entry.",
+          "steps": [
+            {
+              "from": "history"
+            },
+            {
+              "call": "back"
+            }
+          ],
+          "says": "stepped back",
+          "undo": {
+            "store": "history",
+            "verb": "forward"
+          }
+        },
+        {
+          "verb": "forward",
+          "needs": [],
+          "does": "Steps forward one entry, if there is one.",
+          "steps": [
+            {
+              "from": "history"
+            },
+            {
+              "call": "forward"
+            }
+          ],
+          "says": "stepped forward",
+          "undo": {
+            "store": "history",
+            "verb": "back"
+          }
+        },
+        {
+          "verb": "peek",
+          "needs": [],
+          "does": "Says where the tab is.",
+          "steps": [
+            {
+              "from": "location"
+            },
+            {
+              "get": "href"
+            }
+          ],
+          "says": "at {result}"
+        }
       ]
     }
   ],
   "not wired": [
-    { "thing": "clipboard, notifications, location, camera, microphone", "why": "The browser asks the visitor first." },
-    { "thing": "service worker", "why": "The browser must fetch a file to register one." },
-    { "thing": "fetch, sockets, beacons, forms", "why": "They send something out." }
+    {
+      "thing": "clipboard, notifications, location, camera, microphone",
+      "why": "The browser asks the visitor first."
+    },
+    {
+      "thing": "service worker",
+      "why": "The browser must fetch a file to register one."
+    },
+    {
+      "thing": "fetch, sockets, beacons",
+      "why": "They need something on the other end."
+    }
   ],
   "proves": [
     "the whole board is on one screen",
@@ -98,6 +1236,14 @@
     "get reads a thing back and remove takes it away",
     "what was done can be undone",
     "clear empties a store and undo brings it back",
-    "history moves the address and loads nothing"
+    "history moves the address and loads nothing",
+    "what ran is shown as the shape it was and the code it stood for",
+    "a shape handed to the generator does what the knobs do",
+    "the round trip gives the same result",
+    "everything that ran can be handed back at once",
+    "bare steps run, and a step the generator does not know is refused",
+    "markup cannot be handed in",
+    "script text handed in does not run",
+    "a contract handed in generates a different board"
   ]
 }
