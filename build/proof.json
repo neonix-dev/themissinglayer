@@ -17,8 +17,8 @@
   "data that carries code is refused and the rest is built": [
     ["touch", "Build"], ["touch", "Give it a whole page"], ["touch", "Empty the box"], ["type", "{\"contract\":{\"name\":\"Kept\"},\"base\":{\"body\":[[\"script\",\"document.title='it r'+'an'\"],[\"h2\",{\"onclick\":\"x()\",\"style\":\"color:red\"},\"{name} piece\"],[\"a\",{\"href\":\"javascript:x()\"},\"bad link\"],[\"img\",{\"src\":\"https://example.com/a.png\"}]]}}"], ["touch", "Build from this"], ["shows", "Kept piece"], ["shows", "Refused 5"], ["hides", "it ran"]
   ],
-  "the root page's own contract builds here unchanged": [
-    ["touch", "Build"], ["touch", "Root page"], ["shows", "The Missing Layer"], ["closed", "File"], ["touch", "Build"], ["touch", "File"], ["open", "File"], ["touch", "Open"], ["exists", "Claude Code"]
+  "the menu window's own contract builds here unchanged": [
+    ["touch", "Build"], ["touch", "Menu window"], ["shows", "The Missing Layer"], ["closed", "File"], ["touch", "Build"], ["touch", "File"], ["open", "File"], ["touch", "Open"], ["exists", "Claude Code"]
   ],
   "every piece has a name, shown where the piece is": [
     ["touch", "Shape"], ["hides", "h1-1"], ["touch", "Show names"], ["shows", "h1-1"], ["shows", "details-2"]

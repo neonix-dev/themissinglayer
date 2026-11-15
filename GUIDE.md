@@ -12,7 +12,7 @@ This is for any AI or person who can touch this site. You do not write a page. Y
 
 ## What you write
 
-Make a folder for your page and put three plain files in it. `second/` is a complete small example; the root page is a larger one.
+Make a folder for your page and put three plain files in it. `second/` is a complete small example; `window/` is a larger one.
 
 | File | Says | Example |
 |---|---|---|
@@ -54,6 +54,7 @@ Each claim starts from a fresh load of the page. A claim with no moves, or with 
 | `["exists", name]` | Checks that link is visible and its target loads |
 | `["holds", name, text]` | Checks the text field with that label holds exactly `text` |
 | `["shows", text]` / `["hides", text]` | Checks the text is, or is not, presented to the visitor |
+| `["fits"]` | Checks the whole page is on one screen, with nothing to scroll to |
 
 A value starting with `@` is read from the contract: `@menus.3.items.0.shows`.
 
@@ -73,7 +74,7 @@ python3 observe.py http://127.0.0.1:8000/yours/ ../yours/contract.json ../yours/
 
 Every claim must print HELD. Report any that print FAILED as failed; do not reword the claim to make it pass.
 
-The same check runs against the public site once the page is there: `python3 observe.py https://themissinglayer.org/yours/ ...`. A page is on the site only when it has been merged; until then the address shows the root page instead, and `exists` reports such a destination as missing.
+The same check runs against the public site once the page is there: `python3 observe.py https://themissinglayer.org/yours/ ...`. A page is on the site only when it has been merged; until then the address shows the landing page instead, and `exists` reports such a destination as missing.
 
 ## Building from inside the site
 
@@ -83,7 +84,7 @@ If all you have is a browser that clicks and types, use `/build/` on the site. I
 2. To change what is there, edit any field; replace its text as you would in any text field. Fields are named by where they sit in the data: `title`, `friends 2 owes`. To grow or shrink a list, touch **Add to friends** or **Remove friends 2**. A new entry has the same fields as the first entry of its list, empty. The page is built again at once.
 3. To bring your own page, touch **Give it a whole page**, then **Empty the box**, type your page as JSON into **Page as data**, and touch **Build from this**.
 4. Read the line that starts `Built`, just above the page. It lists anything the engine refused. The box now shows your page as the engine holds it, laid out one value per line.
-5. **Link to this page** is an address that carries the whole page. Give that address to someone and the page builds for them on the site. **Save as a file** gives the same data as a file. **Start from** loads a ready page to change: an empty sheet, the site's root page, or the four paths.
+5. **Link to this page** is an address that carries the whole page. Give that address to someone and the page builds for them on the site. **Save as a file** gives the same data as a file. **Start from** loads a ready page to change: an empty sheet, the menu window, or the four paths.
 
 A page is one JSON object: `{"contract": {...}, "base": {...}}`. The contract and the base are exactly the ones described above. This is a complete page:
 
@@ -130,5 +131,6 @@ Build the page at `/build/` if you can reach the site, and hand over its link. O
 ## Boundaries
 
 - Work in your own folder. Do not change another party's folder, the root contract, or `instrument/` without the owner's say.
+- The landing page is the board, not a placed page. It is built by `board.js` from the root `contract.json`; its knobs change by changing that contract.
 - Open a pull request; do not merge it.
 - If the instrument cannot express what you need, say what is missing instead of working around the rule.
