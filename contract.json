@@ -10,7 +10,8 @@
   "doors": {
     "knobs": "Touch a store, touch a verb, type into Name and Value, touch Do. Undo takes back the last thing done.",
     "shape": "Type or paste JSON into Shape and touch Generate. A shape is one of: a run {\"store\", \"verb\", \"Name\", \"Value\"}; bare steps {\"steps\": [...]}; a list of shapes; or a whole contract like this file, which rebuilds the board.",
-    "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate."
+    "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate.",
+    "floppy": "Save downloads what the board is and holds as plain JSON; Load takes the files back and rebuilds it. The same through Shape: {\"keep\": true} writes the floppies into Shape, {\"keep\": {\"size\": 4000}} makes each at most that many bytes, and Generate takes them back, in any order. A floppy holds records: the board, each store, each thing held. It never holds code; the generator rebuilds from the records. From a script: board.serialize(size) and board.deserialize(floppies)."
   },
   "grammar": {
     "from": "start at one of: document, box, localStorage, sessionStorage, indexedDB, cookieStore, caches, history, location",
@@ -24,7 +25,8 @@
     "entries": "turn the current thing into name and value pairs",
     "each": "run steps on every member of the current list",
     "gather": "run several lists of steps and keep each result under its own name",
-    "words": "{Name} and {Value} are filled from the run; {Name:uri} makes it safe in an address; {Value:before=} and {Value:after=} split at the first equals sign"
+    "words": "{Name} and {Value} are filled from the run; {Name:uri} makes it safe in an address; {Value:before=} and {Value:after=} split at the first equals sign",
+    "keep": "on a store: how it is kept on a floppy. \"empty\" is the shape that empties it; \"each\" is the shape that puts one thing back, with {name} and {value} filled from the record. A store that holds elements needs only \"empty\". A store with no \"keep\" is not kept."
   },
   "parts": {
     "thing": [
@@ -95,6 +97,12 @@
           "from": "box"
         }
       ],
+      "keep": {
+        "empty": {
+          "store": "dom",
+          "verb": "clear"
+        }
+      },
       "verbs": [
         {
           "verb": "make",
@@ -330,6 +338,18 @@
           "entries": true
         }
       ],
+      "keep": {
+        "empty": {
+          "store": "local",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "local",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
       "verbs": [
         {
           "verb": "put",
@@ -472,6 +492,18 @@
           "entries": true
         }
       ],
+      "keep": {
+        "empty": {
+          "store": "session",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "session",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
       "verbs": [
         {
           "verb": "put",
@@ -614,6 +646,18 @@
           "call": "getAll"
         }
       ],
+      "keep": {
+        "empty": {
+          "store": "indexed",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "indexed",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
       "verbs": [
         {
           "verb": "put",
@@ -766,6 +810,18 @@
           "call": "getAll"
         }
       ],
+      "keep": {
+        "empty": {
+          "store": "cookie",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "cookie",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
       "verbs": [
         {
           "verb": "put",
@@ -947,6 +1003,24 @@
                   },
                   {
                     "get": "url"
+                  },
+                  {
+                    "as": "address"
+                  },
+                  {
+                    "new": "URL",
+                    "with": [
+                      "$address"
+                    ]
+                  },
+                  {
+                    "get": "searchParams"
+                  },
+                  {
+                    "call": "get",
+                    "with": [
+                      "n"
+                    ]
                   }
                 ],
                 "value": [
@@ -968,6 +1042,18 @@
           ]
         }
       ],
+      "keep": {
+        "empty": {
+          "store": "cache",
+          "verb": "clear"
+        },
+        "each": {
+          "store": "cache",
+          "verb": "put",
+          "Name": "{name}",
+          "Value": "{value}"
+        }
+      },
       "verbs": [
         {
           "verb": "put",
@@ -992,7 +1078,7 @@
             {
               "call": "put",
               "with": [
-                "held/{Name:uri}",
+                "held?n={Name:uri}",
                 "$body"
               ]
             }
@@ -1017,7 +1103,7 @@
             {
               "call": "match",
               "with": [
-                "held/{Name:uri}"
+                "held?n={Name:uri}"
               ]
             },
             {
@@ -1040,7 +1126,7 @@
             {
               "call": "delete",
               "with": [
-                "held/{Name:uri}"
+                "held?n={Name:uri}"
               ]
             }
           ],
@@ -1207,7 +1293,8 @@
           ],
           "says": "at {result}"
         }
-      ]
+      ],
+      "not kept": "The browser does not hand over a tab's history, so a floppy cannot rebuild it."
     }
   ],
   "not wired": [
@@ -1244,6 +1331,9 @@
     "bare steps run, and a step the generator does not know is refused",
     "markup cannot be handed in",
     "script text handed in does not run",
-    "a contract handed in generates a different board"
+    "a contract handed in generates a different board",
+    "what the board holds can be kept as plain JSON and rebuilt from it",
+    "a thing made in the page comes back from a floppy as the same thing",
+    "a set of floppies rebuilds the board, and keeping it again gives the same"
   ]
 }

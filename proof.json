@@ -18,7 +18,7 @@
     ["touch", "cookie"], ["touch", "put"], ["touch", "Name"], ["type", "crumb"], ["touch", "Value"], ["type", "sweet"], ["touch", "Do"], ["shows", "crumb = sweet"], ["again"], ["touch", "cookie"], ["shows", "crumb = sweet"]
   ],
   "the cache keeps a thing across a reload": [
-    ["touch", "cache"], ["touch", "put"], ["touch", "Name"], ["type", "page"], ["touch", "Value"], ["type", "saved"], ["touch", "Do"], ["shows", "held/page = saved"], ["again"], ["touch", "cache"], ["shows", "held/page = saved"]
+    ["touch", "cache"], ["touch", "put"], ["touch", "Name"], ["type", "page"], ["touch", "Value"], ["type", "saved"], ["touch", "Do"], ["shows", "page = saved"], ["again"], ["touch", "cache"], ["shows", "page = saved"]
   ],
   "a thing made in the page is real, and is gone after a reload": [
     ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "button"], ["touch", "Do"], ["touch", "say"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "ring me"], ["touch", "Do"], ["touch", "ring me"], ["shows", "ring me"], ["again"], ["touch", "dom"], ["hides", "ring me"]
@@ -58,5 +58,14 @@
   ],
   "a contract handed in generates a different board": [
     ["touch", "Shape"], ["type", "{\"title\":\"Small\",\"stores\":[{\"store\":\"only\",\"holds\":[{\"from\":\"location\"},{\"get\":\"pathname\"}],\"verbs\":[{\"verb\":\"look\",\"needs\":[],\"steps\":[{\"from\":\"history\"},{\"get\":\"length\"}],\"says\":\"length {result}\"}]}]}"], ["touch", "Generate"], ["shows", "Small"], ["shows", "only"], ["shows", "look"], ["hides", "cookie"], ["touch", "Do"], ["shows", "only look: length"]
+  ],
+  "what the board holds can be kept as plain JSON and rebuilt from it": [
+    ["touch", "local"], ["touch", "put"], ["touch", "Name"], ["type", "sun"], ["touch", "Value"], ["type", "yellow"], ["touch", "Do"], ["touch", "indexed"], ["touch", "put"], ["touch", "Name"], ["type", "leaf"], ["touch", "Value"], ["type", "green"], ["touch", "Do"], ["touch", "cache"], ["touch", "put"], ["touch", "Name"], ["type", "page"], ["touch", "Value"], ["type", "saved"], ["touch", "Do"], ["touch", "Shape"], ["type", "{\"keep\":true}"], ["touch", "Generate"], ["shows", "kept on 1 floppy"], ["touch", "local"], ["touch", "clear"], ["touch", "Do"], ["hides", "sun = yellow"], ["touch", "indexed"], ["touch", "clear"], ["touch", "Do"], ["hides", "leaf = green"], ["touch", "cache"], ["touch", "clear"], ["touch", "Do"], ["hides", "page = saved"], ["touch", "Generate"], ["shows", "rebuilt from 1 floppy: the board keeps the same"], ["touch", "local"], ["shows", "sun = yellow"], ["touch", "indexed"], ["shows", "leaf = green"], ["touch", "cache"], ["shows", "page = saved"]
+  ],
+  "a thing made in the page comes back from a floppy as the same thing": [
+    ["touch", "dom"], ["touch", "make"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "button"], ["touch", "Do"], ["touch", "say"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "ring me"], ["touch", "Do"], ["touch", "set"], ["touch", "Name"], ["type", "bell"], ["touch", "Value"], ["type", "title=a bell"], ["touch", "Do"], ["touch", "Shape"], ["type", "{\"keep\":true}"], ["touch", "Generate"], ["shows", "kept on 1 floppy"], ["touch", "clear"], ["touch", "Do"], ["shows", "dom: 0 made here"], ["touch", "Generate"], ["shows", "the board keeps the same"], ["shows", "dom: 1 made here"], ["shows", "ring me"], ["touch", "read"], ["touch", "Name"], ["type", "bell"], ["touch", "Do"], ["shows", "<button id=\"bell\" title=\"a bell\">ring me</button>"]
+  ],
+  "a set of floppies rebuilds the board, and keeping it again gives the same": [
+    ["touch", "session"], ["touch", "put"], ["touch", "Name"], ["type", "k"], ["touch", "Value"], ["type", "v"], ["touch", "Do"], ["touch", "Shape"], ["type", "{\"keep\":{\"size\":2000}}"], ["touch", "Generate"], ["shows", "floppies, label"], ["touch", "clear"], ["touch", "Do"], ["hides", "k = v"], ["touch", "Generate"], ["shows", "floppies: the board keeps the same"], ["touch", "session"], ["shows", "k = v"], ["touch", "Shape"], ["type", "{\"keep\":{\"size\":2000}}"], ["touch", "Generate"], ["touch", "Generate"], ["shows", "floppies: the board keeps the same"]
   ]
 }

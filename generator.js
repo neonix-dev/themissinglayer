@@ -2,7 +2,9 @@
 // ones it knows into running code, in this tab. It holds the grammar of a step and how
 // to draw a board; which stores and verbs exist, and what each does, is in the contract.
 // Text is never run as code here, and the page's policy makes the browser refuse it.
+// What the board is and holds can be kept as plain JSON on floppies and rebuilt from them.
 (async () => {
+  if (document.querySelector("main.board")) return;   // one board to a page
   const el = (kind, text, attrs) => {
     const node = document.createElement(kind);
     if (text != null) node.append(text);
@@ -180,8 +182,11 @@
   const shapeLabel = el("label", "Shape "), shape = el("textarea", null, { autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
   shapeLabel.append(shape);
   const generate = el("button", "Generate", { type: "button" });
+  const save = el("button", "Save", { type: "button", title: "Download what the board is and holds, as plain JSON" });
+  const load = el("button", "Load", { type: "button", title: "Rebuild the board from saved JSON" });
+  const files = el("input", null, { type: "file", accept: ".json,application/json", multiple: "", hidden: "" });
   const doorActs = el("div", null, { class: "act" });
-  doorActs.append(generate, handBack);
+  doorActs.append(generate, handBack, save, load, files);
   doors.append(ranHead, ran, codeLine, shapeLabel, doorActs);
   board.append(head, knobs, held, doors);
   document.body.append(board);
@@ -252,6 +257,7 @@
     for (const s of c.stores) {
       if (typeof s.store !== "string") refuse("every store needs a name");
       known(s.holds || [], parts);
+      if (s.keep != null && (typeof s.keep !== "object" || Array.isArray(s.keep))) refuse(`${s.store} does not say how it is kept`);
       for (const v of s.verbs || []) { known(v.steps, parts); if (v.was) known(v.was, parts); }
     }
     contract = c;
@@ -265,6 +271,128 @@
     await choose(c.stores[0], stores.firstChild);
   };
 
+  // ---- the floppy ---------------------------------------------------------------------
+  // What the board is and what its stores hold, written as plain records: the board,
+  // each store, each thing held. No code is ever written out; a record is data, and
+  // the generator rebuilds from it. The contract says, per store, how it is kept.
+  const ENGINE = "1", FLOPPY = 1474560;
+  const bytes = (text) => new TextEncoder().encode(text).length;
+  const labelOf = (recs, engine) => {
+    const text = engine + JSON.stringify(recs);
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+    return (h >>> 0).toString(16).padStart(8, "0");
+  };
+  const HTML = "http://www.w3.org/1999/xhtml";
+  // An element as data, and data as an element again.
+  const tree = (n) => {
+    if (n.nodeType === 3) return n.data;
+    if (n.nodeType !== 1) return null;
+    const out = n.namespaceURI === HTML ? { kind: n.localName } : { kind: n.tagName, of: n.namespaceURI };
+    if (n.attributes.length) out.has = Object.fromEntries([...n.attributes].map((a) => [a.name, a.value]));
+    const inside = [...n.childNodes].map(tree).filter((x) => x != null);
+    if (inside.length) out.holds = inside;
+    return out;
+  };
+  const grow = (t, depth = 0) => {
+    if (typeof t === "string") return document.createTextNode(t);
+    if (!t || typeof t !== "object" || typeof t.kind !== "string" || depth > 256) refuse("not a thing the generator can rebuild");
+    const node = t.of ? document.createElementNS(t.of, t.kind) : document.createElement(t.kind);
+    for (const [k, v] of Object.entries(t.has || {})) node.setAttribute(k, word(v));
+    for (const one of t.holds || []) node.append(grow(one, depth + 1));
+    return node;
+  };
+  const records = async () => {
+    const { stores: all, ...rest } = contract;
+    const recs = [{ board: rest }, ...all.map((s) => ({ store: s }))];
+    for (const s of all) {
+      if (!s.keep) continue;
+      let got;
+      try { got = await walk(known(s.holds || [], contract.parts || {}), envOf({})); } catch { recs.push({ left: s.store }); continue; }
+      if (got instanceof Element) { for (const n of got.childNodes) { const thing = tree(n); if (thing != null) recs.push({ in: s.store, thing }); } continue; }
+      const pairs = rowsOf(got).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+      for (const [name, value] of pairs) recs.push(value === undefined ? { in: s.store, name } : { in: s.store, name, value });
+    }
+    return recs;
+  };
+  // Records go onto floppies in order, as many as fit on each. No floppy is ever larger
+  // than its size: a record too large for one is cut, as text, across as many as it needs.
+  const kept = async (size) => {
+    size = Number(size) > 0 ? Number(size) : FLOPPY;
+    const recs = await records(), label = labelOf(recs, ENGINE);
+    const text = (holds, disk, of) => JSON.stringify({ floppy: { engine: ENGINE, label, disk, of }, holds }, null, 2);
+    const room = size - bytes(text([], 99999, 99999)) - 4;
+    if (room < 64) refuse(`a floppy needs at least ${size - room + 64} bytes`);
+    const costOf = (r) => { const t = JSON.stringify(r, null, 2); return bytes(t) + 4 * t.split("\n").length + 2; };
+    const pieces = recs.flatMap((r) => {
+      if (costOf(r) <= room) return [r];
+      const whole = JSON.stringify(r), out = [];
+      for (let at = 0; at < whole.length;) {
+        let fit = 1, most = whole.length - at;
+        while (fit < most) { const mid = (fit + most + 1) >> 1; if (costOf({ cut: whole.slice(at, at + mid), more: false }) <= room) fit = mid; else most = mid - 1; }
+        out.push({ cut: whole.slice(at, at + fit), more: at + fit < whole.length });
+        at += fit;
+      }
+      return out;
+    });
+    const sets = [[]];
+    let used = 0;
+    for (const r of pieces) {
+      const cost = costOf(r);
+      if (sets.at(-1).length && used + cost > room) { sets.push([]); used = 0; }
+      sets.at(-1).push(r);
+      used += cost;
+    }
+    const disks = sets.map((holds, i) => text(holds, i + 1, sets.length));
+    return { disks, label, said: `kept on ${disks.length} ${disks.length === 1 ? "floppy" : "floppies"}, label ${label}` };
+  };
+  const quiet = (shape) => ("store" in shape ? runVerb(shape, true) : runSteps(shape));
+  const rebuild = async (recs, set) => {
+    const of = (key) => recs.filter((r) => r && typeof r === "object" && key in r);
+    const head = of("board")[0];
+    if (!head || !head.board || typeof head.board !== "object") refuse("the floppy holds no board");
+    const c = { ...head.board, stores: of("store").map((r) => r.store) };
+    const left = new Set(of("left").map((r) => r.left));
+    const grown = of("thing").map((r) => [r.in, grow(r.thing)]);
+    await build(c);
+    log.length = undone.length = 0;
+    codeLine.textContent = "";
+    const failed = [];
+    for (const s of c.stores) {
+      if (!s.keep || left.has(s.store)) continue;
+      try {
+        if (s.keep.empty) await quiet(s.keep.empty);
+        const mine = grown.filter(([where]) => where === s.store);
+        if (mine.length) (await walk(known(s.holds || [], c.parts || {}), envOf({}))).append(...mine.map(([, node]) => node));
+        if (s.keep.each) for (const r of of("name")) if (r.in === s.store) await quiet(given(s.keep.each, envOf({ name: word(r.name), value: word(r.value) })));
+      } catch { failed.push(s.store); }
+    }
+    const same = labelOf(await records(), ENGINE) === labelOf(recs, ENGINE);
+    return `rebuilt from ${set.of} ${set.of === 1 ? "floppy" : "floppies"}: ${same ? "the board keeps the same as what was handed in" : "this browser keeps it differently from what was handed in"}`
+      + (failed.length ? `; could not rebuild ${failed.join(", ")}` : "")
+      + (set.engine === ENGINE ? "" : `; written by engine ${word(set.engine)}, this is engine ${ENGINE}`);
+  };
+  // Floppies go in one at a time, in any order. The board is rebuilt when the set is whole.
+  let slot = null;
+  const insert = async (disk) => {
+    const f = disk.floppy;
+    if (!f || typeof f !== "object" || !Array.isArray(disk.holds) || !Number.isInteger(f.disk) || !Number.isInteger(f.of) || f.disk < 1 || f.disk > f.of) refuse("not a floppy the generator knows");
+    if (!slot || slot.label !== f.label || slot.of !== f.of) slot = { label: f.label, of: f.of, engine: f.engine, disks: {} };
+    slot.disks[f.disk] = disk.holds;
+    const missing = [];
+    for (let i = 1; i <= f.of; i++) if (!(i in slot.disks)) missing.push(i);
+    if (missing.length) return `floppy ${f.disk} of ${f.of} is in; still needed: ${missing.join(", ")}`;
+    const set = slot, recs = [];
+    slot = null;
+    let cut = "";
+    for (let i = 1; i <= set.of; i++) for (const r of set.disks[i]) {
+      if (!r || typeof r !== "object" || !("cut" in r)) { recs.push(r); continue; }
+      cut += r.cut;
+      if (!r.more) { recs.push(JSON.parse(cut)); cut = ""; }
+    }
+    return rebuild(recs, set);
+  };
+
   // The one way in. The knobs and the Shape box both hand their shape to this.
   const give = async (given, undoing) => {
     if (Array.isArray(given)) { for (const one of given) await give(one, undoing); return; }
@@ -275,6 +403,12 @@
         log.push(JSON.stringify(given));
         tell("the board was generated from the contract handed in");
         codeLine.textContent = "";
+      } else if ("floppy" in given) {
+        tell(await insert(given));
+      } else if ("keep" in given) {
+        const out = await kept(given.keep && given.keep.size);
+        shape.value = out.disks.length === 1 ? out.disks[0] : `[\n${out.disks.join(",\n")}\n]`;
+        tell(out.said);
       } else {
         const out = "store" in given ? await runVerb(given, undoing) : "steps" in given ? await runSteps(given) : refuse("not a shape the generator knows");
         log.push(JSON.stringify(given));
@@ -313,6 +447,38 @@
     await give(handed);
   };
   handBack.onclick = () => { shape.value = `[${log.join(",")}]`; };
+  save.onclick = async () => {
+    try {
+      const out = await kept();
+      out.disks.forEach((text, i) => {
+        const a = el("a", null, { href: URL.createObjectURL(new Blob([text], { type: "application/json" })), download: `board-${out.label}-${i + 1}of${out.disks.length}.json` });
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      });
+      tell(out.said);
+    } catch (e) { tell(`could not: ${e && e.message ? e.message : "not available in this browser"}`); }
+  };
+  load.onclick = () => files.click();
+  files.onchange = async () => {
+    let handed;
+    try { handed = (await Promise.all([...files.files].map((f) => f.text()))).map((text) => JSON.parse(text)); } catch { handed = null; }
+    files.value = "";
+    if (!handed) return tell("refused: that is not JSON");
+    await give(handed.flat());
+  };
+  // The same two things for a script or another seat: serialize gives the floppies as
+  // JSON text, deserialize takes them back, as text or parsed, one or many, in any order.
+  const parsed = (x) => (typeof x === "string" ? JSON.parse(x) : x);
+  globalThis.board = Object.freeze({
+    engine: ENGINE,
+    serialize: async (size) => (await kept(size)).disks,
+    deserialize: async (handed) => {
+      const disks = [parsed(handed)].flat().map(parsed).flat();
+      if (!disks.every((d) => d && typeof d === "object" && "floppy" in d)) throw new Error("deserialize takes floppies");
+      await give(disks);
+      return said.textContent;
+    },
+  });
   for (const input of [name, value]) input.onkeydown = (e) => { if (e.key === "Enter") doIt.onclick(); };
   addEventListener("popstate", () => show());
 
