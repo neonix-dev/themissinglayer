@@ -522,5 +522,27 @@
   } else if (address === "serialize") {
     await save.onclick();
     line.textContent = said.textContent;
+  } else if (address === "explore" && contract) {
+    // The whole field of interaction on one page, written out from the contract: every
+    // door, address, script call, store and verb, and the grammar. Read, not operated.
+    const field = el("main", null, { class: "field" });
+    const part = (name, ...inside) => { const sec = el("section"); sec.append(el("h2", name), ...inside); return sec; };
+    const pairs = (all) => { const dl = el("dl"); for (const [k, v] of all) dl.append(el("dt", word(k)), el("dd", word(v))); return dl; };
+    const go = el("button", "Go in", { type: "button" });
+    go.onclick = () => { field.hidden = true; history.replaceState(history.state, "", "./"); enter(); };
+    const top = el("header");
+    top.append(el("h1", contract.title || ""), go);
+    field.append(top);
+    for (const [key, v] of Object.entries(contract)) {
+      if (key === "title" || key === "screen" || key === "parts") continue;
+      if (key === "stores") {
+        for (const s of v) field.append(part(`store: ${s.store}`, el("p", `${s.is || ""} ${s.keep ? "Kept on a floppy." : `Not kept on a floppy. ${s["not kept"] || ""}`}`),
+          pairs((s.verbs || []).map((x) => [[x.verb, ...(x.needs || []), ...(x.may || []).map((m) => `${m}?`)].join(" "), x.does || ""]))));
+      } else if (typeof v === "string") field.append(part(key, el("p", v)));
+      else if (Array.isArray(v)) field.append(v.every((x) => x && typeof x === "object") ? part(key, pairs(v.map((x) => Object.values(x)))) : part(key, ...v.map((x) => el("p", word(x)))));
+      else if (v && typeof v === "object") field.append(part(key, pairs(Object.entries(v))));
+    }
+    cover.hidden = true;
+    document.body.append(field);
   }
 })();

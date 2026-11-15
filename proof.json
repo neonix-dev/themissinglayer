@@ -76,5 +76,8 @@
   ],
   "the address /deserialize asks before it wipes": [
     ["go", "deserialize.html"], ["shows", "Download a copy first?"], ["shows", "Choose files"], ["hides", "Generate"], ["fits"]
+  ],
+  "the address /explore shows the whole field of interaction": [
+    ["go", "explore.html"], ["shows", "store: dom"], ["shows", "store: history"], ["shows", "Makes an element of the kind in Value"], ["shows", "board.deserialize(floppies)"], ["shows", "/serialize"], ["shows", "run several lists of steps"], ["shows", "service worker"], ["hides", "Generate"], ["fits"], ["touch", "Go in"], ["shows", "Generate"], ["at", ""]
   ]
 }
