@@ -4,19 +4,25 @@
 # A sheet names no device, so nothing in it changes between the two. This file holds the
 # same grammar of a sheet and the same floppy; how a move is offered, how a thing is
 # shown and where a box is kept are its own answers. It needs only Python 3.
-#   python3 generator.py            then pick by number
+#   python3 sheets.py               then pick by number
+# In daq.code this is kernel/term/sheets.py and the sheets are the apps beside it
+# (apps/<app>/app.json with "sheets"), or the ones on a mounted DAQ carrier. Placed on
+# the site as generator.py, with nothing beside it, it fetches them from the site.
 # A line that starts with { or [ is a shape, as in the browser's Shape box:
 #   {"load": "email.wire"}  {"unload": "email.stub"}  a sheet pasted whole
 #   {"do": "email.touch.send", "with": {"subject": "hi", "body": "there"}}
 #   {"do": "email.touch.read", "pick": 1}
 #   {"from": "email.wire.sent"}  {"to": "email.wire.inbox", "with": {...}}
 #   {"keep": true}  and a floppy, which wipes and rebuilds
-import json, os, re, sys, threading, urllib.request
+import glob, json, os, re, sys, threading, urllib.request
 
 ENGINE, FLOPPY = "2", 1474560
 SITE = os.environ.get("MISSINGLAYER_SITE", "https://themissinglayer.org/")
 HERE = os.path.dirname(os.path.abspath(sys.argv[0])) if sys.argv and sys.argv[0] not in ("", "-") else os.getcwd()
 HOME = os.environ.get("MISSINGLAYER_HOME") or os.path.join(os.path.expanduser("~"), ".missinglayer")
+# Where apps are: beside this file as daq.code lays them out, then on a mounted carrier.
+APPS = [d for d in [os.path.join(HERE, "..", "..", "apps")] + [os.path.join(p, "code", "apps") for p in ["/media/daq", "/Volumes/DAQ", *glob.glob("/media/*/DAQ"), *glob.glob("/run/media/*/DAQ")]
+                                                                 if os.path.exists(os.path.join(p, "stick.json"))] if os.path.isdir(d)]
 NAME, ID, AT = (re.compile(r"^[^./\\]+" + r"\.[^./\\]+" * n + "$") for n in (0, 1, 2))
 
 
@@ -326,10 +332,11 @@ def insert(disk):
 
 # ---- the one way in: a shape -------------------------------------------------------------
 def read_json(rel):
-    local = os.path.join(HERE, *rel.split("/"))
-    if os.path.exists(local):
-        with open(local, encoding="utf-8") as f:
-            return json.load(f)
+    for root in APPS + [HERE]:
+        local = os.path.join(root, *rel.split("/"))
+        if os.path.exists(local):
+            with open(local, encoding="utf-8") as f:
+                return json.load(f)
     with urllib.request.urlopen(urllib.request.Request(SITE + rel, headers={"User-Agent": "missinglayer-generator"}), timeout=10) as r:
         return json.load(r)
 
@@ -391,6 +398,24 @@ def first_of(thing, kind):
     return word(thing.get(kind["parts"][0])) or f"(no {kind['parts'][0]})"
 
 
+def shipped():
+    """The sheets there are to load: those of the apps (app.json with "sheets"), else what the site ships."""
+    found = []
+    for root in APPS:
+        for app in sorted(os.listdir(root)):
+            try:
+                with open(os.path.join(root, app, "app.json"), encoding="utf-8") as f:
+                    found += [f"{app}.{name}" for name in json.load(f).get("sheets", []) if f"{app}.{name}" not in found]
+            except (OSError, ValueError, AttributeError):
+                pass
+    if APPS:
+        return found
+    try:
+        return list(read_json("contract.json").get("ships", {}))
+    except (OSError, ValueError, AttributeError):
+        return []
+
+
 def menu():
     acts = []
     for m in sorted(every("moves"), key=lambda x: x["at"]):
@@ -398,10 +423,7 @@ def menu():
         ends = [kind_of(b) for b in (v.get("when"), v.get("from"), v.get("to")) if b]
         if not v.get("when") and not any("waits" in k for k in ends):
             acts.append((f"{m['name']}: " + (f"pick a {ends[0]['name']} in {v['from']}" if v.get("from") else f"make a {ends[0]['name']}, to {v['to']}"), ("move", m)))
-    try:
-        ships = list(read_json("contract.json").get("ships", {}))
-    except (OSError, ValueError, AttributeError):
-        ships = []
+    ships = shipped()
     acts += [(f"load {i}", ("give", {"load": i})) for i in ships if i not in loaded]
     acts += [(f"unload {i}", ("give", {"unload": i})) for i in sorted(loaded)]
     acts += [("save a floppy here", ("give", {"keep": True})), ("restore from a floppy", ("restore",)), ("leave", ("leave",))]
