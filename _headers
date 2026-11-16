@@ -1,3 +1,6 @@
 # Every visit checks for the current files, so a page never runs beside an older script.
+# The page may load only what this site ships, send nothing out, and sit in no frame.
 /*
   Cache-Control: no-cache
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'
+  X-Content-Type-Options: nosniff

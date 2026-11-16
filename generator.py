@@ -5,9 +5,8 @@
 # same grammar of a sheet and the same floppy; how a move is offered, how a thing is
 # shown and where a box is kept are its own answers. It needs only Python 3.
 #   python3 sheets.py               then pick by number
-# In daq.code this is kernel/term/sheets.py and the sheets are the apps beside it
-# (apps/<app>/app.json with "sheets"), or the ones on a mounted DAQ carrier. Placed on
-# the site as generator.py, with nothing beside it, it fetches them from the site.
+# With apps beside it (apps/<app>/app.json with "sheets"), or on a mounted carrier, it
+# reads the sheets from there. With nothing beside it, it fetches them from the site.
 # A line that starts with { or [ is a shape, as in the browser's Shape box:
 #   {"load": "email.wire"}  {"unload": "email.stub"}  a sheet pasted whole
 #   {"do": "email.touch.send", "with": {"subject": "hi", "body": "there"}}
@@ -20,10 +19,10 @@ ENGINE, FLOPPY = "2", 1474560
 SITE = os.environ.get("MISSINGLAYER_SITE", "https://themissinglayer.org/")
 HERE = os.path.dirname(os.path.abspath(sys.argv[0])) if sys.argv and sys.argv[0] not in ("", "-") else os.getcwd()
 HOME = os.environ.get("MISSINGLAYER_HOME") or os.path.join(os.path.expanduser("~"), ".missinglayer")
-# Where apps are: beside this file as daq.code lays them out, then on a mounted carrier.
+# Where apps are: two folders up beside this file, then on a mounted carrier.
 APPS = [d for d in [os.path.join(HERE, "..", "..", "apps")] + [os.path.join(p, "code", "apps") for p in ["/media/daq", "/Volumes/DAQ", *glob.glob("/media/*/DAQ"), *glob.glob("/run/media/*/DAQ")]
                                                                  if os.path.exists(os.path.join(p, "stick.json"))] if os.path.isdir(d)]
-NAME, ID, AT = (re.compile(r"^[^./\\]+" + r"\.[^./\\]+" * n + "$") for n in (0, 1, 2))
+NAME, ID, AT = (re.compile(r"^[^./\\:]+" + r"\.[^./\\:]+" * n + "$") for n in (0, 1, 2))
 
 
 class Refused(Exception):
@@ -71,12 +70,35 @@ def checked_move(m, what):
     return m
 
 
+# How a page looks is said in a few plain words, the same as in the browser. A terminal has
+# no paper, type or corners of its own to set, so it honours the accent, as the nearest of
+# its colours, and the space; the rest it knows and lets be.
+COLOUR = re.compile(r"^#[0-9a-f]{6}$", re.I)
+LOOK = {"paper": COLOUR, "ink": COLOUR, "accent": COLOUR, "face": ["sans", "serif", "mono"], "size": ["small", "medium", "large"],
+        "space": ["tight", "normal", "roomy"], "corner": ["square", "soft", "round"]}
+DEVICE = "terminal"
+
+
+def here(j):
+    on = j.get("on")
+    return on is None or DEVICE in (on if isinstance(on, list) else [on])
+
+
 def checked(j):
     if not plain(j) or not isinstance(j.get("id"), str) or not ID.match(j["id"]):
         refuse("a JSON needs an id of two levels, like email.wire")
-    only(j, ["id", "says", "kinds", "boxes", "moves"], j["id"])
+    only(j, ["id", "says", "on", "kinds", "boxes", "here", "moves", "look"], j["id"])
+    if "on" in j and (j["on"] == [] or not all(isinstance(d, str) and NAME.match(d) for d in (j["on"] if isinstance(j["on"], list) else [j["on"]]))):
+        refuse(f'{j["id"]}: "on" names the devices this JSON is for, like browser')
+    if "look" in j:
+        if not plain(j["look"]):
+            refuse(f"{j['id']}: a look is words and what they are set to")
+        only(j["look"], list(LOOK), f"{j['id']}.look")
+        for k, v in j["look"].items():
+            if not (isinstance(v, str) and (LOOK[k].match(v) if k in ("paper", "ink", "accent") else v in LOOK[k])):
+                refuse(f'{j["id"]}.look: "{k}" is ' + ("a colour like #1a2b3c" if k in ("paper", "ink", "accent") else "one of " + ", ".join(LOOK[k])))
     names = set()
-    for key in ("kinds", "boxes", "moves"):
+    for key in ("kinds", "boxes", "here", "moves"):
         if j.get(key) is None:
             continue
         if not plain(j[key]):
@@ -89,7 +111,7 @@ def checked(j):
             names.add(name)
             if key == "kinds" and not (isinstance(v, list) and v and all(isinstance(p, str) and p for p in v) and len(set(v)) == len(v)):
                 refuse(f"{j['id']}.{name}: a kind lists its parts")
-            if key == "boxes" and not (isinstance(v, str) and (NAME.match(v) or AT.match(v))):
+            if key in ("boxes", "here") and not (isinstance(v, str) and (NAME.match(v) or AT.match(v))):
                 refuse(f"{j['id']}.{name}: a box names the kind it holds")
             if key == "moves":
                 checked_move(v, f"{j['id']}.{name}")
@@ -101,8 +123,21 @@ carried = {"head": [], "tail": []}   # records of a floppy that belong to anothe
 lock = threading.RLock()
 
 
+def each(key):
+    return [{"id": i, "name": n, "at": f"{i}.{n}", "key": key, "v": v} for i in sorted(loaded) if here(loaded[i]) for n, v in sorted((loaded[i].get(key) or {}).items())]
+
+
 def every(key):
-    return [{"id": i, "name": n, "at": f"{i}.{n}", "key": key, "v": v} for i in sorted(loaded) for n, v in (loaded[i].get(key) or {}).items()]
+    # Only what is meant for this device counts. The boxes are those kept for every run and
+    # those this run holds for itself (a JSON lists them under "here").
+    return each("boxes") + [dict(b, key="boxes", mine=True) for b in each("here")] if key == "boxes" else each(key)
+
+
+mine = {}   # what the boxes of this run alone hold: gone when it ends, never on a floppy
+
+
+def mine_only(at):
+    return any(b["at"] == at and b.get("mine") for b in every("boxes"))
 
 
 def kind_of(box):
@@ -133,6 +168,8 @@ def keep_boxes(all_):
 
 
 def in_box(at):
+    if mine_only(at):
+        return list(mine.get(at, []))
     got = boxes().get(at)
     return got if isinstance(got, list) else []
 
@@ -143,9 +180,12 @@ def arrive(box, thing, by, hops):
     if "waits" in kind:
         refuse(f"{by} waits for {kind['waits']}, which is not loaded")
     it = {p: word(thing.get(p)) for p in kind["parts"]}
-    all_ = boxes()
-    all_[box] = in_box(box) + [it]
-    keep_boxes(all_)
+    if mine_only(box):
+        mine.setdefault(box, []).append(it)
+    else:
+        all_ = boxes()
+        all_[box] = in_box(box) + [it]
+        keep_boxes(all_)
     if hops < 8:
         for m in every("moves"):
             if m["v"].get("when") == box:
@@ -224,7 +264,7 @@ def label_of(recs):
 
 def records():
     recs = carried["head"] + [{"json": loaded[i]} for i in sorted(loaded)] + carried["tail"]
-    for b in sorted(every("boxes"), key=lambda x: x["at"]):
+    for b in sorted((b for b in every("boxes") if not b.get("mine")), key=lambda x: x["at"]):
         if "waits" not in kind_of(b["at"]):
             recs += [{"at": b["at"], "is": thing} for thing in in_box(b["at"])]
     return recs
@@ -289,6 +329,7 @@ def rebuild(recs, slot_):
     timers.clear()
     shown.clear()
     loaded.clear()
+    mine.clear()
     for j in sheets:
         loaded[j["id"]] = j
     keep_boxes(things)
@@ -359,8 +400,11 @@ def give(g):
     try:
         if not plain(g):
             refuse("not a shape the generator knows")
-        if "load" in g or ("id" in g and ("kinds" in g or "boxes" in g or "moves" in g)):
+        if "load" in g or ("id" in g and any(k in g for k in ("kinds", "boxes", "here", "moves", "look", "says", "on"))):
             j = checked(g if "load" not in g else fetched(g["load"]) if isinstance(g["load"], str) else g["load"])
+            shipped_one = "load" in g and isinstance(g["load"], str)
+            if j["id"] in loaded and not shipped_one and stringify(loaded[j["id"]]) != stringify(j):
+                refuse(f"{j['id']} is already loaded and this one differs; unload it first")
             loaded[j["id"]] = j
             return f"loaded {j['id']}"
         if "unload" in g:
@@ -430,11 +474,29 @@ def menu():
     return acts
 
 
+def looks():
+    out = {}
+    for i in sorted(loaded):
+        if here(loaded[i]):
+            out.update(loaded[i].get("look") or {})   # in the order of the addresses, a later one over an earlier
+    return out
+
+
+def tint(text):
+    # The accent, as the nearest of the terminal's 256 colours, and only when a person is reading.
+    accent = looks().get("accent")
+    if not accent or not sys.stdout.isatty():
+        return text
+    r, g, b = (round(int(accent[i:i + 2], 16) / 255 * 5) for i in (1, 3, 5))
+    return f"\033[38;5;{16 + 36 * r + 6 * g + b}m{text}\033[0m"
+
+
 def page(told=None):
-    print(f"The Missing Layer, in a terminal. {'loaded: ' + ', '.join(sorted(loaded)) if loaded else 'nothing is loaded'}")
+    away = [i for i in sorted(loaded) if not here(loaded[i])]
+    print(f"The Missing Layer, in a terminal. {'loaded: ' + ', '.join(sorted(loaded)) if loaded else 'nothing is loaded'}" + (f"; not for a {DEVICE}: {', '.join(away)}" if away else ""))
     moves = every("moves")
     for x in sorted(every("kinds") + every("boxes") + moves, key=lambda x: x["at"]):
-        print(x["at"])
+        print(tint(x["at"]))
         v = x["v"]
         ends = [kind_of(b) for b in (v.get("when"), v.get("from"), v.get("to")) if b] if x["key"] == "moves" else [kind_of(x["at"])] if x["key"] == "boxes" else []
         lacks = next((k for k in ends if "waits" in k), None)
@@ -444,7 +506,7 @@ def page(told=None):
             print(f"  a {x['name']} has: {', '.join(v)}")
         elif x["key"] == "boxes":
             held = in_box(x["at"])
-            print(f"  holds {len(held)} {ends[0]['name']}")
+            print(f"  holds {len(held)} {ends[0]['name']}" + (", in this run only" if x.get("mine") else ""))
             for i, thing in enumerate(held):
                 print(f"    {i + 1}. {first_of(thing, ends[0])}")
         elif v.get("when"):
