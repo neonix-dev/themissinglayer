@@ -17,7 +17,7 @@
   },
   "addresses": {
     "/": "The cover: a title and one line, whose word explore leads to /explore. The board is behind it.",
-    "/explore": "The whole field of interaction on one page: every door, address, script call, store and verb, and the grammar, written out from this file.",
+    "/explore": "The whole field of interaction on one page: every door, address, script call, store and verb, and the grammar, written out from this file. A reader that runs no script gets one line there instead, which leads to this file.",
     "/serialize": "Downloads what the board is and holds, as floppies.",
     "/deserialize": "Asks whether to download a copy first, then takes floppies, wipes everything and rebuilds.",
     "/contract.json": "This file.",
