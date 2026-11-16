@@ -13,7 +13,7 @@
     "shape": "Type or paste JSON into Shape and touch Generate. A shape is one of: a run {\"store\", \"verb\", \"Name\", \"Value\"}; bare steps {\"steps\": [...]}; a list of shapes; or a whole contract like this file, which rebuilds the board.",
     "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate.",
     "floppy": "Save downloads what the board is and holds as plain JSON; Load takes the files back and rebuilds it. The same through Shape: {\"keep\": true} writes the floppies into Shape, {\"keep\": {\"size\": 4000}} makes each at most that many bytes, and Generate takes them back, in any order. A floppy holds records: the board, each store, each thing held. It never holds code; the generator rebuilds from the records. From a script: board.serialize(size) and board.deserialize(floppies). By address: /serialize downloads the floppies; /deserialize asks whether to download a copy first, then takes the files. Rebuilding wipes everything first: the site goes back to the board it shipped with, every kept store empty, and is then rebuilt from the floppies.",
-    "matrix": "The site ships JSONs beside the board; \"ships\" names them. Each has an id of two levels and brings named things, each a list of steps, and may bring stores and parts. Through Shape: {\"load\": \"email.wire\"} loads one from the site, a JSON pasted whole loads itself, {\"unload\": \"email.wire\"} takes one out. Nothing runs because it was loaded: each time the loaded set changes, the page is drawn again from all of it in the order of the addresses, so any order of loading gives the same page. Every thing gets its place and its address, like email.wire.inbox. What waits on something that is not loaded says so and does nothing; that part is the reader's. Page shows what the loaded JSONs make; Board comes back. A reload forgets what was loaded; what the stores hold stays. A floppy carries the loaded JSONs with everything else."
+    "matrix": "The site ships sheets beside the board; \"ships\" names them. A sheet is a JSON that says what exists and what moves, and names no device; \"sheet\" is everything one can say. Through Shape: {\"load\": \"email.wire\"} loads one from the site, a sheet pasted whole loads itself, {\"unload\": \"email.wire\"} takes one out. Nothing happens because a sheet was loaded: each time the loaded set changes, the page is made again from all of it in the order of the addresses, so any order of loading gives the same page. Every kind, box and move gets a place under its address, like email.wire.inbox. What needs something that is not loaded says what it waits for and does nothing. A move is done by touching what the page made for it, or through Shape: {\"do\": \"email.touch.send\", \"with\": {\"subject\": \"hi\", \"body\": \"there\"}} or {\"do\": \"email.touch.read\", \"pick\": 1}. A move can also be handed in whole and goes once: {\"from\": \"email.wire.sent\"} answers what the box holds, and {\"to\": \"email.wire.inbox\", \"with\": {\"subject\": \"hi\", \"body\": \"there\"}} puts a thing in. That is the door for a reader outside the page; raw storage is not a door. Page shows what the loaded sheets make; Board comes back. A reload forgets what was loaded; what the boxes hold stays. A floppy carries the loaded sheets and what their boxes hold. The same sheets and the same floppy work in the generator for a terminal, /generator.py."
   },
   "addresses": {
     "/": "The cover: a title and one line, whose word explore leads to /explore. The board is behind it.",
@@ -21,12 +21,26 @@
     "/serialize": "Downloads what the board is and holds, as floppies.",
     "/deserialize": "Asks whether to download a copy first, then takes floppies, wipes everything and rebuilds.",
     "/contract.json": "This file.",
-    "/email/wire.json": "A shipped JSON: the id email.wire is the file email/wire.json. The dot is the folder."
+    "/email/wire.json": "A shipped JSON: the id email.wire is the file email/wire.json. The dot is the folder.",
+    "/generator.py": "The generator for a terminal: python3 generator.py. The same sheets, moves and floppies as here, picked by number; it has no board."
   },
   "ships": {
-    "email.wire": "The wireframe of an email with an inbox and a sent box, and its two stores, email.wire.inbox and email.wire.sent. Alone: every layout, one after the other, with its id.",
-    "email.touch": "The interaction of that email. With the wireframe: one layout at a time, compose opens, send sends, a row opens.",
-    "email.stub": "A stub on the other end: ten seconds after a mail is sent it answers. Unloaded, nothing answers, and the reader answers through Shape: {\"store\": \"email.wire.inbox\", \"verb\": \"put\", \"Name\": the subject, \"Value\": the answer}."
+    "email.wire": "What exists in an email: the kind mail (subject, body) and two boxes of mails, email.wire.inbox and email.wire.sent. Alone: what exists is shown and nothing can be done.",
+    "email.touch": "What whoever is at the device can do: send, read, look. With email.wire: fields and a button to send, and the rows of both boxes open.",
+    "email.stub": "A stub on the other end: ten seconds after a mail arrives in sent it puts an answer in the inbox. Unloaded, nothing answers, and a reader answers through Shape: {\"to\": \"email.wire.inbox\", \"with\": {\"subject\": the subject, \"body\": the answer}}."
+  },
+  "sheet": {
+    "id": "Two levels, like email.wire. Every kind, box and move in the sheet has the address id.name, three levels. No two sheets share an id. The dot is the folder: email.wire is the file email/wire.json.",
+    "says": "Words for a reader. The generator does nothing with them.",
+    "kinds": "Each a name and the list of its parts. The first part is what a thing is called by.",
+    "boxes": "Each a name and the kind it holds: a name in the same sheet, or an address.",
+    "moves": "Each a name and one thing going from somewhere to somewhere, said with the five words below.",
+    "from": "The box the thing is picked from. Left out, the thing comes from whoever is at the device, who makes it.",
+    "to": "The box the thing is put in. Left out, the thing goes to whoever is at the device, who is shown it. A thing stays where it came from.",
+    "when": "A box. The move then happens by itself for each thing that arrives there. The generator sees only what arrives through it.",
+    "after": "A wait in seconds before the thing goes on.",
+    "with": "Parts of the thing and the words they get, whatever they were.",
+    "nothing else": "A sheet cannot name a screen, a key, a button, a layout or where a box is kept; each device's generator answers those its own way. A sheet that says anything else is refused."
   },
   "script": {
     "board.enter()": "Shows the board.",
@@ -37,7 +51,8 @@
     "board.load(id or JSON)": "Loads a shipped JSON by its id, or a JSON handed whole.",
     "board.unload(id)": "Takes a loaded JSON out.",
     "board.loaded()": "The ids of what is loaded.",
-    "board.page()": "Shows the page the loaded JSONs make."
+    "board.page()": "Shows the page the loaded JSONs make.",
+    "board.do(move)": "Does a move: {\"do\": address, \"with\" or \"pick\"}, or a move handed whole. Answers what was said."
   },
   "grammar": {
     "from": "start at one of: document, box, localStorage, sessionStorage, indexedDB, cookieStore, caches, history, location",
@@ -52,11 +67,7 @@
     "each": "run steps on every member of the current list",
     "gather": "run several lists of steps and keep each result under its own name",
     "words": "{Name} and {Value} are filled from the run; {Name:uri} makes it safe in an address; {Value:before=} and {Value:after=} split at the first equals sign",
-    "keep": "on a store: how it is kept on a floppy. \"empty\" is the shape that empties it; \"each\" is the shape that puts one thing back, with {name} and {value} filled from the record. A store that holds elements needs only \"empty\". A store with no \"keep\" is not kept.",
-    "touched": "wait for a touch on the thing at an address; \"then\" lists the steps, which start at that thing, and \"$touched\" is what was touched inside it",
-    "changed": "wait for the store at an address to hold something else than it did; \"then\" lists the steps. The generator looks after everything it runs itself, so a write that does not come through it is not seen",
-    "after": "wait a time in milliseconds; \"then\" lists the steps, which keep the current thing and every name as they were",
-    "here": "in a thing of a loaded JSON, {\"use\": \"here\"} goes back to the thing's own place on the page"
+    "keep": "on a store: how it is kept on a floppy. \"empty\" is the shape that empties it; \"each\" is the shape that puts one thing back, with {name} and {value} filled from the record. A store that holds elements needs only \"empty\". A store with no \"keep\" is not kept."
   },
   "parts": {
     "thing": [
@@ -1370,11 +1381,12 @@
     "the address /deserialize asks before it wipes",
     "the address /explore shows the whole field of interaction",
     "the word explore on the cover leads to /explore",
-    "the wireframe alone lays out every layout, one after the other, with its id",
-    "with the interaction loaded, compose opens, a mail is sent, and a row opens",
+    "the wireframe alone shows what exists, each under its address, and nothing to do",
+    "with the interaction loaded, a mail is sent and a row opens",
     "the stub answers a sent mail after ten seconds",
     "with the stub unloaded nothing answers, and a reader answers through Shape",
-    "one floppy carries the layouts, the interaction and the mail",
-    "the interaction alone says what it waits for and does nothing"
+    "one floppy carries the sheets and what their boxes hold",
+    "the interaction alone says what it waits for and does nothing",
+    "a sheet that says anything of a device is refused"
   ]
 }

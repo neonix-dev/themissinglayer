@@ -20,6 +20,8 @@ The cover says only that a bot should explore, and the word explore links to `/e
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
 | `index.html`, `board.css` | The cover and the layout. |
+| `email/*.json` | Sheets: JSONs that say what exists and what moves, and name no device. |
+| `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
 | `proof.json` | How each claim in the contract is played and checked. |
 | `instrument/` | The checker: it opens the page in a browser, plays it with real clicks and typing, and prints HELD or FAILED per claim. |
@@ -33,41 +35,66 @@ Both doors hand their shape to the same place in the generator.
 
 Everything that runs is listed under Ran as the shape it was, with the code it stood for underneath. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate. The result must be the same both ways.
 
-## The matrix: JSONs loaded beside the board
+## Sheets: JSONs that name no device
 
-The site ships JSONs of its own. Each can be loaded alone, first or last, and unloaded again.
+The site ships JSONs of its own, called sheets. A sheet says what exists and what moves. It never says screen, key, button, layout or where anything is kept, so the same file works on any device that has a generator. Each can be loaded alone, first or last, and unloaded again.
 
-| File | Id | What it brings |
+| File | Id | What it says |
 |---|---|---|
-| `email/wire.json` | `email.wire` | The wireframe of an email with an inbox and a sent box, and the two stores the mail is kept in. |
-| `email/touch.json` | `email.touch` | The interaction: one layout at a time, compose opens, send sends, a row opens. |
-| `email/stub.json` | `email.stub` | A stub on the other end: ten seconds after a mail is sent, it answers. |
+| `email/wire.json` | `email.wire` | What exists: a mail has a subject and a body; an inbox and a sent box hold mails. |
+| `email/touch.json` | `email.touch` | What whoever is at the device can do: send, read, look. |
+| `email/stub.json` | `email.stub` | A stub on the other end: ten seconds after a mail arrives in sent, it answers. |
 
-The id is the address: the dot is the folder, so `email.wire` is `email/wire.json`, and `email.wire.inbox` is the thing called `inbox` in it.
+The three files are 961 bytes together. This is all of `email.touch`:
 
-- Through Shape: `{"load": "email.wire"}`, `{"unload": "email.wire"}`, or paste a JSON whole.
-- From a script: `board.load(id or JSON)`, `board.unload(id)`, `board.loaded()`, `board.page()`.
-- **Page** shows what the loaded JSONs make. **Board** comes back.
+```json
+{ "send": { "to": "email.wire.sent" },
+  "read": { "from": "email.wire.inbox" },
+  "look": { "from": "email.wire.sent" } }
+```
 
-A JSON holds named things, each a list of steps, and may bring stores and parts. It carries no script. Nothing runs because a JSON was loaded: each time the loaded set changes, the generator draws the page again from all of it, in the order of the addresses. So any order of loading gives the same page and the same floppy.
+### Everything a sheet can say
 
-Every thing gets its place on the page under its address. A thing that waits on something not loaded says what it waits for and does nothing. That part is left to the reader.
+- **`id`**: two levels, like `email.wire`. Everything in the sheet has the address `id.name`, three levels. The dot is the folder: `email.wire` is `email/wire.json`.
+- **`kinds`**: a name and its parts. `"mail": ["subject", "body"]`.
+- **`boxes`**: a name and the kind it holds. `"inbox": "mail"`.
+- **`moves`**: a name and one thing going from somewhere to somewhere, said with five words:
+  - `from`: the box it is picked from. Left out, whoever is at the device makes it.
+  - `to`: the box it is put in. Left out, whoever is at the device is shown it.
+  - `when`: a box. The move then happens by itself for each thing that arrives there.
+  - `after`: a wait in seconds.
+  - `with`: parts of the thing and the words they get.
 
-The email, step by step:
+A sheet that says anything else is refused. Nothing happens because a sheet was loaded: each time the loaded set changes, the generator makes its page again from all of it, in the order of the addresses. So any order of loading gives the same page and the same floppy. A move that needs something not loaded says what it waits for and does nothing.
 
-1. Load `email.wire` alone. Every layout is laid out, one after the other, with its id. Nothing happens on a touch.
-2. Load `email.touch`. One layout shows at a time; Compose opens, Send sends, a row opens.
-3. Load `email.stub`. Ten seconds after Send, an answer is in the inbox under the same subject.
-4. Unload `email.stub`. Nothing answers. A reader outside the page (Claude's extension) answers through Shape: `{"store": "email.wire.inbox", "verb": "put", "Name": "<subject>", "Value": "<answer>"}`.
-5. Save. The floppy carries the three JSONs and the mail. Load it in any browser and the email is back.
+A thing stays where it came from, so a sheet cannot yet say "take this out of the box".
 
-The grammar of a step grew by three, and the engine number is now 2:
+### Two generators, one set of files
 
-- `{"touched": "<address>", "then": [...]}` waits for a touch on the thing at that address.
-- `{"changed": "<store address>", "then": [...]}` waits for a store to hold something else. The generator looks after everything it runs itself; a write that does not come through it is not seen.
-- `{"after": <milliseconds>, "then": [...]}` waits a time.
+| Generator | Runs on | A move from whoever is here | A move from a box | Where a box is kept |
+|---|---|---|---|---|
+| `generator.js` | a browser | fields and a button | the box's rows can be touched | a database in the browser |
+| `generator.py` | a terminal, Python 3 only | pick its number, type the parts | pick its number, then the row's number | one file, `~/.missinglayer/boxes.json` |
 
-A reload forgets what was loaded. What the stores hold stays.
+In the browser:
+
+- Through Shape: `{"load": "email.wire"}`, `{"unload": "email.wire"}`, or paste a sheet whole.
+- A move through Shape: `{"do": "email.touch.send", "with": {"subject": "hi", "body": "there"}}` or `{"do": "email.touch.read", "pick": 1}`.
+- A move handed in whole goes once: `{"from": "email.wire.sent"}` answers what the box holds; `{"to": "email.wire.inbox", "with": {...}}` puts a thing in.
+- From a script: `board.load(id or sheet)`, `board.unload(id)`, `board.loaded()`, `board.do(move)`, `board.page()`.
+- **Page** shows what the loaded sheets make. **Board** comes back.
+
+In a terminal, `python3 generator.py` prints the same things under the same addresses and a numbered list of what can be done. A line that starts with `{` is a shape, the same shapes as above. With the repository beside it, it reads the sheets from there; alone, it fetches them from the site.
+
+The email, step by step, on either:
+
+1. Load `email.wire` alone. What exists is shown, each under its address. Nothing can be done.
+2. Load `email.touch`. A mail can be sent, and the rows of both boxes open.
+3. Load `email.stub`. Ten seconds after a mail is sent, an answer is in the inbox under the same subject.
+4. Unload `email.stub`. Nothing answers. A reader outside (Claude's extension) reads with `{"from": "email.wire.sent"}` and answers with `{"to": "email.wire.inbox", "with": {"subject": "...", "body": "..."}}`.
+5. Save. The floppy carries the sheets and the mail. It rebuilds in the other generator, and written back from there it is the same bytes.
+
+A reload forgets what was loaded. What the boxes hold stays.
 
 ## Floppies: keeping the board and rebuilding it
 

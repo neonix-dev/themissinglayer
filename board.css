@@ -63,6 +63,10 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .made section div button { text-align: left; padding: 0 .4rem; }
 .made section button { padding: 0 .8rem; }
 .made label { flex-basis: 100%; }
+.made textarea { height: 5rem; }
+.made section dl { flex-basis: 100%; margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .2rem .6rem; }
+.made section dt { opacity: .7; }
+.made section dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .board header button { min-height: 1.6rem; padding: 0 .8rem; }
 [hidden] { display: none !important; }
 @media (max-aspect-ratio: 1/1) {
