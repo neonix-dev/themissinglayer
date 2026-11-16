@@ -138,7 +138,7 @@
   // page is drawn again from all of it, in the order of the addresses.
   let contract, forget = null, drawn = 0;
   const loaded = new Map(), timers = new Set(), shownTo = new Map();
-  const NAME = /^[^./\\]+$/, ID = /^[^./\\]+\.[^./\\]+$/, AT = /^[^./\\]+\.[^./\\]+\.[^./\\]+$/;
+  const NAME = /^[^./\\:]+$/, ID = /^[^./\\:]+\.[^./\\:]+$/, AT = /^[^./\\:]+\.[^./\\:]+\.[^./\\:]+$/;
   const plain = (x) => !!x && typeof x === "object" && !Array.isArray(x);
   const only = (x, keys, what) => { for (const k of Object.keys(x)) if (!keys.includes(k)) refuse(`${what}: the generator does not know "${k}"`); };
   const checkedMove = (m, what) => {
@@ -151,11 +151,30 @@
     if (!m.from && !m.to && !m.when) refuse(`${what}: a move needs a from or a to`);
     return m;
   };
+  // How a page looks is said in a few plain words, each from a short list, and colours as
+  // six digits. No word can hide a thing, move it, or put text or an address in the page.
+  // Every device reads the same words its own way; this is how a browser reads them.
+  const LOOK = {
+    paper: /^#[0-9a-f]{6}$/i, ink: /^#[0-9a-f]{6}$/i, accent: /^#[0-9a-f]{6}$/i,
+    face: { sans: "system-ui, sans-serif", serif: "Georgia, 'Times New Roman', serif", mono: "ui-monospace, monospace" },
+    size: { small: ".9", medium: "1", large: "1.15" },
+    space: { tight: ".7", normal: "1", roomy: "1.4" },
+    corner: { square: "0", soft: ".5em", round: "1.1em" },
+  };
+  const DEVICE = "browser";
+  const here = (j) => !("on" in j) || [j.on].flat().includes(DEVICE);
   const checked = (j) => {
     if (!plain(j) || typeof j.id !== "string" || !ID.test(j.id)) refuse("a JSON needs an id of two levels, like email.wire");
-    only(j, ["id", "says", "kinds", "boxes", "moves"], j.id);
+    only(j, ["id", "says", "on", "kinds", "boxes", "here", "moves", "look"], j.id);
+    if ("on" in j && (![j.on].flat().length || ![j.on].flat().every((d) => typeof d === "string" && NAME.test(d)))) refuse(`${j.id}: "on" names the devices this JSON is for, like browser`);
+    if ("look" in j) {
+      if (!plain(j.look)) refuse(`${j.id}: a look is words and what they are set to`);
+      only(j.look, Object.keys(LOOK), `${j.id}.look`);
+      for (const [k, v] of Object.entries(j.look)) if (!(LOOK[k] instanceof RegExp ? typeof v === "string" && LOOK[k].test(v) : typeof v === "string" && Object.hasOwn(LOOK[k], v)))
+        refuse(`${j.id}.look: "${k}" is ${LOOK[k] instanceof RegExp ? "a colour like #1a2b3c" : `one of ${Object.keys(LOOK[k]).join(", ")}`}`);
+    }
     const names = new Set();
-    for (const key of ["kinds", "boxes", "moves"]) {
+    for (const key of ["kinds", "boxes", "here", "moves"]) {
       if (j[key] == null) continue;
       if (!plain(j[key])) refuse(`${j.id}: ${key} must be named`);
       for (const [name, v] of Object.entries(j[key])) {
@@ -163,7 +182,7 @@
         if (names.has(name)) refuse(`${j.id}: two things are called ${name}`);
         names.add(name);
         if (key === "kinds" && !(Array.isArray(v) && v.length && v.every((p) => typeof p === "string" && p) && new Set(v).size === v.length)) refuse(`${j.id}.${name}: a kind lists its parts`);
-        if (key === "boxes" && !(typeof v === "string" && (NAME.test(v) || AT.test(v)))) refuse(`${j.id}.${name}: a box names the kind it holds`);
+        if ((key === "boxes" || key === "here") && !(typeof v === "string" && (NAME.test(v) || AT.test(v)))) refuse(`${j.id}.${name}: a box names the kind it holds`);
         if (key === "moves") checkedMove(v, `${j.id}.${name}`);
       }
     }
@@ -177,7 +196,10 @@
     if (!j || j.id !== id) refuse(`the site has no JSON called ${id}`);
     return j;
   };
-  const every = (key) => [...loaded.keys()].sort().flatMap((id) => Object.entries(loaded.get(id)[key] || {}).map(([name, v]) => ({ id, name, at: `${id}.${name}`, key, v })));
+  // Only what is meant for this device counts. The boxes are those every tab shares and
+  // those a tab holds for itself.
+  const each = (key) => [...loaded.keys()].sort().filter((id) => here(loaded.get(id))).flatMap((id) => Object.entries(loaded.get(id)[key] || {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([name, v]) => ({ id, name, at: `${id}.${name}`, key, v })));
+  const every = (key) => (key === "boxes" ? [...each("boxes"), ...each("here").map((b) => ({ ...b, key: "boxes", mine: true }))] : each(key));
   const byAt = (a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
   // The kind a box holds, or what it waits for when that is not loaded.
   const kindOf = (boxAt) => {
@@ -200,29 +222,43 @@
     };
   });
   const listed = (x) => (Array.isArray(x) ? x : []);
-  const inBox = (at) => boxes("readonly", (s, out) => { const r = s.get(at); r.onsuccess = () => out(listed(r.result)); });
-  const putIn = (at, thing) => boxes("readwrite", (s) => { const r = s.get(at); r.onsuccess = () => s.put([...listed(r.result), thing], at); });
+  // A box a JSON lists under "here" is held by this tab alone: other tabs never see it and a
+  // floppy does not carry it. The tab keeps its own name for as long as it is open.
+  if (!/^tab-[0-9a-z]{12}$/.test(window.name)) window.name = "tab-" + [...crypto.getRandomValues(new Uint8Array(12))].map((b) => (b % 36).toString(36)).join("");
+  const TAB = window.name;
+  const mineOnly = (at) => every("boxes").some((b) => b.at === at && b.mine);
+  const keyOf = (at) => (mineOnly(at) ? `here:${TAB}:${at}` : at);
+  const inBox = (at) => { const k = keyOf(at); return boxes("readonly", (s, out) => { const r = s.get(k); r.onsuccess = () => out(listed(r.result)); }); };
+  const putIn = (at, thing) => { const k = keyOf(at); return boxes("readwrite", (s) => { const r = s.get(k); r.onsuccess = () => s.put([...listed(r.result), thing], k); }); };
   const setBox = (at, list) => boxes("readwrite", (s) => s.put(list, at));
-  const emptyBoxes = () => boxes("readwrite", (s) => s.clear());
-  // The loaded sheets are kept in the same database, under a name no box can have, so a
-  // reload, or another tab of this site, opens with them. Tabs tell each other when the
-  // loaded set or a box changes; a tab that hears it reads again and makes its page again.
-  const keepLoaded = () => boxes("readwrite", (s) => s.put([...loaded.values()], "loaded"));
+  const emptyBoxes = () => boxes("readwrite", (s) => {   // everything but what other tabs hold for themselves
+    const r = s.openKeyCursor();
+    r.onsuccess = () => { const c = r.result; if (!c) return; if (!(typeof c.key === "string" && c.key.startsWith("here:") && !c.key.startsWith(`here:${TAB}:`))) s.delete(c.key); c.continue(); };
+  });
+  // The loaded sheets are kept in the same database, each under its own name, so a reload,
+  // or another tab of this site, opens with them, and two tabs loading at once both keep
+  // theirs. Tabs tell each other when a sheet or a box changes; a tab that hears it reads
+  // again and makes its page again. A sheet this generator does not know stays kept.
+  const keepSheet = (j) => boxes("readwrite", (s) => s.put(j, `sheet:${j.id}`));
+  const dropSheet = (id) => boxes("readwrite", (s) => s.delete(`sheet:${id}`));
   const takeLoaded = async () => {
-    const kept = await boxes("readonly", (s, out) => { const r = s.get("loaded"); r.onsuccess = () => out(listed(r.result)); });
+    const kept = await boxes("readonly", (s, out) => { const r = s.getAll(IDBKeyRange.bound("sheet:", "sheet:\uffff")); r.onsuccess = () => out(listed(r.result)); });
     loaded.clear();
-    for (const j of kept) { try { const one = checked(j); loaded.set(one.id, one); } catch { /* one this generator does not know is left out */ } }
+    for (const j of kept) { try { const one = checked(j); loaded.set(one.id, one); } catch { /* one this generator does not know is left where it is */ } }
   };
   const tabs = "BroadcastChannel" in globalThis ? new BroadcastChannel("sheets") : null;
   const tellTabs = (what) => { if (tabs) tabs.postMessage(what); };
-
+  // Whoever waits on a box is told when a thing next arrives in it, from this tab or another.
+  const waiting = new Map();
+  const arrived = async (at) => { const all = waiting.get(at); if (!all) return; waiting.delete(at); const list = await inBox(at); for (const ok of all) ok(list); };
   // A thing arrives in a box, and every loaded move that waits on that box is told.
   const arrive = async (boxAt, thing, by, hops) => {
     const kind = kindOf(boxAt);
     if (kind.waits) refuse(`${by} waits for ${kind.waits}, which is not loaded`);
     const it = Object.fromEntries(kind.parts.map((p) => [p, word(thing[p])]));
     await putIn(boxAt, it);
-    tellTabs("box");
+    if (!mineOnly(boxAt)) tellTabs({ box: boxAt });
+    await arrived(boxAt);
     if (hops < 8) for (const m of every("moves")) if (m.v.when === boxAt) { try { await carry(m, it, hops + 1); } catch { /* one that cannot go does not stop the rest */ } }
     return kind;
   };
@@ -278,6 +314,8 @@
     if (fields.length) shape.with = Object.fromEntries(fields.map((f) => [f.name, f.value]));
     await give(shape);
   });
+  const light = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const contrast = (a, b) => { const [x, y] = [light(a), light(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
   const draw = async () => {
     const mine = ++drawn;
     for (const t of [...timers]) if (t.by && !loaded.has(t.by)) { clearTimeout(t.id); timers.delete(t); }
@@ -286,17 +324,18 @@
     const key = (f) => `${f.closest("section").id} ${f.name}`;
     const typed = new Map([...made.querySelectorAll("section [name]")].map((f) => [key(f), f.value]));
     const active = document.activeElement, focus = active && active.name && made.contains(active) ? key(active) : null;
+    const caret = focus ? [active.selectionStart, active.selectionEnd] : null;
     const ids = [...loaded.keys()].sort(), secs = [];
     for (const x of ["kinds", "boxes", "moves"].flatMap(every).sort(byAt)) {
-      const sec = el("section", null, { id: x.at });
-      sec.append(el("h2", x.at));
+      const sec = el("section", null, { id: x.at, class: x.key === "boxes" ? (x.mine ? "holds mine" : "holds") : x.key === "kinds" ? "kind" : x.v.when ? "move auto" : x.v.from ? "move pick" : "move make" });
+      sec.append(el("h2", x.at, { "data-name": x.name }));   // its text is its address; the styles show its name large beside it
       const m = x.v, ends = x.key === "moves" ? [m.when, m.from, m.to].filter(Boolean).map(kindOf) : x.key === "boxes" ? [kindOf(x.at)] : [];
       const lacks = ends.find((k) => k.waits), kind = ends[0];
       if (lacks) sec.append(el("p", `waits for ${lacks.waits}, which is not loaded`));
       else if (x.key === "kinds") sec.append(el("p", `a ${x.name} has: ${x.v.join(", ")}`));
       else if (x.key === "boxes") {
         const list = await inBox(x.at), picks = moves.filter((p) => p.v.from === x.at), rows = el("div");
-        sec.append(el("p", `holds ${list.length} ${kind.name}`));
+        sec.append(el("p", `holds ${list.length} ${kind.name}${x.mine ? ", in this tab only" : ""}`));
         list.forEach((thing, i) => {
           const first = word(thing[kind.parts[0]]) || `(no ${kind.parts[0]})`;
           if (!picks.length) rows.append(el("p", first));
@@ -325,8 +364,18 @@
     if (mine !== drawn) return;   // a later draw has already begun; it will show what is true
     forget = null;
     loadedLine.textContent = ids.length ? `loaded: ${ids.join(", ")}` : "nothing is loaded";
+    const away = ids.filter((id) => !here(loaded.get(id)));
+    if (away.length) loadedLine.textContent += `; not for a ${DEVICE}: ${away.join(", ")}`;
+    // The look: every loaded look, in the order of the addresses, a later one over an earlier.
+    const look = Object.assign({}, ...ids.map((id) => loaded.get(id)).filter(here).map((j) => j.look || {}));
+    if (!(look.paper && look.ink && contrast(look.paper, look.ink) >= 4.5)) { delete look.ink; delete look.paper; }   // together and readable, or neither
+    for (const k of Object.keys(LOOK)) {
+      if (!(k in look)) made.style.removeProperty(`--${k}`);
+      else made.style.setProperty(`--${k}`, LOOK[k] instanceof RegExp ? look[k] : LOOK[k][look[k]]);
+    }
+    if (look.accent) made.style.setProperty("--on-accent", contrast(look.accent, "#000000") > contrast(look.accent, "#ffffff") ? "#000000" : "#ffffff"); else made.style.removeProperty("--on-accent");
     made.replaceChildren(bar, ...secs);
-    if (focus) for (const f of made.querySelectorAll("section [name]")) if (key(f) === focus) f.focus();
+    if (focus) for (const f of made.querySelectorAll("section [name]")) if (key(f) === focus) { f.focus(); try { f.setSelectionRange(caret[0], caret[1]); } catch { /* not a field with a caret */ } }
   };
 
   // ---- running a shape ----------------------------------------------------------------
@@ -530,7 +579,7 @@
       for (const [name, value] of pairs) recs.push(value === undefined ? { in: where, name } : { in: where, name, value });
     }
     // What the boxes of the loaded sheets hold: one record a thing, the same on any device.
-    for (const b of every("boxes").sort(byAt)) if (!kindOf(b.at).waits) for (const is of await inBox(b.at)) recs.push({ at: b.at, is });
+    for (const b of every("boxes").sort(byAt)) if (!b.mine && !kindOf(b.at).waits) for (const is of await inBox(b.at)) recs.push({ at: b.at, is });
     return recs;
   };
   // Records go onto floppies in order, as many as fit on each. No floppy is ever larger
@@ -593,8 +642,8 @@
       await build(c);
     }
     for (const j of sheets) loaded.set(j.id, j);
+    for (const j of sheets) await keepSheet(j);
     for (const [at, list] of things) await setBox(at, list);
-    await keepLoaded();
     tellTabs("loaded");
     log.length = undone.length = 0;
     codeLine.textContent = "";
@@ -644,10 +693,12 @@
     if (Array.isArray(given)) { for (const one of given) await give(one, undoing); return; }
     try {
       if (!given || typeof given !== "object") refuse("not a shape the generator knows");
-      if ("load" in given || ("id" in given && ("kinds" in given || "boxes" in given || "moves" in given))) {
+      if ("load" in given || ("id" in given && ["kinds", "boxes", "here", "moves", "look", "says", "on"].some((k) => k in given))) {
         const j = checked(!("load" in given) ? given : typeof given.load === "string" ? await fetched(given.load) : given.load);
+        const was = loaded.get(j.id), shipped = "load" in given && typeof given.load === "string";
+        if (was && !shipped && JSON.stringify(was) !== JSON.stringify(j)) refuse(`${j.id} is already loaded and this one differs; unload it first`);
+        await keepSheet(j);
         loaded.set(j.id, j);
-        await keepLoaded();
         tellTabs("loaded");
         await draw();
         log.push(JSON.stringify(given));
@@ -655,8 +706,9 @@
         codeLine.textContent = "";
         if (!board.hidden || !cover.hidden) page();
       } else if ("unload" in given) {
-        if (!loaded.delete(given.unload)) refuse(`${word(given.unload)} is not loaded`);
-        await keepLoaded();
+        if (!loaded.has(given.unload)) refuse(`${word(given.unload)} is not loaded`);
+        await dropSheet(given.unload);
+        loaded.delete(given.unload);
         tellTabs("loaded");
         await draw();
         log.push(JSON.stringify(given));
@@ -767,6 +819,7 @@
     unload: async (id) => { await give({ unload: id }); return said.textContent; },
     do: async (move) => { await give(move); return said.textContent; },
     loaded: () => [...loaded.keys()].sort(),
+    wait: (at) => new Promise((ok, no) => { if (kindOf(at).waits) no(new Error(`${word(at)} is not a box that is loaded`)); else waiting.set(at, [...(waiting.get(at) || []), ok]); }),
     serialize: async (size) => (await kept(size)).disks,
     deserialize: async (handed) => {
       const disks = [parsed(handed)].flat().map(parsed).flat();
@@ -787,6 +840,7 @@
     try {
       if (e.data === "loaded") { await takeLoaded(); toPage.hidden = !loaded.size; if (!loaded.size && !made.hidden) await enter(); }
       await draw();
+      if (e.data && e.data.box) await arrived(e.data.box);
     } catch { /* the other tab's change shows on the next draw */ }
   };
 
