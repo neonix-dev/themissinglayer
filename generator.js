@@ -532,15 +532,16 @@
     go.onclick = () => { field.hidden = true; history.replaceState(history.state, "", "./"); enter(); };
     const top = el("header");
     top.append(el("h1", contract.title || ""), go);
-    field.append(top);
+    const cols = el("div", null, { class: "cols" });
+    field.append(top, cols);
     for (const [key, v] of Object.entries(contract)) {
       if (key === "title" || key === "screen" || key === "parts") continue;
       if (key === "stores") {
-        for (const s of v) field.append(part(`store: ${s.store}`, el("p", `${s.is || ""} ${s.keep ? "Kept on a floppy." : `Not kept on a floppy. ${s["not kept"] || ""}`}`),
+        for (const s of v) cols.append(part(`store: ${s.store}`, el("p", `${s.is || ""} ${s.keep ? "Kept on a floppy." : `Not kept on a floppy. ${s["not kept"] || ""}`}`),
           pairs((s.verbs || []).map((x) => [[x.verb, ...(x.needs || []), ...(x.may || []).map((m) => `${m}?`)].join(" "), x.does || ""]))));
-      } else if (typeof v === "string") field.append(part(key, el("p", v)));
-      else if (Array.isArray(v)) field.append(v.every((x) => x && typeof x === "object") ? part(key, pairs(v.map((x) => Object.values(x)))) : part(key, ...v.map((x) => el("p", word(x)))));
-      else if (v && typeof v === "object") field.append(part(key, pairs(Object.entries(v))));
+      } else if (typeof v === "string") cols.append(part(key, el("p", v)));
+      else if (Array.isArray(v)) cols.append(v.every((x) => x && typeof x === "object") ? part(key, pairs(v.map((x) => Object.values(x)))) : part(key, ...v.map((x) => el("p", word(x)))));
+      else if (v && typeof v === "object") cols.append(part(key, pairs(Object.entries(v))));
     }
     cover.hidden = true;
     document.body.append(field);
