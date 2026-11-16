@@ -1,0 +1,7 @@
+{
+  "id": "email.stub",
+  "says": "A stub on the other end. Ten seconds after a mail arrives in sent it puts an answer in the inbox under the same subject. Unload it and nothing answers: that is then the reader's part.",
+  "moves": {
+    "answer": { "when": "email.wire.sent", "after": 10, "with": { "body": "The stub got this and is answering. Nothing read it." }, "to": "email.wire.inbox" }
+  }
+}

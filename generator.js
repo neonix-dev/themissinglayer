@@ -3,6 +3,8 @@
 // to draw a board; which stores and verbs exist, and what each does, is in the contract.
 // Text is never run as code here, and the page's policy makes the browser refuse it.
 // What the board is and holds can be kept as plain JSON on floppies and rebuilt from them.
+// Beside the board it takes sheets: JSONs that name no device. What it makes of them is
+// this browser's answer; generator.py makes a terminal's answer from the same files.
 (async () => {
   if (document.querySelector("main.board")) return;   // one board to a page
   const el = (kind, text, attrs) => {
@@ -122,12 +124,204 @@
     : r && typeof r === "object" && "name" in r && "value" in r ? [word(r.name), word(r.value)] : [word(r)]))
     : typeof x === "object" ? Object.entries(x).map(([k, v]) => [k, word(v)]) : [[word(x)]]);
 
+  // ---- the sheets: JSONs loaded beside the board, in any order --------------------------
+  // A sheet says what exists and what moves, and names no device: nothing of a screen, a
+  // key, a button or where a thing is kept. It has an id of two levels and may bring
+  // kinds (a name and its parts), boxes (each holds things of one kind) and moves. A move
+  // is one thing going from somewhere to somewhere: "from" a box or, left out, from
+  // whoever is at the device, who makes it; "to" a box or, left out, to them; "when"
+  // names a box, and the move then happens by itself for each thing that arrives there;
+  // "after" is a wait in seconds; "with" fixes some of the thing's parts. That is all a
+  // sheet can say. How a move is offered, how a thing is shown and where a box is kept is
+  // this generator's own business, and another device's generator answers its own way.
+  // Nothing happens because a sheet was loaded: each time the loaded set changes the
+  // page is drawn again from all of it, in the order of the addresses.
+  let contract, forget = null, drawn = 0;
+  const loaded = new Map(), timers = new Set(), shownTo = new Map();
+  const NAME = /^[^./\\]+$/, ID = /^[^./\\]+\.[^./\\]+$/, AT = /^[^./\\]+\.[^./\\]+\.[^./\\]+$/;
+  const plain = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+  const only = (x, keys, what) => { for (const k of Object.keys(x)) if (!keys.includes(k)) refuse(`${what}: the generator does not know "${k}"`); };
+  const checkedMove = (m, what) => {
+    if (!plain(m)) refuse(`${what} is not a move`);
+    only(m, ["from", "to", "when", "after", "with"], what);
+    for (const k of ["from", "to", "when"]) if (k in m && (typeof m[k] !== "string" || !AT.test(m[k]))) refuse(`${what}: "${k}" needs the address of a box, like email.wire.inbox`);
+    if ("after" in m && !(typeof m.after === "number" && m.after >= 0 && m.after <= 86400)) refuse(`${what}: "after" is a wait in seconds`);
+    if ("with" in m && (!plain(m.with) || !Object.values(m.with).every((v) => typeof v === "string"))) refuse(`${what}: "with" names parts and the words they get`);
+    if (m.when && m.from) refuse(`${what}: a move that happens by itself takes the thing that arrived`);
+    if (!m.from && !m.to && !m.when) refuse(`${what}: a move needs a from or a to`);
+    return m;
+  };
+  const checked = (j) => {
+    if (!plain(j) || typeof j.id !== "string" || !ID.test(j.id)) refuse("a JSON needs an id of two levels, like email.wire");
+    only(j, ["id", "says", "kinds", "boxes", "moves"], j.id);
+    const names = new Set();
+    for (const key of ["kinds", "boxes", "moves"]) {
+      if (j[key] == null) continue;
+      if (!plain(j[key])) refuse(`${j.id}: ${key} must be named`);
+      for (const [name, v] of Object.entries(j[key])) {
+        if (!NAME.test(name)) refuse(`${j.id}: "${name}" cannot be the third level of an address`);
+        if (names.has(name)) refuse(`${j.id}: two things are called ${name}`);
+        names.add(name);
+        if (key === "kinds" && !(Array.isArray(v) && v.length && v.every((p) => typeof p === "string" && p) && new Set(v).size === v.length)) refuse(`${j.id}.${name}: a kind lists its parts`);
+        if (key === "boxes" && !(typeof v === "string" && (NAME.test(v) || AT.test(v)))) refuse(`${j.id}.${name}: a box names the kind it holds`);
+        if (key === "moves") checkedMove(v, `${j.id}.${name}`);
+      }
+    }
+    return j;
+  };
+  // The dot is the folder: email.wire is the file email/wire.json on this site.
+  const fetched = async (id) => {
+    if (!/^[\w-]+\.[\w-]+$/.test(id)) refuse(`${id} is not the address of a JSON on this site`);
+    const got = await fetch(new URL(`${id.replace(".", "/")}.json`, document.baseURI), { cache: "no-store" });
+    const j = got.ok ? await got.json().catch(() => null) : null;
+    if (!j || j.id !== id) refuse(`the site has no JSON called ${id}`);
+    return j;
+  };
+  const every = (key) => [...loaded.keys()].sort().flatMap((id) => Object.entries(loaded.get(id)[key] || {}).map(([name, v]) => ({ id, name, at: `${id}.${name}`, key, v })));
+  const byAt = (a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
+  // The kind a box holds, or what it waits for when that is not loaded.
+  const kindOf = (boxAt) => {
+    const b = every("boxes").find((x) => x.at === boxAt);
+    if (!b) return { waits: boxAt };
+    const at = AT.test(b.v) ? b.v : `${b.id}.${b.v}`, k = every("kinds").find((x) => x.at === at);
+    return k ? { at, name: k.name, parts: k.v } : { waits: at };
+  };
+  // Where this generator keeps what the boxes hold: one database of its own in the browser.
+  const boxes = (mode, fn) => new Promise((ok, no) => {
+    const open = indexedDB.open("sheets", 1);
+    open.onupgradeneeded = () => open.result.createObjectStore("boxes");
+    open.onerror = () => no(open.error);
+    open.onsuccess = () => {
+      const db = open.result, t = db.transaction("boxes", mode);
+      let out;
+      fn(t.objectStore("boxes"), (x) => { out = x; });
+      t.oncomplete = () => { db.close(); ok(out); };
+      t.onerror = t.onabort = () => { db.close(); no(t.error); };
+    };
+  });
+  const listed = (x) => (Array.isArray(x) ? x : []);
+  const inBox = (at) => boxes("readonly", (s, out) => { const r = s.get(at); r.onsuccess = () => out(listed(r.result)); });
+  const putIn = (at, thing) => boxes("readwrite", (s) => { const r = s.get(at); r.onsuccess = () => s.put([...listed(r.result), thing], at); });
+  const setBox = (at, list) => boxes("readwrite", (s) => s.put(list, at));
+  const emptyBoxes = () => boxes("readwrite", (s) => s.clear());
+
+  // A thing arrives in a box, and every loaded move that waits on that box is told.
+  const arrive = async (boxAt, thing, by, hops) => {
+    const kind = kindOf(boxAt);
+    if (kind.waits) refuse(`${by} waits for ${kind.waits}, which is not loaded`);
+    const it = Object.fromEntries(kind.parts.map((p) => [p, word(thing[p])]));
+    await putIn(boxAt, it);
+    if (hops < 8) for (const m of every("moves")) if (m.v.when === boxAt) { try { await carry(m, it, hops + 1); } catch { /* one that cannot go does not stop the rest */ } }
+    return kind;
+  };
+  // The rest of a move once its thing is in hand: fix the parts it names, wait, hand it on.
+  const carry = async (m, thing, hops = 0) => {
+    const it = { ...thing, ...(m.v.with || {}) };
+    const go = async () => {
+      if (m.v.to) return `${m.at}: a ${(await arrive(m.v.to, it, m.at, hops)).name} went to ${m.v.to}`;
+      if (!m.id) return JSON.stringify(it);
+      shownTo.set(m.at, it);
+      return `${m.at}: ${word(Object.values(it)[0])}`;
+    };
+    if (!(m.v.after > 0)) return go();
+    if (m.v.to && kindOf(m.v.to).waits) refuse(`${m.at} waits for ${kindOf(m.v.to).waits}, which is not loaded`);
+    const t = { by: m.id };
+    t.id = setTimeout(async () => {
+      timers.delete(t);
+      try { tell(await go()); } catch (e) { tell(e instanceof Refused ? `refused: ${e.message}` : `could not: ${e && e.message}`); }
+      await draw();
+    }, m.v.after * 1000);
+    timers.add(t);
+    return `${m.at}: in ${m.v.after} s it goes to ${m.v.to || "whoever is here"}`;
+  };
+  // A move done by whoever is at the device, or handed in through Shape.
+  const doMove = async (m, given) => {
+    if (m.v.when) refuse(`${m.at} happens by itself, when a thing arrives in ${m.v.when}`);
+    if (!m.v.from) {
+      const kind = kindOf(m.v.to), mine = plain(given.with) ? given.with : {};
+      if (kind.waits) refuse(`${m.at} waits for ${kind.waits}, which is not loaded`);
+      if (!kind.parts.some((p) => word({ ...mine, ...(m.v.with || {}) }[p]).trim())) refuse(`${m.at} needs a ${kind.name}: ${kind.parts.join(", ")}`);
+      return carry(m, mine);
+    }
+    const kind = kindOf(m.v.from);
+    if (kind.waits) refuse(`${m.at} waits for ${kind.waits}, which is not loaded`);
+    const list = await inBox(m.v.from);
+    if (given.pick == null && !m.id && !m.v.to) return JSON.stringify(list);
+    return carry(m, list[Number(given.pick) - 1] || refuse(`${m.v.from} holds ${list.length}; pick one by its number, from 1`));
+  };
+
+  // What this generator makes of the loaded sheets, in this browser: every kind, box and
+  // move gets a place under its address. A move from whoever is here becomes fields and
+  // a button; a move from a box makes that box's rows touchable.
+  const made = el("main", null, { class: "made", hidden: "" });
+  const bar = el("header"), loadedLine = el("p", "nothing is loaded", { class: "says" }), heard = el("output", null, { class: "says", "aria-live": "polite" });
+  const toBoard = el("button", "Board", { type: "button", title: "The board, where JSONs are loaded and unloaded" });
+  bar.append(toBoard, loadedLine, heard);
+  made.append(bar);
+  made.addEventListener("click", async (e) => {
+    const b = e.target.closest && e.target.closest("[data-do]");
+    if (!b) return;
+    const shape = { do: b.dataset.do }, fields = [...b.closest("section").querySelectorAll("[name]")];
+    if (b.dataset.pick) shape.pick = Number(b.dataset.pick);
+    if (fields.length) shape.with = Object.fromEntries(fields.map((f) => [f.name, f.value]));
+    await give(shape);
+  });
+  const draw = async () => {
+    const mine = ++drawn;
+    for (const t of [...timers]) if (t.by && !loaded.has(t.by)) { clearTimeout(t.id); timers.delete(t); }
+    const moves = every("moves");
+    for (const at of [...shownTo.keys()]) if (!moves.some((m) => m.at === at)) shownTo.delete(at);
+    const key = (f) => `${f.closest("section").id} ${f.name}`;
+    const typed = new Map([...made.querySelectorAll("section [name]")].map((f) => [key(f), f.value]));
+    const active = document.activeElement, focus = active && active.name && made.contains(active) ? key(active) : null;
+    const ids = [...loaded.keys()].sort(), secs = [];
+    for (const x of ["kinds", "boxes", "moves"].flatMap(every).sort(byAt)) {
+      const sec = el("section", null, { id: x.at });
+      sec.append(el("h2", x.at));
+      const m = x.v, ends = x.key === "moves" ? [m.when, m.from, m.to].filter(Boolean).map(kindOf) : x.key === "boxes" ? [kindOf(x.at)] : [];
+      const lacks = ends.find((k) => k.waits), kind = ends[0];
+      if (lacks) sec.append(el("p", `waits for ${lacks.waits}, which is not loaded`));
+      else if (x.key === "kinds") sec.append(el("p", `a ${x.name} has: ${x.v.join(", ")}`));
+      else if (x.key === "boxes") {
+        const list = await inBox(x.at), picks = moves.filter((p) => p.v.from === x.at), rows = el("div");
+        sec.append(el("p", `holds ${list.length} ${kind.name}`));
+        list.forEach((thing, i) => {
+          const first = word(thing[kind.parts[0]]) || `(no ${kind.parts[0]})`;
+          if (!picks.length) rows.append(el("p", first));
+          for (const p of picks) rows.append(el("button", picks.length > 1 ? `${p.name}: ${first}` : first, { type: "button", "data-do": p.at, "data-pick": i + 1 }));
+        });
+        if (list.length) sec.append(rows);
+      } else if (m.when) {
+        sec.append(el("p", `when a ${kind.name} arrives in ${m.when}, ${m.after > 0 ? `after ${m.after} s ` : ""}it goes to ${m.to || "whoever is here"}`
+          + (m.with ? `, with ${Object.entries(m.with).map(([k, v]) => `${k}: ${v}`).join("; ")}` : "")));
+      } else if (m.from) {
+        const it = shownTo.get(x.at);
+        sec.append(el("p", `touch a ${kind.name} in ${m.from}${m.to ? `; it goes to ${m.to}` : ""}`));
+        if (it) { const dl = el("dl"); for (const [k, v] of Object.entries(it)) dl.append(el("dt", k), el("dd", v)); sec.append(dl); }
+      } else {
+        kind.parts.forEach((part, i) => {
+          if (m.with && part in m.with) return;
+          const f = el(i ? "textarea" : "input", null, { name: part, autocomplete: "off", autocapitalize: "off", spellcheck: "false" }), label = el("label", part + " ");
+          if (forget !== x.at && typed.has(`${x.at} ${part}`)) f.value = typed.get(`${x.at} ${part}`);
+          label.append(f);
+          sec.append(label);
+        });
+        sec.append(el("button", x.name, { type: "button", "data-do": x.at }));
+      }
+      secs.push(sec);
+    }
+    if (mine !== drawn) return;   // a later draw has already begun; it will show what is true
+    forget = null;
+    loadedLine.textContent = ids.length ? `loaded: ${ids.join(", ")}` : "nothing is loaded";
+    made.replaceChildren(bar, ...secs);
+    if (focus) for (const f of made.querySelectorAll("section [name]")) if (key(f) === focus) f.focus();
+  };
+
   // ---- running a shape ----------------------------------------------------------------
-  let contract;
   const envOf = (words) => ({ words, named: {}, missing: false });
   const runVerb = async (shape, undoing) => {
     const store = contract.stores.find((s) => s.store === shape.store) || refuse(`no store is called ${shape.store}`);
-    const verb = store.verbs.find((v) => v.verb === shape.verb) || refuse(`${shape.store} has no verb called ${shape.verb}`);
+    const verb = (store.verbs || []).find((v) => v.verb === shape.verb) || refuse(`${shape.store} has no verb called ${shape.verb}`);
     const words = { Name: word(shape.Name), Value: word(shape.Value) };
     const parts = contract.parts || {};
     let was = null;
@@ -147,7 +341,7 @@
       else if (verb.was && was == null) back = verb["undo if none"] ? [plain(verb["undo if none"])] : null;
       else if (verb.undo) back = [plain(verb.undo)];
     }
-    return { what: `${store.store} ${verb.verb}`, said, code: code(steps, env), back };
+    return { what: `${shape.store} ${verb.verb}`, said, code: code(steps, env), back };
   };
   const runSteps = async (shape) => {
     const steps = known(shape.steps, (contract && contract.parts) || {}), env = envOf({ Name: word(shape.Name), Value: word(shape.Value) });
@@ -158,7 +352,8 @@
   // ---- the board ----------------------------------------------------------------------
   const board = el("main", null, { class: "board" });
   const head = el("header"), title = el("h1"), says = el("p", null, { class: "says" });
-  head.append(title, says);
+  const toPage = el("button", "Page", { type: "button", title: "What the loaded JSONs make", hidden: "" });
+  head.append(title, toPage, says);
   const stores = el("section", null, { class: "knob", "aria-label": "Store" });
   const verbs = el("section", null, { class: "knob", "aria-label": "Verb" });
   const field = (label) => { const input = el("input", null, { autocomplete: "off", autocapitalize: "off", spellcheck: "false" }); const wrap = el("label", label + " "); wrap.append(input); return [wrap, input]; };
@@ -196,11 +391,11 @@
   const way = cover.querySelector("button") || cover.appendChild(el("h1")).appendChild(el("button", "The Missing Layer", { type: "button" }));
   const line = cover.querySelector("p") || cover.appendChild(el("p"));
   board.hidden = true;
-  document.body.append(cover, board);
+  document.body.append(cover, board, made);
 
   let store, verb, original;
   const log = [], undone = [];
-  const tell = (text) => { said.textContent = text; };
+  const tell = (text) => { said.textContent = heard.textContent = text; };
   const pressed = (group, button) => { for (const b of group.children) b.setAttribute("aria-pressed", String(b === button)); };
   // Only what fits is shown and the rest is counted, so nothing scrolls.
   const fit = (list) => {
@@ -282,7 +477,7 @@
   // What the board is and what its stores hold, written as plain records: the board,
   // each store, each thing held. No code is ever written out; a record is data, and
   // the generator rebuilds from it. The contract says, per store, how it is kept.
-  const ENGINE = "1", FLOPPY = 1474560;
+  const ENGINE = "2", FLOPPY = 1474560;
   const bytes = (text) => new TextEncoder().encode(text).length;
   const labelOf = (recs, engine) => {
     const text = engine + JSON.stringify(recs);
@@ -311,15 +506,19 @@
   };
   const records = async () => {
     const { stores: all, ...rest } = contract;
-    const recs = [{ board: rest }, ...all.map((s) => ({ store: s }))];
+    const recs = [{ board: rest }, ...all.map((s) => ({ store: s })), ...[...loaded.keys()].sort().map((id) => ({ json: loaded.get(id) }))];
+    const parts = contract.parts || {};
     for (const s of all) {
+      const where = s.store;
       if (!s.keep) continue;
       let got;
-      try { got = await walk(known(s.holds || [], contract.parts || {}), envOf({})); } catch { recs.push({ left: s.store }); continue; }
-      if (got instanceof Element) { for (const n of got.childNodes) { const thing = tree(n); if (thing != null) recs.push({ in: s.store, thing }); } continue; }
+      try { got = await walk(known(s.holds || [], parts), envOf({})); } catch { recs.push({ left: where }); continue; }
+      if (got instanceof Element) { for (const n of got.childNodes) { const thing = tree(n); if (thing != null) recs.push({ in: where, thing }); } continue; }
       const pairs = rowsOf(got).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
-      for (const [name, value] of pairs) recs.push(value === undefined ? { in: s.store, name } : { in: s.store, name, value });
+      for (const [name, value] of pairs) recs.push(value === undefined ? { in: where, name } : { in: where, name, value });
     }
+    // What the boxes of the loaded sheets hold: one record a thing, the same on any device.
+    for (const b of every("boxes").sort(byAt)) if (!kindOf(b.at).waits) for (const is of await inBox(b.at)) recs.push({ at: b.at, is });
     return recs;
   };
   // Records go onto floppies in order, as many as fit on each. No floppy is ever larger
@@ -357,31 +556,50 @@
   const rebuild = async (recs, set) => {
     const of = (key) => recs.filter((r) => r && typeof r === "object" && key in r);
     const head = of("board")[0];
-    if (!head || !head.board || typeof head.board !== "object") refuse("the floppy holds no board");
-    const c = { ...head.board, stores: of("store").map((r) => r.store) };
+    if (head && !plain(head.board)) refuse("the floppy holds no board");
+    // A floppy written by a generator that has no board of its own carries only sheets and
+    // what their boxes hold; the board is then the one this site shipped with.
+    const c = head ? { ...head.board, stores: of("store").map((r) => r.store) } : original || refuse("the floppy holds no board");
+    const things = new Map();
+    for (const r of of("is")) if (typeof r.at === "string" && plain(r.is)) things.set(r.at, [...(things.get(r.at) || []), Object.fromEntries(Object.entries(r.is).map(([k, v]) => [k, word(v)]))]);
     const left = new Set(of("left").map((r) => r.left));
     const grown = of("thing").map((r) => [r.in, grow(r.thing)]);
+    const sheets = of("json").map((r) => checked(r.json));
     await build(c);   // refused here, before anything is wiped, if the board on the floppy is not one the generator knows
-    // Everything goes first: the site is brought back to the board it shipped with, with
-    // every kept store empty, and only then rebuilt from the floppies.
+    // Everything goes first: every kept store is emptied, every loaded JSON is taken out,
+    // the site is brought back to the board it shipped with, and only then is it rebuilt.
+    const empty = async () => { for (const s of contract.stores) if (s.keep && s.keep.empty) { try { await quiet(s.keep.empty); } catch { /* not in this browser */ } } };
+    await empty();
+    await emptyBoxes();
+    loaded.clear();
+    shownTo.clear();
+    for (const t of timers) clearTimeout(t.id);
+    timers.clear();
     if (original) {
       await build(original);
-      for (const s of original.stores) if (s.keep && s.keep.empty) { try { await quiet(s.keep.empty); } catch { /* not in this browser */ } }
+      await empty();
       await build(c);
     }
+    for (const j of sheets) loaded.set(j.id, j);
+    for (const [at, list] of things) await setBox(at, list);
     log.length = undone.length = 0;
     codeLine.textContent = "";
     const failed = [];
-    for (const s of c.stores) {
-      if (!s.keep || left.has(s.store)) continue;
+    const parts = contract.parts || {};
+    for (const s of contract.stores) {
+      const where = s.store;
+      if (!s.keep || left.has(where)) continue;
       try {
         if (s.keep.empty) await quiet(s.keep.empty);
-        const mine = grown.filter(([where]) => where === s.store);
-        if (mine.length) (await walk(known(s.holds || [], c.parts || {}), envOf({}))).append(...mine.map(([, node]) => node));
-        if (s.keep.each) for (const r of of("name")) if (r.in === s.store) await quiet(given(s.keep.each, envOf({ name: word(r.name), value: word(r.value) })));
-      } catch { failed.push(s.store); }
+        const mine = grown.filter(([w]) => w === where);
+        if (mine.length) (await walk(known(s.holds || [], parts), envOf({}))).append(...mine.map(([, node]) => node));
+        if (s.keep.each) for (const r of of("name")) if (r.in === where) await quiet(given(s.keep.each, envOf({ name: word(r.name), value: word(r.value) })));
+      } catch { failed.push(where); }
     }
-    const same = labelOf(await records(), ENGINE) === labelOf(recs, ENGINE);
+    await draw();
+    toPage.hidden = !loaded.size;
+    const now = await records();
+    const same = labelOf(head ? now : now.filter((r) => "json" in r || "is" in r), ENGINE) === labelOf(recs, ENGINE);
     return `rebuilt from ${set.of} ${set.of === 1 ? "floppy" : "floppies"}: ${same ? "the board keeps the same as what was handed in" : "this browser keeps it differently from what was handed in"}`
       + (failed.length ? `; could not rebuild ${failed.join(", ")}` : "")
       + (set.engine === ENGINE ? "" : `; written by engine ${word(set.engine)}, this is engine ${ENGINE}`);
@@ -412,7 +630,33 @@
     if (Array.isArray(given)) { for (const one of given) await give(one, undoing); return; }
     try {
       if (!given || typeof given !== "object") refuse("not a shape the generator knows");
-      if ("stores" in given) {
+      if ("load" in given || ("id" in given && ("kinds" in given || "boxes" in given || "moves" in given))) {
+        const j = checked(!("load" in given) ? given : typeof given.load === "string" ? await fetched(given.load) : given.load);
+        loaded.set(j.id, j);
+        await draw();
+        log.push(JSON.stringify(given));
+        tell(`loaded ${j.id}`);
+        codeLine.textContent = "";
+        if (!board.hidden || !cover.hidden) page();
+      } else if ("unload" in given) {
+        if (!loaded.delete(given.unload)) refuse(`${word(given.unload)} is not loaded`);
+        await draw();
+        log.push(JSON.stringify(given));
+        tell(`unloaded ${given.unload}`);
+        codeLine.textContent = "";
+        if (!loaded.size && !made.hidden) await enter();
+      } else if ("do" in given || (("from" in given || "to" in given) && !("store" in given) && !("steps" in given))) {
+        // A move: one a loaded sheet names, or one handed in whole, which goes once, now.
+        if (!("do" in given) && "when" in given) refuse("only a loaded JSON can wait for a thing to arrive");
+        const m = "do" in given ? every("moves").find((x) => x.at === given.do) || refuse(`${word(given.do)} is not loaded`)
+          : { id: "", name: "shape", at: "shape", v: checkedMove(Object.fromEntries(["from", "to", "after", "with"].filter((k) => k in given).map((k) => [k, given[k]])), "shape") };
+        const out = await doMove(m, given);
+        if (m.id && !m.v.from) forget = m.at;
+        await draw();
+        log.push(JSON.stringify(given));
+        tell(out);
+        codeLine.textContent = "";
+      } else if ("stores" in given) {
         await build(given);
         log.push(JSON.stringify(given));
         tell("the board was generated from the contract handed in");
@@ -433,6 +677,7 @@
     } catch (e) {
       tell(e instanceof Refused ? `refused: ${e.message}` : `could not: ${e && e.message ? e.message : "not available in this browser"}`);
     }
+    toPage.hidden = !loaded.size;
     showRan();
     await show();
   };
@@ -488,14 +733,22 @@
     line.textContent = said.textContent;
     if (asking && /^rebuilt/.test(said.textContent)) { history.replaceState(history.state, "", "./"); enter(); }
   };
-  const enter = async () => { cover.hidden = true; board.hidden = false; showRan(); await show(); };
+  const enter = async () => { cover.hidden = made.hidden = true; board.hidden = false; showRan(); await show(); };
+  const page = () => { cover.hidden = board.hidden = true; made.hidden = false; };
   way.onclick = enter;
+  toBoard.onclick = enter;
+  toPage.onclick = page;
   // The same two things for a script or another seat: serialize gives the floppies as
   // JSON text, deserialize takes them back, as text or parsed, one or many, in any order.
   const parsed = (x) => (typeof x === "string" ? JSON.parse(x) : x);
   globalThis.board = Object.freeze({
     engine: ENGINE,
     enter,
+    page,
+    load: async (what) => { await give({ load: what }); return said.textContent; },
+    unload: async (id) => { await give({ unload: id }); return said.textContent; },
+    do: async (move) => { await give(move); return said.textContent; },
+    loaded: () => [...loaded.keys()].sort(),
     serialize: async (size) => (await kept(size)).disks,
     deserialize: async (handed) => {
       const disks = [parsed(handed)].flat().map(parsed).flat();
