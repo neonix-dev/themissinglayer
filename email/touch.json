@@ -1,0 +1,9 @@
+{
+  "id": "email.touch",
+  "says": "What whoever is at the device can do with the email: send a mail, read one from the inbox, look at one that was sent. It makes nothing of its own.",
+  "moves": {
+    "send": { "to": "email.wire.sent" },
+    "read": { "from": "email.wire.inbox" },
+    "look": { "from": "email.wire.sent" }
+  }
+}

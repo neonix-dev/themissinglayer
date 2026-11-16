@@ -1,0 +1,6 @@
+{
+  "id": "email.wire",
+  "says": "What exists in an email: a mail, and two boxes that hold mails. It says nothing of what can be done.",
+  "kinds": { "mail": ["subject", "body"] },
+  "boxes": { "inbox": "mail", "sent": "mail" }
+}
