@@ -204,6 +204,17 @@
   const putIn = (at, thing) => boxes("readwrite", (s) => { const r = s.get(at); r.onsuccess = () => s.put([...listed(r.result), thing], at); });
   const setBox = (at, list) => boxes("readwrite", (s) => s.put(list, at));
   const emptyBoxes = () => boxes("readwrite", (s) => s.clear());
+  // The loaded sheets are kept in the same database, under a name no box can have, so a
+  // reload, or another tab of this site, opens with them. Tabs tell each other when the
+  // loaded set or a box changes; a tab that hears it reads again and makes its page again.
+  const keepLoaded = () => boxes("readwrite", (s) => s.put([...loaded.values()], "loaded"));
+  const takeLoaded = async () => {
+    const kept = await boxes("readonly", (s, out) => { const r = s.get("loaded"); r.onsuccess = () => out(listed(r.result)); });
+    loaded.clear();
+    for (const j of kept) { try { const one = checked(j); loaded.set(one.id, one); } catch { /* one this generator does not know is left out */ } }
+  };
+  const tabs = "BroadcastChannel" in globalThis ? new BroadcastChannel("sheets") : null;
+  const tellTabs = (what) => { if (tabs) tabs.postMessage(what); };
 
   // A thing arrives in a box, and every loaded move that waits on that box is told.
   const arrive = async (boxAt, thing, by, hops) => {
@@ -211,6 +222,7 @@
     if (kind.waits) refuse(`${by} waits for ${kind.waits}, which is not loaded`);
     const it = Object.fromEntries(kind.parts.map((p) => [p, word(thing[p])]));
     await putIn(boxAt, it);
+    tellTabs("box");
     if (hops < 8) for (const m of every("moves")) if (m.v.when === boxAt) { try { await carry(m, it, hops + 1); } catch { /* one that cannot go does not stop the rest */ } }
     return kind;
   };
@@ -582,6 +594,8 @@
     }
     for (const j of sheets) loaded.set(j.id, j);
     for (const [at, list] of things) await setBox(at, list);
+    await keepLoaded();
+    tellTabs("loaded");
     log.length = undone.length = 0;
     codeLine.textContent = "";
     const failed = [];
@@ -633,6 +647,8 @@
       if ("load" in given || ("id" in given && ("kinds" in given || "boxes" in given || "moves" in given))) {
         const j = checked(!("load" in given) ? given : typeof given.load === "string" ? await fetched(given.load) : given.load);
         loaded.set(j.id, j);
+        await keepLoaded();
+        tellTabs("loaded");
         await draw();
         log.push(JSON.stringify(given));
         tell(`loaded ${j.id}`);
@@ -640,6 +656,8 @@
         if (!board.hidden || !cover.hidden) page();
       } else if ("unload" in given) {
         if (!loaded.delete(given.unload)) refuse(`${word(given.unload)} is not loaded`);
+        await keepLoaded();
+        tellTabs("loaded");
         await draw();
         log.push(JSON.stringify(given));
         tell(`unloaded ${given.unload}`);
@@ -762,6 +780,15 @@
 
   try { await build(original = await (await fetch("contract.json", { cache: "no-store" })).json()); }
   catch (e) { original = null; tell(e instanceof Refused ? `refused: ${e.message}` : "The generator could not read contract.json. Hand it a contract in Shape."); }
+
+  // What was loaded in this browser is loaded again; the cover still comes first.
+  try { await takeLoaded(); if (loaded.size) { await draw(); toPage.hidden = false; } } catch { /* a browser with no database starts with nothing loaded */ }
+  if (tabs) tabs.onmessage = async (e) => {
+    try {
+      if (e.data === "loaded") { await takeLoaded(); toPage.hidden = !loaded.size; if (!loaded.size && !made.hidden) await enter(); }
+      await draw();
+    } catch { /* the other tab's change shows on the next draw */ }
+  };
 
   // Two addresses do the same as Save and Load: /serialize and /deserialize.
   if (asking) {
