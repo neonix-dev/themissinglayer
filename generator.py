@@ -554,7 +554,7 @@ def main():
 # python3 generator.py map   reads every map/*.json, in any order, and writes map.html. The
 # page carries no script: one select, and the stylesheet shows the skin or the diagram by what
 # is selected. Each map JSON owns its own keys; two that claim the same key are refused.
-MAP_KEYS = {"map.card": ("art", "at"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts")}
+MAP_KEYS = {"map.card": ("art", "at"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts"), "map.themes": ("themes",)}
 
 
 def map_sheets(folder):
@@ -579,6 +579,13 @@ def map_sheets(folder):
     for c in got["components"]:
         if c not in got["on"]:
             refuse(f"{c} stands at no address")
+    THEME = {"name", "page", "veil", "veil_opacity", "art", "ink", "muted", "wire", "wire_opacity", "tag", "tag_line", "seen", "repo", "gone", "conflict", "font"}
+    for k, th in got["themes"].items():
+        if not re.fullmatch(r"[a-z]+", k) or k == "skin" or set(th) != THEME:
+            refuse(f"theme {k} must be a lowercase name and say exactly {', '.join(sorted(THEME))}")
+        for v in th.values():
+            if not re.fullmatch(r"[#\w .,'()\-]+", str(v)):
+                refuse(f"theme {k} says something that is not a colour, a number, a filter or a font: {v}")
     for a, b, _ in got["connections"]:
         for c in (a, b):
             if c not in got["components"]:
@@ -613,12 +620,12 @@ def card_layer(m, ox):
             pairs.setdefault(tuple(sorted((on[a], on[b]))), []).append(comps[a]["seen"] != "repo" and comps[b]["seen"] != "repo")
     for (pa, pb), firm in sorted(pairs.items()):
         A, B = at[pa], at[pb]
-        t.append(f'<line class="wire{"" if all(firm) else " unseen"}" x1="{ox + A["x"]}" y1="{A["y"]}" x2="{ox + B["x"]}" y2="{B["y"]}"/>')
+        t.append(f'<line class="wire{"" if all(firm) else " unseen"}" data-ends="{pa} {pb}" x1="{ox + A["x"]}" y1="{A["y"]}" x2="{ox + B["x"]}" y2="{B["y"]}"/>')
     for a, p in at.items():
         x, y, r = ox + p["x"], p["y"], p["r"]
         rows = [(comps[c]["name"], comps[c]["seen"]) for c in here[a]] or [("missing", "missing")]
         if r:
-            t.append(f'<circle class="spot{"" if here[a] else " gone"}" cx="{x}" cy="{y}" r="{r}"/>')
+            t.append(f'<circle class="spot{"" if here[a] else " gone"}" data-at="{a}" cx="{x}" cy="{y}" r="{r}"/>')
         side = p.get("label", "left" if p["x"] < W / 2 - 20 else "right")
         if side == "row":
             text = "  ·  ".join(n for n, _ in rows)
@@ -635,7 +642,10 @@ def card_layer(m, ox):
             tx, anchor, ty = x + r + 14, "start", y - (n - 1) * 12 + 6
             rx = tx - 9
         t.append(f'<rect class="tag" x="{rx:.0f}" y="{ty - 20}" width="{w:.0f}" height="{n * 24 + 6}" rx="6"/>')
-        t += [f'<text class="name {s}" x="{tx}" y="{ty + i * 24}" text-anchor="{anchor}">{esc(name)}</text>' for i, (name, s) in enumerate(rows)]
+        ids = [c for c in here[a]] if here[a] else [""]
+        if len(rows) == 1 and len(ids) > 1:
+            ids = [" ".join(ids)]
+        t += [f'<text class="name {s}" data-at="{a}" data-c="{ids[i]}" x="{tx}" y="{ty + i * 24}" text-anchor="{anchor}">{esc(name)}</text>' for i, (name, s) in enumerate(rows)]
     return "".join(t)
 
 
@@ -653,10 +663,10 @@ def margin_panels(m, x_left, x_right, height):
     for head, d, cls in (("Missing", m["missing"], "gone"), ("Conflicts", m["conflicts"], "conflict")):
         right.append((head, [(f"row {cls}" if i == 0 else "row more", l) for k, v in d.items() for i, l in enumerate(wrap(f"{k}: {v}", 62))]))
     t = []
-    for x0, blocks in ((x_left, left), (x_right, right)):
+    for x0, blocks, top in ((x_left, left, 40), (x_right, right, 110)):   # the right column starts below the select
         lines = sum(len(ls) for _, ls in blocks)
-        step = min(22, (height - 40 - len(blocks) * 36) / lines)   # the lines close up until the column fits
-        y = 40
+        step = min(22, (height - top - len(blocks) * 36) / lines)   # the lines close up until the column fits
+        y = top
         for head, ls in blocks:
             t.append(f'<text class="head" x="{x0}" y="{y:.0f}">{esc(head)}</text>')
             y += 24
@@ -680,34 +690,43 @@ def write_map(folder=None, out=None):
                 f'<g class="diagram">{card_layer(m, ox)}{panels}</g>'
                 f'<a href="explore" aria-label="The entry: explore"><polygon points="{entry}" fill="transparent"/></a></svg>')
 
+    def vars(th):
+        return " ".join(f"--{k.replace('_', '-')}: {v};" for k, v in th.items() if k != "name")
+    first = next(iter(m["themes"].values()))
+    themes_css = f"body {{ {vars(first)} }}\n" + "\n".join(
+        f'body:has(option[value="{k}"]:checked) {{ {vars(th)} }}' for k, th in m["themes"].items())
+    options = "".join(f'<option value="{k}">Live: {esc(th["name"])}</option>' for k, th in m["themes"].items())
     wide = surface("wide", side, W + 2 * side, margin_panels(m, 28, side + W + 36, H))
     tall = surface("tall", 0, W, "")
     html = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'"><title>The Missing Layer: map</title><style>
-html, body {{ margin: 0; height: 100%; overflow: hidden; background: #f6e9d3; color: #2b2118; }}
+html, body {{ margin: 0; height: 100%; overflow: hidden; }}
+body {{ background: var(--page); color: var(--ink); }}
 svg {{ width: 100vw; height: 100vh; height: 100dvh; display: block; }}
 .tall, .diagram {{ display: none; }}
 @media (orientation: portrait) {{ .wide {{ display: none; }} .tall {{ display: block; }} }}
-body:has(option[value="diagram"]:checked) .diagram {{ display: inline; }}
+body:not(:has(option[value="skin"]:checked)) .diagram {{ display: inline; }}
+body:not(:has(option[value="skin"]:checked)) image {{ filter: var(--art); }}
 form {{ position: fixed; top: .6rem; right: .8rem; margin: 0; font: 15px/1 Georgia, serif; }}
-select {{ font: inherit; color: inherit; background: #fbf3e6; border: 1px solid #8a6a4a; border-radius: 4px; padding: .25rem .4rem; }}
-.veil {{ fill: #f6e9d3; opacity: .8; }}
-.wire {{ stroke: #3b2a1c; stroke-width: 2.5; opacity: .5; }}
+select {{ font: inherit; color: var(--ink); background: var(--tag); border: 1px solid var(--tag-line); border-radius: 4px; padding: .25rem .4rem; }}
+.veil {{ fill: var(--veil); opacity: var(--veil-opacity); }}
+.wire {{ stroke: var(--wire); stroke-width: 2.5; opacity: var(--wire-opacity); }}
 .wire.unseen {{ stroke-dasharray: 8 7; }}
-.spot {{ fill: none; stroke: #3b2a1c; stroke-width: 3; }}
-.spot.gone {{ fill: none; stroke: #b4472f; stroke-dasharray: 6 6; }}
-.tag {{ fill: #fbf3e6; stroke: #8a6a4a; stroke-width: 1; }}
-text {{ font-family: Georgia, "Times New Roman", serif; fill: #2b2118; }}
+.spot {{ fill: none; stroke: var(--ink); stroke-width: 3; }}
+.spot.gone {{ fill: none; stroke: var(--gone); stroke-dasharray: 6 6; }}
+.tag {{ fill: var(--tag); stroke: var(--tag-line); stroke-width: 1; }}
+text {{ font-family: var(--font); fill: var(--ink); }}
 .name {{ font-size: 18px; font-weight: 600; }}
 .head {{ font-size: 18px; font-weight: 700; }}
 .row {{ font-size: 15px; }}
-.connector, .session {{ fill: #2f5d2a; }}
-.repo {{ fill: #5a3f26; }}
-.gone {{ fill: #b4472f; }}
-.conflict {{ fill: #7a3f8a; }}
-.row.more {{ fill: #5a4a3a; }}
-a:focus-visible polygon {{ stroke: #2f5d8a; stroke-width: 4; }}
-</style></head><body><form><label>View <select name="view"><option value="skin" selected>The card</option><option value="diagram">Live components</option></select></label></form>
+.connector, .session {{ fill: var(--seen); }}
+.repo {{ fill: var(--repo); }}
+text.gone {{ fill: var(--gone); }}
+.conflict {{ fill: var(--conflict); }}
+.row.more {{ fill: var(--muted); }}
+a:focus-visible polygon {{ stroke: var(--seen); stroke-width: 4; }}
+{themes_css}
+</style></head><body><form><label>View <select name="view"><option value="skin" selected>The card</option>{options}</select></label></form>
 {wide}
 {tall}
 </body></html>
