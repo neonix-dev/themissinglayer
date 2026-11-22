@@ -550,5 +550,176 @@ def main():
         t.join(90)
 
 
+# ---- /map: the card as a surface ---------------------------------------------------------
+# python3 generator.py map   reads every map/*.json, in any order, and writes map.html. The
+# page carries no script: one select, and the stylesheet shows the skin or the diagram by what
+# is selected. Each map JSON owns its own keys; two that claim the same key are refused.
+MAP_KEYS = {"map.card": ("art", "at"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts")}
+
+
+def map_sheets(folder):
+    got = {}
+    for path in sorted(glob.glob(os.path.join(folder, "*.json"))):
+        with open(path, encoding="utf-8") as f:
+            j = json.load(f)
+        if j.get("id") not in MAP_KEYS:
+            refuse(f"{os.path.basename(path)} is not a map sheet")
+        for k in MAP_KEYS[j["id"]]:
+            if k in got:
+                refuse(f"{k} is said twice")
+            got[k] = j.get(k)
+    lost = [i for i, ks in MAP_KEYS.items() if ks[0] not in got]
+    if lost:
+        refuse(f"waiting for {', '.join(lost)}")
+    for c, a in got["on"].items():
+        if c not in got["components"]:
+            refuse(f"map.on puts {c} at {a}, and map.live has no {c}")
+        if a not in got["at"]:
+            refuse(f"map.on puts {c} at {a}, and map.card has no {a}")
+    for c in got["components"]:
+        if c not in got["on"]:
+            refuse(f"{c} stands at no address")
+    for a, b, _ in got["connections"]:
+        for c in (a, b):
+            if c not in got["components"]:
+                refuse(f"a connection names {c}, and map.live has no {c}")
+    return got
+
+
+def wrap(text, most):
+    lines, line = [], ""
+    for w in str(text).split():
+        if line and len(line) + 1 + len(w) > most:
+            lines.append(line)
+            line = w
+        else:
+            line = f"{line} {w}".strip()
+    return lines + ([line] if line else [])
+
+
+def esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def card_layer(m, ox):
+    """The diagram drawn on the card: a veil over the art, the connections, each address and what stands there."""
+    art, at, comps, on = m["art"], m["at"], m["components"], m["on"]
+    W, H = art["width"], art["height"]
+    here = {a: [c for c in comps if on[c] == a] for a in at}
+    t = [f'<rect class="veil" x="{ox}" y="0" width="{W}" height="{H}"/>']
+    pairs = {}
+    for a, b, _ in m["connections"]:
+        if on[a] != on[b]:
+            pairs.setdefault(tuple(sorted((on[a], on[b]))), []).append(comps[a]["seen"] != "repo" and comps[b]["seen"] != "repo")
+    for (pa, pb), firm in sorted(pairs.items()):
+        A, B = at[pa], at[pb]
+        t.append(f'<line class="wire{"" if all(firm) else " unseen"}" x1="{ox + A["x"]}" y1="{A["y"]}" x2="{ox + B["x"]}" y2="{B["y"]}"/>')
+    for a, p in at.items():
+        x, y, r = ox + p["x"], p["y"], p["r"]
+        rows = [(comps[c]["name"], comps[c]["seen"]) for c in here[a]] or [("missing", "missing")]
+        if r:
+            t.append(f'<circle class="spot{"" if here[a] else " gone"}" cx="{x}" cy="{y}" r="{r}"/>')
+        side = p.get("label", "left" if p["x"] < W / 2 - 20 else "right")
+        if side == "row":
+            text = "  ·  ".join(n for n, _ in rows)
+            rows, side = [(text, "repo")], "below"
+        n = len(rows)
+        w = max(len(s) for s, _ in rows) * 10.5 + 18
+        if side == "below":
+            tx, anchor, ty = x, "middle", y + r + 32
+            rx = tx - w / 2
+        elif side == "left":
+            tx, anchor, ty = x - r - 14, "end", y - (n - 1) * 12 + 6
+            rx = tx - w + 9
+        else:
+            tx, anchor, ty = x + r + 14, "start", y - (n - 1) * 12 + 6
+            rx = tx - 9
+        t.append(f'<rect class="tag" x="{rx:.0f}" y="{ty - 20}" width="{w:.0f}" height="{n * 24 + 6}" rx="6"/>')
+        t += [f'<text class="name {s}" x="{tx}" y="{ty + i * 24}" text-anchor="{anchor}">{esc(name)}</text>' for i, (name, s) in enumerate(rows)]
+    return "".join(t)
+
+
+def margin_panels(m, x_left, x_right, height):
+    """What stands where, in the left margin; connections, missing and conflicts in the right."""
+    at, comps, on = m["at"], m["components"], m["on"]
+    left = []
+    for a, p in at.items():
+        lines = []
+        for c in [c for c in comps if on[c] == a]:
+            lines += [(f'row {comps[c]["seen"]}' if i == 0 else "row more", l) for i, l in enumerate(wrap(f'{comps[c]["name"]}: {comps[c]["is"]}', 64))]
+        left.append((f'{p["card"]}: {p["is"]}', lines or [("row gone", "missing")]))
+    left.append((f'seen, as of {m["asof"]}', [(f"row {k}", f"{k}: {v}") for k, v in m["seen"].items()]))
+    right = [("Connections", [("row", f'{comps[a]["name"]} to {comps[b]["name"]}: {how}') for a, b, how in m["connections"]])]
+    for head, d, cls in (("Missing", m["missing"], "gone"), ("Conflicts", m["conflicts"], "conflict")):
+        right.append((head, [(f"row {cls}" if i == 0 else "row more", l) for k, v in d.items() for i, l in enumerate(wrap(f"{k}: {v}", 62))]))
+    t = []
+    for x0, blocks in ((x_left, left), (x_right, right)):
+        lines = sum(len(ls) for _, ls in blocks)
+        step = min(22, (height - 40 - len(blocks) * 36) / lines)   # the lines close up until the column fits
+        y = 40
+        for head, ls in blocks:
+            t.append(f'<text class="head" x="{x0}" y="{y:.0f}">{esc(head)}</text>')
+            y += 24
+            for cls, line in ls:
+                t.append(f'<text class="{cls}" x="{x0}" y="{y:.0f}">{esc(line)}</text>')
+                y += step
+            y += 12
+    return "".join(t)
+
+
+def write_map(folder=None, out=None):
+    m = map_sheets(folder or os.path.join(HERE, "map"))
+    art, tri = m["art"], m["at"]["triangle"]
+    W, H = art["width"], art["height"]
+    side = W // 2                     # landscape: the card in the middle of a 2:1 surface, the margins beside it
+
+    def surface(cls, ox, sw, panels):
+        entry = f'{ox + tri["x"] - 150},{tri["y"] - 75} {ox + tri["x"] + 150},{tri["y"] - 75} {ox + tri["x"]},{tri["y"] + 95}'
+        return (f'<svg class="{cls}" viewBox="0 0 {sw} {H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The Missing Layer card">'
+                f'<image href="{esc(art["file"])}" x="{ox}" y="0" width="{W}" height="{H}"/>'
+                f'<g class="diagram">{card_layer(m, ox)}{panels}</g>'
+                f'<a href="explore" aria-label="The entry: explore"><polygon points="{entry}" fill="transparent"/></a></svg>')
+
+    wide = surface("wide", side, W + 2 * side, margin_panels(m, 28, side + W + 36, H))
+    tall = surface("tall", 0, W, "")
+    html = f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'"><title>The Missing Layer: map</title><style>
+html, body {{ margin: 0; height: 100%; overflow: hidden; background: #f6e9d3; color: #2b2118; }}
+svg {{ width: 100vw; height: 100vh; height: 100dvh; display: block; }}
+.tall, .diagram {{ display: none; }}
+@media (orientation: portrait) {{ .wide {{ display: none; }} .tall {{ display: block; }} }}
+body:has(option[value="diagram"]:checked) .diagram {{ display: inline; }}
+form {{ position: fixed; top: .6rem; right: .8rem; margin: 0; font: 15px/1 Georgia, serif; }}
+select {{ font: inherit; color: inherit; background: #fbf3e6; border: 1px solid #8a6a4a; border-radius: 4px; padding: .25rem .4rem; }}
+.veil {{ fill: #f6e9d3; opacity: .8; }}
+.wire {{ stroke: #3b2a1c; stroke-width: 2.5; opacity: .5; }}
+.wire.unseen {{ stroke-dasharray: 8 7; }}
+.spot {{ fill: none; stroke: #3b2a1c; stroke-width: 3; }}
+.spot.gone {{ fill: none; stroke: #b4472f; stroke-dasharray: 6 6; }}
+.tag {{ fill: #fbf3e6; stroke: #8a6a4a; stroke-width: 1; }}
+text {{ font-family: Georgia, "Times New Roman", serif; fill: #2b2118; }}
+.name {{ font-size: 18px; font-weight: 600; }}
+.head {{ font-size: 18px; font-weight: 700; }}
+.row {{ font-size: 15px; }}
+.connector, .session {{ fill: #2f5d2a; }}
+.repo {{ fill: #5a3f26; }}
+.gone {{ fill: #b4472f; }}
+.conflict {{ fill: #7a3f8a; }}
+.row.more {{ fill: #5a4a3a; }}
+a:focus-visible polygon {{ stroke: #2f5d8a; stroke-width: 4; }}
+</style></head><body><form><label>View <select name="view"><option value="skin" selected>The card</option><option value="diagram">Live components</option></select></label></form>
+{wide}
+{tall}
+</body></html>
+"""
+    out = out or os.path.join(HERE, "map.html")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(html)
+    return out
+
+
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:2] == ["map"]:
+        print(write_map())
+    else:
+        main()

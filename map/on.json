@@ -1,0 +1,43 @@
+{
+  "id": "map.on",
+  "says": "Which component stands at which address of the card. It names no place and no device: only a component's name in map.live and an address in map.card. An address may hold several components; a component stands at one address. What the card has and the build does not is under missing; where the two disagree is under conflicts.",
+  "on": {
+    "claude": "tree",
+    "notion": "tree",
+    "door": "triangle",
+    "cloudflare": "triangle",
+    "site": "ask",
+    "d1": "thoughts",
+    "reader": "thoughts",
+    "daqstore": "thoughts",
+    "tailnet": "c",
+    "mac": "c",
+    "iphone": "c",
+    "muse": "c",
+    "github": "achievements",
+    "connectors": "workflows",
+    "stick": "compatibility",
+    "pi0": "heartbeat",
+    "pi5": "r",
+    "browser": "l1",
+    "terminal": "r1",
+    "pico": "l2",
+    "kb21": "r2",
+    "oasis": "forest",
+    "readers": "forest",
+    "ekalavya": "forest"
+  },
+  "missing": {
+    "health": "Nothing gathers health. The pi0 writes itself down every minute and the pi5 has its shape check, but each keeps it to itself.",
+    "alerts": "Nothing raises an alert. The pi0's wallpaper stops being green only on the pi0.",
+    "brain to site": "A brain reaches the store through door and the site through a browser, never one through the other: the site fetches nothing.",
+    "Muse on the tailnet": "Muse's seat runs on the mac and is not yet a tailnet member."
+  },
+  "conflicts": {
+    "two doors": "The board's Shape door and the door Worker are both an entry, under one word. The triangle holds door; the board's door is under Ask.",
+    "two stores of thought": "daq.store (git, on the stick) and D1 (door's records) both keep thought.",
+    "places": "A sheet may not name a place, and the card is places. So map.card is a skin, outside the sheet grammar: the browser's answer only.",
+    "portrait on landscape": "The card is portrait and the surface landscape. The card stands in the middle; the diagram uses the margins.",
+    "live is a snapshot": "The site fetches nothing, so the diagram is what map.live saw on its day, until it is written again."
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "id": "map.card",
+  "says": "The card as the browser's skin: where each element of the card is on the art, in the art's own pixels. This is the one map file that names a place; the others name none. Each element is an address; what stands there is said in map/on.json.",
+  "art": {
+    "file": "map/card.jpg",
+    "width": 1086,
+    "height": 1448
+  },
+  "at": {
+    "tree": {
+      "x": 542,
+      "y": 200,
+      "r": 82,
+      "card": "the tree above the triangle",
+      "is": "the brain: whatever is plugged in",
+      "label": "right"
+    },
+    "triangle": {
+      "x": 545,
+      "y": 362,
+      "r": 58,
+      "card": "the inverted triangle",
+      "is": "the entry: where the brain plugs in",
+      "label": "right"
+    },
+    "ask": {
+      "x": 433,
+      "y": 440,
+      "r": 38,
+      "card": "Ask",
+      "is": "input: what is asked"
+    },
+    "thoughts": {
+      "x": 642,
+      "y": 440,
+      "r": 38,
+      "card": "Thoughts",
+      "is": "input: what is kept as thought"
+    },
+    "c": {
+      "x": 541,
+      "y": 690,
+      "r": 78,
+      "card": "C, the pair",
+      "is": "the pair: seats joined",
+      "label": "below"
+    },
+    "achievements": {
+      "x": 170,
+      "y": 612,
+      "r": 46,
+      "card": "Achievements",
+      "is": "what is done and kept"
+    },
+    "workflows": {
+      "x": 348,
+      "y": 622,
+      "r": 46,
+      "card": "Workflows",
+      "is": "the verbs that cross",
+      "label": "below"
+    },
+    "compatibility": {
+      "x": 264,
+      "y": 748,
+      "r": 46,
+      "card": "Compatibility",
+      "is": "the same thing on every device",
+      "label": "left"
+    },
+    "heartbeat": {
+      "x": 744,
+      "y": 622,
+      "r": 46,
+      "card": "Heartbeat",
+      "is": "says it is alive"
+    },
+    "health": {
+      "x": 918,
+      "y": 622,
+      "r": 46,
+      "card": "Health",
+      "is": "says how it is"
+    },
+    "alerts": {
+      "x": 820,
+      "y": 754,
+      "r": 46,
+      "card": "Alerts",
+      "is": "says when it is not well"
+    },
+    "r": {
+      "x": 542,
+      "y": 1020,
+      "r": 58,
+      "card": "R, on the mountain",
+      "is": "run",
+      "label": "right"
+    },
+    "forest": {
+      "x": 542,
+      "y": 1340,
+      "r": 0,
+      "card": "Random Forest",
+      "is": "the base: many below",
+      "label": "row"
+    },
+    "l1": {
+      "x": 200,
+      "y": 290,
+      "r": 70,
+      "card": "L1 Control",
+      "is": "a control"
+    },
+    "r1": {
+      "x": 890,
+      "y": 290,
+      "r": 70,
+      "card": "R1 Control",
+      "is": "a control"
+    },
+    "l2": {
+      "x": 200,
+      "y": 990,
+      "r": 70,
+      "card": "L2 Control",
+      "is": "a control",
+      "label": "below"
+    },
+    "r2": {
+      "x": 890,
+      "y": 990,
+      "r": 70,
+      "card": "R2 Control",
+      "is": "a control",
+      "label": "below"
+    }
+  }
+}

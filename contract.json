@@ -22,6 +22,7 @@
     "/deserialize": "Asks whether to download a copy first, then takes floppies, wipes everything and rebuilds.",
     "/contract.json": "This file.",
     "/email/wire.json": "A shipped JSON: the id email.wire is the file email/wire.json. The dot is the folder.",
+    "/map": "The card as a surface: paper, the whole page, no script. One select shows the card or the live components standing on its elements. Written by python3 generator.py map from map/card.json (where each element is on the art), map/live.json (the components and their connections, a snapshot) and map/on.json (which component stands at which element), loaded in any order.",
     "/generator.py": "The generator for a terminal: python3 generator.py. The same sheets, moves and floppies as here, picked by number; it has no board."
   },
   "ships": {

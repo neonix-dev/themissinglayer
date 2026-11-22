@@ -96,6 +96,22 @@ The email, step by step, on either:
 
 A reload forgets what was loaded. What the boxes hold stays.
 
+## /map: the card as the surface
+
+The whole site is a contract, and the card is that contract drawn. `/map` shows the card as paper over the whole page, with no scroll. One select switches the same surface to the live components, each standing on one element of the card.
+
+The tree above the triangle is the brain: whatever is plugged in. It enters through the triangle; everything below is the static engine.
+
+The page runs no script. Its policy refuses any, and the stylesheet shows the card or the diagram according to what is selected. In landscape the card stands in the middle, with the inventory in the margins. In portrait the diagram stands on the card alone.
+
+| File | Id | What it says |
+|---|---|---|
+| `map/card.json` | `map.card` | Where each element is on the art. It is the one map file that names a place, so it is the browser's skin and not a sheet. |
+| `map/live.json` | `map.live` | The components and their connections, and how each was seen: through a connector, by the brain writing the snapshot, or only in a repository. |
+| `map/on.json` | `map.on` | Which component stands at which element; what the card has and the build does not; where the two disagree. |
+
+`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. The site fetches nothing, so the diagram is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
+
 ## Floppies: keeping the board and rebuilding it
 
 What the board is and what its stores hold can be written out as plain JSON and read back.
