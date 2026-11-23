@@ -13,6 +13,7 @@ site = args[0].rstrip("/") + "/"
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 contract = json.load(open(os.path.join(ROOT, "contract.json"), encoding="utf-8"))
 examples = [x["name"] for x in contract["examples"]]
+themes = [o.split('"')[0] for o in open(os.path.join(ROOT, "index.html"), encoding="utf-8").read().split('<option value="')[1:]]
 IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
 # name, width, height (the part of the screen Safari or Chrome leaves to the page), density, touch
 DEVICES = [
@@ -25,6 +26,8 @@ DEVICES = [
 
 h = Hand()
 held = []
+h.say("Network.enable")
+h.say("Network.setCacheDisabled", cacheDisabled=True)   # every file as the site serves it now, never a copy from an earlier run
 
 
 def claim(text, ok):
@@ -72,6 +75,23 @@ def type_in(js, text, touch):
     h.say("Input.insertText", text=text)
 
 
+def choose(value):
+    """Picks a cover theme the way a reader does: focus the select, then arrow keys."""
+    sel = "document.querySelector('select[name=cover]')"
+    look(f"{sel}.focus()")
+    for _ in range(8):
+        key("ArrowUp", 38)
+    for _ in range(look(f"[...{sel}.options].findIndex(o => o.value === {json.dumps(value)})")):
+        key("ArrowDown", 40)
+    time.sleep(.3)
+    return look(f"{sel}.value") == value
+
+
+def key(name, code):
+    for kind in ("rawKeyDown", "keyUp"):
+        h.say("Input.dispatchKeyEvent", type=kind, key=name, code=name, windowsVirtualKeyCode=code)
+
+
 def button(text):
     return f"[...document.querySelectorAll('button')].find(b => !b.closest('[hidden]') && b.textContent.trim() === {json.dumps(text)})"
 
@@ -90,7 +110,7 @@ def fits():
 
 INSIDE = """(() => {
   const r = (e) => e.getBoundingClientRect();
-  const parts = [document.querySelector('.cover h1 button'), document.querySelector('.cover .plate p'),
+  const parts = [document.querySelector('.cover h1 button'), document.querySelector('.cover .plate p'), document.querySelector('.cover select[name=cover]'),
                  ...document.querySelectorAll('.cover .examples button'), document.querySelector('.cover footer')];
   return { all: parts.every(e => e && (b => b.left >= 0 && b.top >= 0 && b.right <= innerWidth + .5 && b.bottom <= innerHeight + .5)(r(e))),
            count: parts.length };
@@ -107,15 +127,26 @@ for name, w, hgt, dpr, touch in DEVICES:
     time.sleep(1.5)
     shoot(f"{name}-1-cover")
     inside = look(INSIDE)
-    claim(f"{name}: the cover shows in full: title, line, {len(examples)} examples and the purpose inside the window, nothing to scroll",
-          inside["all"] and inside["count"] == 3 + len(examples) and fits())
+    claim(f"{name}: the cover shows in full: title, line, {len(examples)} examples, the theme select and the purpose inside the window, nothing to scroll",
+          inside["all"] and inside["count"] == 4 + len(examples) and fits())
     tall = hgt > w
     art = look("(() => { const s = getComputedStyle(document.querySelector('.cover')), b = document.querySelector('.cover').getBoundingClientRect();"
                " return { image: s.backgroundImage, size: s.backgroundSize, full: b.width === innerWidth && b.height === innerHeight }; })()")
-    claim(f"{name}: the line art fills the whole window, drawn for a {'tall' if tall else 'wide'} window",
-          art["full"] and art["size"].startswith("cover") and ("cover-tall.svg" if tall else "cover-wide.svg") in art["image"])
-    small = look("[...document.querySelectorAll('.cover button')].filter(b => b.getBoundingClientRect().height < 44).length")
-    claim(f"{name}: every button on the cover is at least 44 px tall", small == 0)
+    shape = "tall" if tall else "wide"
+    claim(f"{name}: the line art fills the whole window: the brain in the middle under the title, drawn for a {shape} window",
+          art["full"] and art["size"].startswith("cover") and f"cover-{themes[0]}-{shape}.svg" in art["image"])
+    corner = look("(() => { const b = document.querySelector('.cover select[name=cover]').getBoundingClientRect(); return innerWidth - b.right < 40 && b.top < 60; })()")
+    drawn = []
+    for n, theme in enumerate(themes):
+        picked = choose(theme)
+        got = look("getComputedStyle(document.querySelector('.cover')).backgroundImage")
+        drawn.append(picked and f"cover-{theme}-{shape}.svg" in got and fits())
+        shoot(f"{name}-0{n}-theme-{theme}")
+    choose(themes[0])
+    claim(f"{name}: the select at the top right picks each of the {len(themes)} cover themes, and each fills the window with its own drawing",
+          corner and all(drawn))
+    small = look("[...document.querySelectorAll('.cover button, .cover select')].filter(b => b.getBoundingClientRect().height < 44).length")
+    claim(f"{name}: every button and the select on the cover are at least 44 px tall", small == 0)
     # Mail: tap it, write a mail, send it, and the stub answers
     ok = tap(example("Mail"), touch)
     begun = ok and look("!document.querySelector('.made').hidden") and look("!!document.querySelector('input[name=subject]')")

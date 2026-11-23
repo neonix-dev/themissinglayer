@@ -33,23 +33,36 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .ran button { font-family: ui-monospace, monospace; font-size: .75rem; min-height: 1.8rem; }
 .box > * { margin: 0; flex: none; }
 .code { display: block; flex: none; height: 3.6em; overflow: hidden; font-size: .75rem; overflow-wrap: anywhere; border-top: 1px solid GrayText; padding-top: .3rem; }
-/* The cover is line art, drawn like a circuit board from the card (cover-wide.svg and
-   cover-tall.svg, made by generator.py from map/card.json): each fills the whole window of its
-   shape, with pads at the card's holes, the brain's path in copper, chips for the controls,
-   traces out to every edge, and the board's own marks. A fine grid lies under it. The cover
-   keeps to its light board in any scheme, clears an iPhone's notch and home bar, and nothing
-   moves. */
+/* The cover is line art drawn from the card laid out round its brain (map/ring.json): the
+   brain in the middle, under the title, with every other element wired in to it. Four themes
+   draw it, each in its own domain's language (cover-<theme>-wide.svg and -tall.svg, made by
+   generator.py); the select at the top right picks one, the window's shape picks wide or tall.
+   Each fills the whole window. The cover keeps to light paper in any scheme, clears an iPhone's
+   notch and home bar, and nothing moves. */
 .cover {
+  --wide: url("cover-circuit-wide.svg"); --tall: url("cover-circuit-tall.svg"); --paper: #f7f9fb; --line: #e6edf4; --cell: 24px; --dot: transparent;
   position: relative; overflow: hidden; box-sizing: border-box; height: 100vh; height: 100dvh;
   padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) calc(84px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   display: grid; place-content: center; justify-items: center; gap: 16px; text-align: center;
   color: #1d2b3a; color-scheme: light; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-  background-color: #f7f9fb;
-  background-image: url("cover-wide.svg"), linear-gradient(#e6edf4 1px, transparent 1px), linear-gradient(90deg, #e6edf4 1px, transparent 1px);
-  background-size: cover, 24px 24px, 24px 24px; background-position: center, center, center; background-repeat: no-repeat, repeat, repeat;
+  background-color: var(--paper);
+  background-image: var(--wide), radial-gradient(circle, var(--dot) 1.6px, transparent 2.2px), linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: cover, var(--cell) var(--cell), var(--cell) var(--cell), var(--cell) var(--cell);
+  background-position: center; background-repeat: no-repeat, repeat, repeat, repeat;
 }
 @media (orientation: portrait) {
-  .cover { background-image: url("cover-tall.svg"), linear-gradient(#e6edf4 1px, transparent 1px), linear-gradient(90deg, #e6edf4 1px, transparent 1px); }
+  .cover { background-image: var(--tall), radial-gradient(circle, var(--dot) 1.6px, transparent 2.2px), linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); }
+}
+.cover:has(option[value="processor"]:checked) { --wide: url("cover-processor-wide.svg"); --tall: url("cover-processor-tall.svg"); --paper: #f3f5f8; --line: #e8ecf1; --cell: 16px; }
+.cover:has(option[value="breadboard"]:checked) { --wide: url("cover-breadboard-wide.svg"); --tall: url("cover-breadboard-tall.svg"); --paper: #f6f3ec; --line: transparent; --cell: 20px; --dot: #d8d1c2; }
+.cover:has(option[value="neural"]:checked) { --wide: url("cover-neural-wide.svg"); --tall: url("cover-neural-tall.svg"); --paper: #fbfaf7; --line: transparent; }
+.cover .themes {
+  position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 1;
+  display: flex; align-items: center; gap: 8px; font: 600 12px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #4a5d72;
+}
+.cover .themes select {
+  min-height: 44px; padding: 0 10px; font: 15px system-ui, -apple-system, sans-serif; letter-spacing: 0; text-transform: none;
+  color: #1d2b3a; background: rgba(255, 255, 255, .95); border: 1px solid #c9d6e3; border-radius: 4px;
 }
 .cover[hidden] { display: none; }
 .cover .plate {
@@ -129,3 +142,5 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
   input, textarea { font-size: max(16px, 1rem); }
   .made button { min-height: 44px; }
 }
+/* On a narrow screen the cover's theme select stands without its word, so it covers no part. */
+@media (max-width: 560px) { .cover .themes span { display: none; } }

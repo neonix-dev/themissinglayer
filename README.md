@@ -1,6 +1,6 @@
 # The Missing Layer
 
-The site is one page. On load it shows the card drawn as light line art, like a circuit board, filling the whole window, with a title, one line and two shipped examples centred on it and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
+The site is one page. On load it shows the card drawn as light line art round a brain in the middle (the brain is whatever the reader brings), filling the whole window in one of four domain themes picked at the top right, with a title, one line and two shipped examples on the brain and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
 
 ## The way in
 
@@ -19,7 +19,7 @@ The cover says only that a bot should explore, and the word explore links to `/e
 |---|---|
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
-| `index.html`, `board.css`, `cover-wide.svg`, `cover-tall.svg` | The cover and the layout. The two SVGs are the cover's line art, one for a window wider than tall and one for a phone held upright, each laid out to fill its shape. They show pads at the card's holes, the brain's path in copper, chips for the four controls, traces out to every edge, and a board's own marks (edge, mounting holes, fiducials, part designators, title block), over a fine grid. `python3 generator.py map` draws them from `map/card.json`, so they never copy the hand-drawn art. |
+| `index.html`, `board.css`, `cover-*.svg` | The cover and the layout. The cover draws the card laid out round its brain (`map/ring.json`): the tree is the brain, in the middle under the title; C is the bus ring round it; the Random Forest is the outer ring; every other element stands round them, wired straight in. Four themes draw it, each in its own domain's language: Circuit board (pads, copper traces, chips, a title block), Processor (a die: the core, functional blocks, buses, the pad ring), Breadboard (a chip on the centre channel, jumper wires, LEDs, the power rails) and Neural (the cell body, dendrites, a network round the edge). Each comes as `cover-<theme>-wide.svg` and `cover-<theme>-tall.svg`; the select at the top right picks the theme and the window's shape picks wide or tall, in the stylesheet alone. `python3 generator.py map` draws them all from `map/card.json` and `map/ring.json`, so none copies the hand-drawn art. |
 | `email/*.json` | Sheets: JSONs that say what exists and what moves, and name no device. |
 | `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
@@ -111,7 +111,8 @@ The acceptance check for the cover on phones and desktops is `instrument/cover.p
 
 - the cover shows in full and nothing scrolls;
 - the line art fills the whole window, drawn for its shape;
-- every button is at least 44px tall, and every text field is at least 16px so an iPhone does not zoom;
+- the select at the top right picks each of the four themes, and each fills the window with its own drawing;
+- every button and the select are at least 44px tall, and every text field is at least 16px so an iPhone does not zoom;
 - tapping Mail writes and sends a mail, and the stub answers;
 - tapping Notes writes a note that the notebook holds;
 - the board fits from there.
@@ -139,9 +140,10 @@ The page runs no script. Its policy refuses any, and the stylesheet shows what t
 | `map/card.json` | `map.card` | Where each hole is on the card, in the art's own pixels, with its symbol, its code and its word; the title; the lines that join the holes. It is the one map file that names a place, so it is the browser's skin and not a sheet. |
 | `map/live.json` | `map.live` | The components and their connections, and how each was seen: through a connector, by the brain writing the snapshot, or only in a repository. |
 | `map/on.json` | `map.on` | Which component stands at which element; what the card has and the build does not; where the two disagree. |
+| `map/ring.json` | `map.ring` | The card laid out round its brain for the cover: where each element stands, as fractions of a wide window and of a tall one, and how big the brain is. |
 | `map/themes.json` | `map.themes` | The themes. Each says who drew it, whether it is the art or its own drawing, its symbols (glyph, code, letter or word), its line (solid, dashed or double), and its palette and font. It never says where anything is. |
 
-`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`, and the cover's line art (`cover-wide.svg`, `cover-tall.svg`) from the same card. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
+`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`, and the cover's line art (`cover-<theme>-<wide|tall>.svg`) from the same card. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
 
 The acceptance check for `/map` is `instrument/map.py`. It opens the page in landscape (1280×800) and portrait (390×844) and picks every theme, with the overlay off and on, using the keyboard. It then measures every hole and every symbol and prints HELD or FAILED per claim:
 

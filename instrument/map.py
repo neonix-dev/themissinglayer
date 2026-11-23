@@ -17,6 +17,8 @@ live, on, at, themes = sheets["components"], sheets["on"], sheets["at"], list(sh
 WIDE, TALL = (1280, 800), (390, 844)
 
 h = Hand()
+h.say("Network.enable")
+h.say("Network.setCacheDisabled", cacheDisabled=True)   # every file as the site serves it now, never a copy from an earlier run
 
 
 def look(expr):
