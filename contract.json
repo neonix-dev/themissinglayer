@@ -2,13 +2,13 @@
   "title": "The Missing Layer",
   "says": "A busy board for the browser. Every knob is something this tab can already do.",
   "what": "The site holds no application and no data. It gives a grammar, and each browser that opens it is one live state. This file is the whole board: the one script on the site is a generator that reads it and turns the shapes it knows into running code.",
-  "rule": "The board is one screen: no scroll, no navigation. The page the loaded JSONs make may scroll. On load only the title and one line are visible. No text is ever run as code; the page asks the browser to refuse it. Only shapes the generator knows become code.",
+  "rule": "The board is one screen: no scroll, no navigation. The page the loaded JSONs make may scroll. On load only the cover is visible: neonix's card spread over the whole window, the title and one line centred on it, and a footer that says what the site is for. No text is ever run as code; the page asks the browser to refuse it. Only shapes the generator knows become code.",
   "screen": {
     "width": 1280,
     "height": 800
   },
   "doors": {
-    "cover": "The page opens on a title and one line. The word explore in the line leads to /explore. The board is built behind it. Touch the title to go in, or call board.enter().",
+    "cover": "The page opens on neonix's card, spread over the whole window without being stretched, with the title and one line centred on it and the purpose in the footer: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. The word explore in the line leads to /explore. The board is built behind it. Touch the title to go in, or call board.enter().",
     "knobs": "Touch a store, touch a verb, type into Name and Value, touch Do. Undo takes back the last thing done.",
     "shape": "Type or paste JSON into Shape and touch Generate. A shape is one of: a run {\"store\", \"verb\", \"Name\", \"Value\"}; bare steps {\"steps\": [...]}; a list of shapes; or a whole contract like this file, which rebuilds the board.",
     "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate.",
@@ -1382,6 +1382,7 @@
     "the address /deserialize asks before it wipes",
     "the address /explore shows the whole field of interaction",
     "the word explore on the cover leads to /explore",
+    "the cover says what the site is for, and nothing scrolls",
     "the wireframe alone shows what exists, each under its address, and nothing to do",
     "with the interaction loaded, a mail is sent and a row opens",
     "the stub answers a sent mail after ten seconds",

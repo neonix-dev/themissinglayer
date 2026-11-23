@@ -1,6 +1,6 @@
 # The Missing Layer
 
-The site is one page. On load it shows a title and one line, centred, and nothing else. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
+The site is one page. On load it shows neonix's card spread over the whole window, not stretched but brushed out to every edge, with a title and one line centred on it and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
 
 ## The way in
 
@@ -19,7 +19,7 @@ The cover says only that a bot should explore, and the word explore links to `/e
 |---|---|
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
-| `index.html`, `board.css` | The cover and the layout. |
+| `index.html`, `board.css` | The cover and the layout. The cover's artwork is `map/card.jpg`: a blurred copy fills the window, and the card itself stands in the middle at its own proportions, its edges feathered into the fill. |
 | `email/*.json` | Sheets: JSONs that say what exists and what moves, and name no device. |
 | `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
