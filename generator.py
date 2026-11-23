@@ -552,9 +552,11 @@ def main():
 
 # ---- /map: the card as a surface ---------------------------------------------------------
 # python3 generator.py map   reads every map/*.json, in any order, and writes map.html. The
-# page carries no script: one select, and the stylesheet shows the skin or the diagram by what
-# is selected. Each map JSON owns its own keys; two that claim the same key are refused.
-MAP_KEYS = {"map.card": ("art", "at"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts"), "map.themes": ("themes",)}
+# card is a stencil: each element is a hole. A theme is what goes into the holes; the first is
+# neonix's own hand-drawn card, the others draw their own. An overlay lies on top of any theme.
+# The page carries no script: two selects, and the stylesheet shows what is selected. Each map
+# JSON owns its own keys; two that claim the same key are refused.
+MAP_KEYS = {"map.card": ("art", "at", "title", "joins"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts"), "map.themes": ("themes",)}
 
 
 def map_sheets(folder):
@@ -579,13 +581,26 @@ def map_sheets(folder):
     for c in got["components"]:
         if c not in got["on"]:
             refuse(f"{c} stands at no address")
-    THEME = {"name", "page", "veil", "veil_opacity", "art", "ink", "muted", "wire", "wire_opacity", "tag", "tag_line", "seen", "repo", "gone", "conflict", "font"}
+    THEME = {"name", "by", "draw", "symbols", "line", "grid", "stroke", "page", "hole", "veil", "veil_opacity", "ink", "muted",
+             "wire", "wire_opacity", "tag", "tag_line", "seen", "repo", "gone", "conflict", "font"}
+    ways = {"draw": ("art", "own"), "symbols": ("art", "glyph", "code", "letter", "word"), "line": ("solid", "dashed", "double")}
     for k, th in got["themes"].items():
-        if not re.fullmatch(r"[a-z]+", k) or k == "skin" or set(th) != THEME:
+        if not re.fullmatch(r"[a-z]+", k) or k in ("none", "live") or set(th) != THEME:
             refuse(f"theme {k} must be a lowercase name and say exactly {', '.join(sorted(THEME))}")
+        for w, may in ways.items():
+            if th[w] not in may:
+                refuse(f"theme {k}: {w} is one of {', '.join(may)}")
+        if (th["draw"] == "art") != (th["symbols"] == "art"):
+            refuse(f"theme {k}: only the art's own drawing has the art's symbols")
         for v in th.values():
             if not re.fullmatch(r"[#\w .,'()\-]+", str(v)):
-                refuse(f"theme {k} says something that is not a colour, a number, a filter or a font: {v}")
+                refuse(f"theme {k} says something that is not a colour, a number, a word or a font: {v}")
+    arts = [k for k, th in got["themes"].items() if th["draw"] == "art"]
+    if arts != list(got["themes"])[:1]:
+        refuse("the hand-drawn card is the one theme that shows the art, and it comes first")
+    for a, b in got["joins"]:
+        if a not in got["at"] or b not in got["at"]:
+            refuse(f"the card joins {a} and {b}, and has no such element")
     for a, b, _ in got["connections"]:
         for c in (a, b):
             if c not in got["components"]:
@@ -677,25 +692,76 @@ def margin_panels(m, x_left, x_right, height):
     return "".join(t)
 
 
+def own_drawing(m, k, th, ox, uid):
+    """A theme drawn with its own hand into the card's holes: its holes, symbols, lines and type. No art."""
+    at, title = m["at"], m["title"]
+    W, H = m["art"]["width"], m["art"]["height"]
+    dash = ' stroke-dasharray="10 7"' if th["line"] == "dashed" else ""
+    t = [f'<g class="th th-{k}">']
+    t.append(f'<rect class="th-sheet" x="{ox}" y="0" width="{W}" height="{H}"/>')
+    if th["grid"]:
+        t.append(f'<pattern id="grid-{uid}-{k}" width="40" height="40" patternUnits="userSpaceOnUse" x="{ox}" y="0">'
+                 f'<path class="th-grid" d="M 40 0 L 0 0 0 40"/></pattern>'
+                 f'<rect x="{ox}" y="0" width="{W}" height="{H}" fill="url(#grid-{uid}-{k})"/>')
+    t.append(f'<text class="th-title" x="{ox + title["x"]}" y="{title["y"]}" text-anchor="middle">{esc(title["text"])}</text>')
+    for a, b in m["joins"]:
+        A, B = at[a], at[b]
+        line = f'x1="{ox + A["x"]}" y1="{A["y"]}" x2="{ox + B["x"]}" y2="{B["y"]}"'
+        if th["line"] == "double":
+            t.append(f'<line class="th-line" {line} stroke-width="{th["stroke"] * 3}"/><line class="th-gap" {line} stroke-width="{th["stroke"]}"/>')
+        else:
+            t.append(f'<line class="th-line" {line} stroke-width="{th["stroke"]}"{dash}/>')
+    tri = at["triangle"]
+    x, y = ox + tri["x"], tri["y"]
+    t.append(f'<polygon class="th-shape" points="{x - 160},{y - 65} {x + 160},{y - 65} {x},{y + 105}" stroke-width="{th["stroke"]}"{dash}/>')
+    f = at["forest"]
+    n, w = 24, f["w"]
+    for i in range(n):
+        cx = ox + f["x"] - w / 2 + (i + .5) * w / n
+        hgt = 70 + (i * 37 % 5) * 9
+        t.append(f'<polygon class="th-shape" points="{cx - 17:.0f},{f["y"] + 60} {cx + 17:.0f},{f["y"] + 60} {cx:.0f},{f["y"] + 60 - hgt}" stroke-width="{th["stroke"]}"/>')
+    t.append(f'<line class="th-line" x1="{ox + f["x"] - w / 2}" y1="{f["y"] + 60}" x2="{ox + f["x"] + w / 2}" y2="{f["y"] + 60}" stroke-width="{th["stroke"]}"/>')
+    t.append(f'<text class="th-word big" x="{ox + f["x"]}" y="{f["y"] - 115}" text-anchor="middle">{esc(f["word"])}</text>')
+    for a, p in at.items():
+        if not p["r"]:
+            continue
+        x, y, r = ox + p["x"], p["y"], p["r"]
+        t.append(f'<circle class="th-hole" data-at="{a}" cx="{x}" cy="{y}" r="{r}" stroke-width="{th["stroke"]}"{dash}/>')
+        if th["line"] == "double":
+            t.append(f'<circle class="th-ring" cx="{x}" cy="{y}" r="{r + 7}" stroke-width="{th["stroke"] / 2}"/>')
+        sym = {"glyph": p["glyph"], "code": p["code"], "letter": (p["word"] or p["code"])[:1], "word": p["word"] or p["code"]}[th["symbols"]]
+        size = {"glyph": r * .9, "code": r * .5, "letter": r * 1.05, "word": min(22, 1.6 * r / (.58 * max(len(sym), 1)))}[th["symbols"]]
+        t.append(f'<text class="th-sym {th["symbols"]}" x="{x}" y="{y + size * .35:.1f}" text-anchor="middle" font-size="{size:.1f}">{esc(sym)}</text>')
+        if p["word"] and th["symbols"] != "word":
+            ly = y - r - 14 if a in ("l1", "r1", "l2", "r2") else y + r + 24
+            t.append(f'<text class="th-word" x="{x}" y="{ly}" text-anchor="middle">{esc(p["word"])}</text>')
+    t.append('</g>')
+    return "".join(t)
+
+
 def write_map(folder=None, out=None):
     m = map_sheets(folder or os.path.join(HERE, "map"))
-    art, tri = m["art"], m["at"]["triangle"]
+    art, tri, themes = m["art"], m["at"]["triangle"], m["themes"]
     W, H = art["width"], art["height"]
     side = W // 2                     # landscape: the card in the middle of a 2:1 surface, the margins beside it
 
     def surface(cls, ox, sw, panels):
         entry = f'{ox + tri["x"] - 150},{tri["y"] - 75} {ox + tri["x"] + 150},{tri["y"] - 75} {ox + tri["x"]},{tri["y"] + 95}'
+        drawn = "".join(own_drawing(m, k, th, ox, cls) for k, th in themes.items() if th["draw"] == "own")
         return (f'<svg class="{cls}" viewBox="0 0 {sw} {H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The Missing Layer card">'
-                f'<image href="{esc(art["file"])}" x="{ox}" y="0" width="{W}" height="{H}"/>'
+                f'<image class="art" href="{esc(art["file"])}" x="{ox}" y="0" width="{W}" height="{H}"/>{drawn}'
                 f'<g class="diagram">{card_layer(m, ox)}{panels}</g>'
                 f'<a href="explore" aria-label="The entry: explore"><polygon points="{entry}" fill="transparent"/></a></svg>')
 
     def vars(th):
-        return " ".join(f"--{k.replace('_', '-')}: {v};" for k, v in th.items() if k != "name")
-    first = next(iter(m["themes"].values()))
-    themes_css = f"body {{ {vars(first)} }}\n" + "\n".join(
-        f'body:has(option[value="{k}"]:checked) {{ {vars(th)} }}' for k, th in m["themes"].items())
-    options = "".join(f'<option value="{k}">Live: {esc(th["name"])}</option>' for k, th in m["themes"].items())
+        return " ".join(f"--{k.replace('_', '-')}: {v};" for k, v in th.items() if k not in ("name", "by", "draw", "symbols", "line", "grid", "stroke"))
+    first = next(iter(themes))
+    picked = lambda k: f'body:has(select[name="theme"] option[value="{k}"]:checked)'
+    themes_css = (f"body {{ {vars(themes[first])} }}\n"
+                  + "\n".join(f'{picked(k)} {{ {vars(th)} }}' for k, th in themes.items())
+                  + "\n" + "\n".join(f'{picked(k)} .th-{k} {{ display: inline; }}' for k, th in themes.items() if th["draw"] == "own")
+                  + "\n" + "\n".join(f'{picked(k)} image.art {{ display: inline; }}' for k, th in themes.items() if th["draw"] == "art"))
+    theme_options = "".join(f'<option value="{k}"{" selected" if k == first else ""}>{esc(th["name"])}</option>' for k, th in themes.items())
     wide = surface("wide", side, W + 2 * side, margin_panels(m, 28, side + W + 36, H))
     tall = surface("tall", 0, W, "")
     html = f"""<!doctype html>
@@ -703,12 +769,25 @@ def write_map(folder=None, out=None):
 html, body {{ margin: 0; height: 100%; overflow: hidden; }}
 body {{ background: var(--page); color: var(--ink); }}
 svg {{ width: 100vw; height: 100vh; height: 100dvh; display: block; }}
-.tall, .diagram {{ display: none; }}
+.tall, .diagram, .th, image.art {{ display: none; }}
 @media (orientation: portrait) {{ .wide {{ display: none; }} .tall {{ display: block; }} }}
-body:not(:has(option[value="skin"]:checked)) .diagram {{ display: inline; }}
-body:not(:has(option[value="skin"]:checked)) image {{ filter: var(--art); }}
-form {{ position: fixed; top: .6rem; right: .8rem; margin: 0; font: 15px/1 Georgia, serif; }}
+body:has(select[name="overlay"] option[value="live"]:checked) .diagram {{ display: inline; }}
+form {{ position: fixed; top: .6rem; right: .8rem; margin: 0; font: 15px/1 Georgia, serif; display: flex; gap: .5rem; }}
 select {{ font: inherit; color: var(--ink); background: var(--tag); border: 1px solid var(--tag-line); border-radius: 4px; padding: .25rem .4rem; }}
+label {{ color: var(--ink); }}
+.th-sheet {{ fill: var(--page); }}
+.th-grid {{ fill: none; stroke: var(--muted); stroke-width: .6; opacity: .45; }}
+.th-line, .th-ring {{ stroke: var(--ink); fill: none; }}
+.th-gap {{ stroke: var(--page); }}
+.th-shape {{ fill: none; stroke: var(--ink); stroke-linejoin: round; }}
+.th-hole {{ fill: var(--hole); stroke: var(--ink); }}
+.th-sym {{ fill: var(--ink); font-family: "DejaVu Sans", "Segoe UI Symbol", sans-serif; }}
+.th-sym.code, .th-sym.word {{ font-family: var(--font); font-weight: 700; }}
+.th-sym.letter {{ font-family: var(--font); font-weight: 800; }}
+.th-word, .th-title {{ paint-order: stroke; stroke: var(--page); stroke-width: 8px; stroke-linejoin: round; }}
+.th-word {{ font-size: 22px; fill: var(--muted); }}
+.th-word.big {{ font-size: 54px; fill: var(--ink); }}
+.th-title {{ font-size: 64px; font-weight: 700; fill: var(--ink); }}
 .veil {{ fill: var(--veil); opacity: var(--veil-opacity); }}
 .wire {{ stroke: var(--wire); stroke-width: 2.5; opacity: var(--wire-opacity); }}
 .wire.unseen {{ stroke-dasharray: 8 7; }}
@@ -726,7 +805,7 @@ text.gone {{ fill: var(--gone); }}
 .row.more {{ fill: var(--muted); }}
 a:focus-visible polygon {{ stroke: var(--seen); stroke-width: 4; }}
 {themes_css}
-</style></head><body><form><label>View <select name="view"><option value="skin" selected>The card</option>{options}</select></label></form>
+</style></head><body><form><label>Theme <select name="theme">{theme_options}</select></label><label>Overlay <select name="overlay"><option value="none" selected>None</option><option value="live">Live components</option></select></label></form>
 {wide}
 {tall}
 </body></html>

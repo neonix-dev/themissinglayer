@@ -2,7 +2,7 @@
 # in portrait, picks every choice of the select with the keyboard, and measures where every
 # symbol stands. Prints HELD or FAILED per claim. Reads only; changes nothing.
 #   python3 map.py <site> [--shots <folder>]
-# With --shots it also saves what it saw: the card and every theme, landscape and portrait.
+# With --shots it also saves what it saw: every theme, with the overlay off and on, landscape and portrait.
 import base64, glob, itertools, json, os, shutil, sys, tempfile, time
 from hand import Hand
 
@@ -42,16 +42,17 @@ def key(name, code):
         h.say("Input.dispatchKeyEvent", type=kind, key=name, code=name, windowsVirtualKeyCode=code)
 
 
-def choose(value):
+def choose(name, value):
     """Picks a choice the way a reader does: focus the select, then arrow keys."""
-    look("document.querySelector('select').focus()")
+    sel = f"document.querySelector('select[name={name}]')"
+    look(f"{sel}.focus()")
     for _ in range(12):
         key("ArrowUp", 38)
-    want = look(f"[...document.querySelector('select').options].findIndex(o => o.value === {json.dumps(value)})")
+    want = look(f"[...{sel}.options].findIndex(o => o.value === {json.dumps(value)})")
     for _ in range(want):
         key("ArrowDown", 40)
     time.sleep(.2)
-    return look("document.querySelector('select').value") == value
+    return look(f"{sel}.value") == value
 
 
 def shoot(name):
@@ -65,17 +66,23 @@ def shoot(name):
 MEASURE = """(() => {
   const svg = [...document.querySelectorAll('svg')].find(s => getComputedStyle(s).display !== 'none');
   const r = (n) => n.toFixed(1);
+  const on = (e) => { for (let n = e; n && n !== svg; n = n.parentNode) if (getComputedStyle(n).display === 'none') return false; return true; };
   const box = (e) => { const b = e.getBoundingClientRect(); return [r(b.x), r(b.y), r(b.width), r(b.height)].join(' '); };
   const point = (e) => { const m = e.getScreenCTM(), p = svg.createSVGPoint(); p.x = +e.getAttribute('x'); p.y = +e.getAttribute('y'); const q = p.matrixTransform(m); return r(q.x) + ' ' + r(q.y); };
-  const shown = (e) => getComputedStyle(e).display !== 'none' && e.closest('g.diagram') ? getComputedStyle(e.closest('g.diagram')).display !== 'none' : true;
-  const out = { svg: svg.getAttribute('class'), image: box(svg.querySelector('image')), symbols: {}, diagram: getComputedStyle(svg.querySelector('g.diagram')).display !== 'none' };
-  svg.querySelectorAll('circle.spot, rect.tag, line.wire, rect.veil').forEach((e, i) => out.symbols[e.tagName + i] = box(e));
-  svg.querySelectorAll('text.name').forEach((e, i) => out.symbols['text' + i] = point(e));
-  out.names = [...svg.querySelectorAll('text.name')].map(e => ({ at: e.dataset.at, c: e.dataset.c, text: e.textContent, xy: point(e) }));
-  out.spots = [...svg.querySelectorAll('circle.spot')].map(e => { const b = e.getBoundingClientRect(); return { at: e.dataset.at, x: b.x + b.width / 2, y: b.y + b.height / 2, r: b.width / 2 }; });
-  out.wires = [...svg.querySelectorAll('line.wire')].map(e => e.dataset.ends);
-  const ib = svg.querySelector('image').getBoundingClientRect();
-  out.scale = ib.width / %d; out.ox = ib.x; out.oy = ib.y;
+  const img = svg.querySelector('image.art'), ctm = svg.getScreenCTM();
+  const out = { svg: svg.getAttribute('class'), symbols: {}, holes: {} };
+  out.scale = ctm.a; out.ox = ctm.e + (+img.getAttribute('x')) * ctm.a; out.oy = ctm.f + (+img.getAttribute('y')) * ctm.a;
+  out.art = on(img); out.artbox = box(img);
+  out.drawn = [...svg.querySelectorAll('g.th')].filter(on).map(g => g.getAttribute('class').split(' ')[1].slice(3));
+  out.drawnArt = [...svg.querySelectorAll('g.th image')].length;
+  svg.querySelectorAll('circle.th-hole').forEach(e => { if (on(e)) { const b = e.getBoundingClientRect(); out.holes[e.dataset.at] = [b.x + b.width / 2, b.y + b.height / 2]; } });
+  const d = svg.querySelector('g.diagram');
+  out.diagram = on(d);
+  d.querySelectorAll('circle.spot, rect.tag, line.wire, rect.veil').forEach((e, i) => out.symbols[e.tagName + i] = box(e));
+  d.querySelectorAll('text.name').forEach((e, i) => out.symbols['text' + i] = point(e));
+  out.names = [...d.querySelectorAll('text.name')].map(e => ({ at: e.dataset.at, c: e.dataset.c, text: e.textContent, xy: point(e) }));
+  out.spots = [...d.querySelectorAll('circle.spot')].map(e => { const b = e.getBoundingClientRect(); return { at: e.dataset.at, x: b.x + b.width / 2, y: b.y + b.height / 2 }; });
+  out.wires = [...d.querySelectorAll('line.wire')].map(e => e.dataset.ends);
   const de = document.documentElement;
   out.scroll = [de.scrollWidth, de.scrollHeight, innerWidth, innerHeight];
   const sb = svg.getBoundingClientRect(); out.surface = [sb.width, sb.height];
@@ -83,8 +90,9 @@ MEASURE = """(() => {
   out.scripts = document.scripts.length;
   out.policy = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || '';
   out.entry = svg.querySelector('a polygon') ? svg.querySelector('a').getAttribute('href') : null;
+  out.selects = [...document.querySelectorAll('select')].map(s => s.name + '=' + s.value);
   return out;
-})()""" % sheets["art"]["width"]
+})()"""
 
 held = []
 
@@ -94,36 +102,49 @@ def claim(text, ok):
     print(f"  {'HELD  ' if ok else 'FAILED'}  {text}")
 
 
+THEMES = sheets["themes"]
+hand = themes[0]
+drawn = [t for t in themes if THEMES[t]["draw"] == "own"]
 if shots:
     os.makedirs(shots, exist_ok=True)
 for size, orient in ((WIDE, "landscape"), (TALL, "portrait")):
     open_at(size)
     card = look(MEASURE)
-    shoot(f"{orient}-0-card")
     claim(f"{orient}: /map opens as paper over the whole surface, with nothing to scroll",
           card["scroll"][0] <= card["scroll"][2] and card["scroll"][1] <= card["scroll"][3]
-          and card["surface"] == [size[0], size[1]] and card["page"] == "rgb(246, 233, 211)" and not card["diagram"])
+          and card["surface"] == [size[0], size[1]] and card["page"] == "rgb(246, 233, 211)")
+    claim(f"{orient}: it opens on neonix's hand-drawn card with no overlay: two selects, theme and overlay",
+          card["selects"] == [f"theme={hand}", "overlay=none"] and card["art"] and not card["drawn"] and not card["diagram"])
     claim(f"{orient}: the page carries no script, and its policy refuses any", card["scripts"] == 0 and "script-src 'none'" in card["policy"])
     claim(f"{orient}: {'the card stands in the middle of a landscape surface' if orient == 'landscape' else 'the card alone fills the width'}",
           card["svg"] == ("wide" if orient == "landscape" else "tall"))
     claim(f"{orient}: the triangle is the entry and leads to /explore", card["entry"] == "explore")
-    seen = {}
-    for n, theme in enumerate(themes, 1):
-        picked = choose(theme)
+    base, over = {}, {}
+    for n, theme in enumerate(themes):
+        picked = choose("theme", theme)
         got = look(MEASURE)
+        base[theme] = got
         shoot(f"{orient}-{n}-{theme}")
-        seen[theme] = got
-        claim(f"{orient}: the select switches the card to the {theme} diagram, on the same surface",
-              picked and got["diagram"] and got["image"] == card["image"] and got["surface"] == card["surface"])
-    first = seen[themes[0]]
-    moved = [(t, k) for t in themes for k, v in seen[t]["symbols"].items() if first["symbols"].get(k) != v]
-    claim(f"{orient}: every symbol keeps its place in all {len(themes)} themes ({len(first['symbols'])} symbols each)",
-          not moved and all(len(seen[t]["symbols"]) == len(first["symbols"]) for t in themes))
-    # each spot stands where map.card says, on the art
-    s, ox, oy = first["scale"], first["ox"], first["oy"]
-    off = [p["at"] for p in first["spots"] if abs(p["x"] - (ox + at[p["at"]]["x"] * s)) > 1 or abs(p["y"] - (oy + at[p["at"]]["y"] * s)) > 1]
-    claim(f"{orient}: every element's mark stands on the card where map.card puts it", not off and len(first["spots"]) == sum(1 for p in at.values() if p["r"]))
-    # every live component, once, at the element map.on gives it, beside that element
+        own = THEMES[theme]["draw"] == "own"
+        claim(f"{orient}: theme {theme} fills the holes on the same surface" + (", drawn with its own hand and showing none of the art" if own else ", as the hand-drawn card"),
+              picked and got["surface"] == card["surface"] and got["scale"] == card["scale"] and got["ox"] == card["ox"] and not got["diagram"]
+              and (got["drawn"] == [theme] and not got["art"] and got["drawnArt"] == 0 if own else got["drawn"] == [] and got["art"]))
+        choose("overlay", "live")
+        over[theme] = look(MEASURE)
+        shoot(f"{orient}-{n}-{theme}-live")
+        claim(f"{orient}: the overlay lies on theme {theme}", over[theme]["diagram"] and over[theme]["drawn"] == got["drawn"] and over[theme]["art"] == got["art"])
+        choose("overlay", "none")
+    s, ox, oy = card["scale"], card["ox"], card["oy"]
+    holes = [a for a, p in at.items() if p["r"]]
+    off = [(t, a) for t in drawn for a in holes
+           if a not in base[t]["holes"] or abs(base[t]["holes"][a][0] - (ox + at[a]["x"] * s)) > 1 or abs(base[t]["holes"][a][1] - (oy + at[a]["y"] * s)) > 1]
+    claim(f"{orient}: in all {len(drawn)} drawn themes every one of the {len(holes)} holes stands where the hand-drawn card has it", not off)
+    first = over[themes[0]]
+    moved = [(t, k) for t in themes for k, v in over[t]["symbols"].items() if first["symbols"].get(k) != v]
+    claim(f"{orient}: every overlay symbol keeps its place on all {len(themes)} themes ({len(first['symbols'])} symbols each)",
+          not moved and all(len(over[t]["symbols"]) == len(first["symbols"]) for t in themes))
+    offspot = [p["at"] for p in first["spots"] if abs(p["x"] - (ox + at[p["at"]]["x"] * s)) > 1 or abs(p["y"] - (oy + at[p["at"]]["y"] * s)) > 1]
+    claim(f"{orient}: every element's mark in the overlay stands on its hole", not offspot and len(first["spots"]) == len(holes))
     count = {c: 0 for c in live}
     wrong = []
     for n in first["names"]:
@@ -142,8 +163,8 @@ for size, orient in ((WIDE, "landscape"), (TALL, "portrait")):
     pairs = {" ".join(sorted((on[a], on[b]))) for a, b, _ in sheets["connections"] if on[a] != on[b]}
     claim(f"{orient}: every connection between elements is drawn ({len(pairs)} lines for {len(sheets['connections'])} connections)",
           sorted(" ".join(sorted(w.split())) for w in first["wires"]) == sorted(pairs))
-    choose("skin")
-    claim(f"{orient}: choosing the card again takes the diagram away", not look(MEASURE)["diagram"])
+    choose("theme", hand)
+    claim(f"{orient}: overlay None and the hand-drawn card again give back the page as it opened", look(MEASURE)["symbols"] == card["symbols"] and not look(MEASURE)["diagram"] and look(MEASURE)["art"])
 h.away()
 
 # The page is what the map JSONs make, in any order they are found.
@@ -161,15 +182,16 @@ with tempfile.TemporaryDirectory() as tmp:
 shipped = open(os.path.join(ROOT, "map.html"), encoding="utf-8").read()
 claim(f"the map JSONs in all {len(list(itertools.permutations(names)))} orders write the same page, and it is the page shipped", made == {shipped})
 
-if shots and len(themes) >= 2:
+if shots:
     try:
         from PIL import Image
-        tiles = [Image.open(os.path.join(shots, f"landscape-{n}-{t}.jpg")) for n, t in enumerate(themes, 1)]
-        w, hgt = tiles[0].size
-        sheet = Image.new("RGB", (w, hgt * len(tiles)))
-        for i, im in enumerate(tiles):
-            sheet.paste(im, (0, i * hgt))
-        sheet.resize((w // 2, hgt * len(tiles) // 2)).save(os.path.join(shots, "landscape-themes.jpg"), quality=85)
+        for tail in ("", "-live"):
+            tiles = [Image.open(os.path.join(shots, f"landscape-{n}-{t}{tail}.jpg")) for n, t in enumerate(themes)]
+            w, hgt = tiles[0].size
+            sheet = Image.new("RGB", (w * 2, hgt * ((len(tiles) + 1) // 2)), "white")
+            for i, im in enumerate(tiles):
+                sheet.paste(im, ((i % 2) * w, (i // 2) * hgt))
+            sheet.resize((sheet.width // 2, sheet.height // 2)).save(os.path.join(shots, f"landscape-themes{tail}.jpg"), quality=85)
     except ImportError:
         pass
 sys.exit(0 if all(held) else 1)

@@ -22,7 +22,7 @@
     "/deserialize": "Asks whether to download a copy first, then takes floppies, wipes everything and rebuilds.",
     "/contract.json": "This file.",
     "/email/wire.json": "A shipped JSON: the id email.wire is the file email/wire.json. The dot is the folder.",
-    "/map": "The card as a surface: paper, the whole page, no script. One select shows the card, or the live components standing on its elements in one of five themes that move nothing. Written by python3 generator.py map from map/card.json (where each element is on the art), map/live.json (the components and their connections, a snapshot) and map/on.json (which component stands at which element) and map/themes.json (colours, line and type only), loaded in any order.",
+    "/map": "The card as a surface: paper, the whole page, no script. The card is a stencil whose elements are holes. One select picks the theme that fills the holes: neonix's hand-drawn card first, then themes that draw their own and never show the art. A second select lays an overlay on any theme: none, or the live components standing on their elements. Written by python3 generator.py map from map/card.json (the holes and where they are), map/live.json (the components and their connections, a snapshot), map/on.json (which component stands at which element) and map/themes.json (what fills the holes), loaded in any order.",
     "/generator.py": "The generator for a terminal: python3 generator.py. The same sheets, moves and floppies as here, picked by number; it has no board."
   },
   "ships": {
