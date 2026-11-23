@@ -53,9 +53,6 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 @media (orientation: portrait) {
   .cover { background-image: var(--tall), radial-gradient(circle, var(--dot) 1.6px, transparent 2.2px), linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); }
 }
-.cover:has(option[value="processor"]:checked) { --wide: url("cover-processor-wide.svg"); --tall: url("cover-processor-tall.svg"); --paper: #f3f5f8; --line: #e8ecf1; --cell: 16px; }
-.cover:has(option[value="breadboard"]:checked) { --wide: url("cover-breadboard-wide.svg"); --tall: url("cover-breadboard-tall.svg"); --paper: #f6f3ec; --line: transparent; --cell: 20px; --dot: #d8d1c2; }
-.cover:has(option[value="neural"]:checked) { --wide: url("cover-neural-wide.svg"); --tall: url("cover-neural-tall.svg"); --paper: #fbfaf7; --line: transparent; }
 .cover .themes {
   position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 1;
   display: flex; align-items: center; gap: 8px; font: 600 12px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #4a5d72;

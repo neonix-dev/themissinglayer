@@ -1,6 +1,6 @@
   HELD    iphone-15: the cover shows in full: title, line, 2 examples, the theme select and the purpose inside the window, nothing to scroll
   HELD    iphone-15: the line art fills the whole window: the brain in the middle under the title, drawn for a tall window
-  HELD    iphone-15: the select at the top right picks each of the 4 cover themes, and each fills the window with its own drawing
+  HELD    iphone-15: the select at the top right picks each of the 8 cover themes, and each fills the window with its own drawing
   HELD    iphone-15: every button and the select on the cover are at least 44 px tall
   HELD    iphone-15: every text field is 16 px or more, so the iPhone does not zoom when one is touched
   HELD    iphone-15: touching Mail begins it: the page opens, a mail is written and sent
@@ -10,7 +10,7 @@
   HELD    iphone-15: from the page, Board opens the board, and the whole board fits the window
   HELD    iphone-se: the cover shows in full: title, line, 2 examples, the theme select and the purpose inside the window, nothing to scroll
   HELD    iphone-se: the line art fills the whole window: the brain in the middle under the title, drawn for a tall window
-  HELD    iphone-se: the select at the top right picks each of the 4 cover themes, and each fills the window with its own drawing
+  HELD    iphone-se: the select at the top right picks each of the 8 cover themes, and each fills the window with its own drawing
   HELD    iphone-se: every button and the select on the cover are at least 44 px tall
   HELD    iphone-se: every text field is 16 px or more, so the iPhone does not zoom when one is touched
   HELD    iphone-se: touching Mail begins it: the page opens, a mail is written and sent
@@ -20,7 +20,7 @@
   HELD    iphone-se: from the page, Board opens the board, and the whole board fits the window
   HELD    iphone-15-landscape: the cover shows in full: title, line, 2 examples, the theme select and the purpose inside the window, nothing to scroll
   HELD    iphone-15-landscape: the line art fills the whole window: the brain in the middle under the title, drawn for a wide window
-  HELD    iphone-15-landscape: the select at the top right picks each of the 4 cover themes, and each fills the window with its own drawing
+  HELD    iphone-15-landscape: the select at the top right picks each of the 8 cover themes, and each fills the window with its own drawing
   HELD    iphone-15-landscape: every button and the select on the cover are at least 44 px tall
   HELD    iphone-15-landscape: every text field is 16 px or more, so the iPhone does not zoom when one is touched
   HELD    iphone-15-landscape: touching Mail begins it: the page opens, a mail is written and sent
@@ -30,7 +30,7 @@
   HELD    iphone-15-landscape: from the page, Board opens the board, and the whole board fits the window
   HELD    chrome-laptop: the cover shows in full: title, line, 2 examples, the theme select and the purpose inside the window, nothing to scroll
   HELD    chrome-laptop: the line art fills the whole window: the brain in the middle under the title, drawn for a wide window
-  HELD    chrome-laptop: the select at the top right picks each of the 4 cover themes, and each fills the window with its own drawing
+  HELD    chrome-laptop: the select at the top right picks each of the 8 cover themes, and each fills the window with its own drawing
   HELD    chrome-laptop: every button and the select on the cover are at least 44 px tall
   HELD    chrome-laptop: touching Mail begins it: the page opens, a mail is written and sent
   HELD    chrome-laptop: the page Mail makes fits the window's width
@@ -39,7 +39,7 @@
   HELD    chrome-laptop: from the page, Board opens the board, and the whole board fits the window
   HELD    chrome-desktop: the cover shows in full: title, line, 2 examples, the theme select and the purpose inside the window, nothing to scroll
   HELD    chrome-desktop: the line art fills the whole window: the brain in the middle under the title, drawn for a wide window
-  HELD    chrome-desktop: the select at the top right picks each of the 4 cover themes, and each fills the window with its own drawing
+  HELD    chrome-desktop: the select at the top right picks each of the 8 cover themes, and each fills the window with its own drawing
   HELD    chrome-desktop: every button and the select on the cover are at least 44 px tall
   HELD    chrome-desktop: touching Mail begins it: the page opens, a mail is written and sent
   HELD    chrome-desktop: the page Mail makes fits the window's width

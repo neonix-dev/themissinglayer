@@ -1,0 +1,9 @@
+/* Written by generator.py from map/domains.json: each cover theme's drawing, paper and grid. */
+.cover:has(option[value="circuit"]:checked) { --wide: url("cover-circuit-wide.svg"); --tall: url("cover-circuit-tall.svg"); --paper: #f7f9fb; --line: #e6edf4; --cell: 24px; --dot: transparent; }
+.cover:has(option[value="processor"]:checked) { --wide: url("cover-processor-wide.svg"); --tall: url("cover-processor-tall.svg"); --paper: #f3f5f8; --line: #e8ecf1; --cell: 16px; --dot: transparent; }
+.cover:has(option[value="breadboard"]:checked) { --wide: url("cover-breadboard-wide.svg"); --tall: url("cover-breadboard-tall.svg"); --paper: #f6f3ec; --line: transparent; --cell: 20px; --dot: #d8d1c2; }
+.cover:has(option[value="neural"]:checked) { --wide: url("cover-neural-wide.svg"); --tall: url("cover-neural-tall.svg"); --paper: #fbfaf7; --line: transparent; --cell: 24px; --dot: transparent; }
+.cover:has(option[value="raga"]:checked) { --wide: url("cover-raga-wide.svg"); --tall: url("cover-raga-tall.svg"); --paper: #fbf6ee; --line: transparent; --cell: 24px; --dot: transparent; }
+.cover:has(option[value="blues"]:checked) { --wide: url("cover-blues-wide.svg"); --tall: url("cover-blues-tall.svg"); --paper: #f4f2ee; --line: transparent; --cell: 24px; --dot: transparent; }
+.cover:has(option[value="pipeline"]:checked) { --wide: url("cover-pipeline-wide.svg"); --tall: url("cover-pipeline-tall.svg"); --paper: #f4f6f4; --line: #e7ece8; --cell: 32px; --dot: transparent; }
+.cover:has(option[value="flight"]:checked) { --wide: url("cover-flight-wide.svg"); --tall: url("cover-flight-tall.svg"); --paper: #f3f5f7; --line: #e5eaef; --cell: 20px; --dot: transparent; }

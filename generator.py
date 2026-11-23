@@ -556,7 +556,7 @@ def main():
 # neonix's own hand-drawn card, the others draw their own. An overlay lies on top of any theme.
 # The page carries no script: two selects, and the stylesheet shows what is selected. Each map
 # JSON owns its own keys; two that claim the same key are refused.
-MAP_KEYS = {"map.card": ("art", "at", "title", "joins"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts"), "map.themes": ("themes",), "map.ring": ("ring",)}
+MAP_KEYS = {"map.card": ("art", "at", "title", "joins"), "map.live": ("asof", "seen", "components", "connections"), "map.on": ("on", "missing", "conflicts"), "map.themes": ("themes",), "map.ring": ("ring",), "map.domains": ("domains",)}
 
 
 def map_sheets(folder):
@@ -569,7 +569,7 @@ def map_sheets(folder):
         for k in MAP_KEYS[j["id"]]:
             if k in got:
                 refuse(f"{k} is said twice")
-            got[k] = j if j["id"] == "map.ring" else j.get(k)
+            got[k] = j if j["id"] in ("map.ring", "map.domains") else j.get(k)
     lost = [i for i, ks in MAP_KEYS.items() if ks[0] not in got]
     if lost:
         refuse(f"waiting for {', '.join(lost)}")
@@ -599,13 +599,27 @@ def map_sheets(folder):
     if arts != list(got["themes"])[:1]:
         refuse("the hand-drawn card is the one theme that shows the art, and it comes first")
     ring = got["ring"]
+    around = set(got["at"]) - {ring["center"], ring["bus"], ring["base"]}
+    if set(ring["numbers"]) != set(got["at"]):
+        refuse("map.ring must number every element of the card")
     for shape in ("wide", "tall"):
-        around = set(got["at"]) - {ring["center"], ring["bus"], ring["base"]}
         if set(ring[shape]) != around:
             refuse(f"map.ring {shape} must place exactly {', '.join(sorted(around))}")
-        for a, xy in ring[shape].items():
+        for a, xy in [*ring[shape].items(), *((n, j[shape]) for n, j in ring["junctions"].items())]:
             if len(xy) != 2 or not all(0 <= v <= 1 for v in xy):
                 refuse(f"map.ring {shape} {a}: a place is two fractions of the window")
+    joined = [a for j in ring["junctions"].values() for a in j["joins"]]
+    if len(joined) != len(set(joined)) or not set(joined) <= around:
+        refuse("map.ring: a junction joins elements that stand round the brain, each at most once")
+    doms = got["domains"]
+    for k, d in doms["domains"].items():
+        if not isinstance(d.get("title"), str) or set(d.get("words", {})) != set(DOMAIN_WORDS):
+            refuse(f"domain {k} must say a title and a word for exactly {', '.join(DOMAIN_WORDS)}")
+    for k, th in doms["themes"].items():
+        if not re.fullmatch(r"[a-z]+", k) or set(th) != {"name", "group", "domain", "draw"}:
+            refuse(f"cover theme {k} must be a lowercase name and say name, group, domain and draw")
+        if th["domain"] not in doms["domains"] or th["draw"] not in SKINS:
+            refuse(f"cover theme {k}: no domain {th['domain']} or no drawing {th['draw']} the generator knows")
     for a, b in got["joins"]:
         if a not in got["at"] or b not in got["at"]:
             refuse(f"the card joins {a} and {b}, and has no such element")
@@ -747,47 +761,72 @@ def own_drawing(m, k, th, ox, uid):
     return "".join(t)
 
 
-COVER_PARTS = {"tree": "U0", "triangle": "J1", "ask": "J2", "thoughts": "J3", "c": "U2", "achievements": "TP1", "workflows": "TP2",
-               "compatibility": "TP3", "heartbeat": "TP4", "health": "TP5", "alerts": "TP6", "r": "U3",
-               "l1": "SW1", "r1": "SW2", "l2": "SW3", "r2": "SW4"}
+import math
+
 CONTROLS = ("l1", "r1", "l2", "r2")
-COVER_SHAPES = {"wide": (2560, 1600, 150), "tall": (1180, 1900, 260)}   # a tall one shaped like a phone
-# The cover's themes: each draws the same radial card in one domain's own language.
-COVER_THEMES = {"circuit": "Circuit board", "processor": "Processor", "breadboard": "Breadboard", "neural": "Neural"}
-COVERS = [f"cover-{t}-{s}.svg" for t in COVER_THEMES for s in COVER_SHAPES]
+DOMAIN_WORDS = ("ask", "thoughts", "achievements", "workflows", "compatibility", "heartbeat", "health", "alerts", "r", "forest", "controls")
+COVER_SHAPES = {"wide": (2560, 1600, 150), "tall": (1180, 1960, 260)}   # a tall one shaped like a phone
 
 
-def cover_geometry(m, shape):
-    """Where everything stands on a cover of this shape: the brain in the middle, the bus ring
-    round it, every other element at its place in map.ring, and the point on the brain's edge
-    each one is wired to, straight in towards the middle."""
+def cover_themes(m):
+    return m["domains"]["themes"]
+
+
+def cover_files(m):
+    return [f"cover-{t}-{s}.svg" for t in cover_themes(m) for s in COVER_SHAPES]
+
+
+def cover_geometry(m, shape, theme):
+    """Where everything stands on a cover of this shape, and what it is called in the theme's
+    domain: the brain (C.0) in the middle, the interface ring (C.1) round it, every other
+    element at its place in map.ring with its number and its word, the junctions (C.5, C.9)
+    the branches meet at, and the wires: each element in to its junction or straight in to the
+    brain, each junction in to the brain."""
     CW, CH, foot = COVER_SHAPES[shape]
     H = CH - foot
-    ring = m["ring"]
+    ring, doms = m["ring"], m["domains"]
+    dom = doms["domains"][doms["themes"][theme]["domain"]]
     P = {a: (round(x * CW), round(y * H)) for a, (x, y) in ring[shape].items()}
+    J = {n: (round(j[shape][0] * CW), round(j[shape][1] * H)) for n, j in ring["junctions"].items()}
+    via = {a: n for n, j in ring["junctions"].items() for a in j["joins"]}
     bw, bh = ring["brain"][shape]
     cx, cy, hw, hh = CW / 2, H / 2, CW * bw / 2, H * bh / 2
+    gap = 46
 
     def edge(x, y, grow=0):
         dx, dy = x - cx, y - cy
         t = min((hw + grow) / abs(dx) if dx else 1e9, (hh + grow) / abs(dy) if dy else 1e9)
         return round(cx + dx * t), round(cy + dy * t)
-    return {"CW": CW, "CH": CH, "H": H, "foot": foot, "P": P, "cx": cx, "cy": cy, "hw": hw, "hh": hh, "edge": edge,
-            "big": shape == "tall"}
 
-
-def svg_open(g, style):
-    return [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {g["CW"]} {g["CH"]}" preserveAspectRatio="xMidYMid slice"><style>{style}</style>']
+    def word(a):
+        return dom["words"]["controls"] if a in CONTROLS else dom["words"].get(a, "")
+    links = [((P[a], J[via[a]]) if a in via else (P[a], edge(*P[a], gap)), a in ("tree", "r")) for a in P]
+    links += [((J[n], edge(*J[n], gap)), False) for n in J]
+    return {"CW": CW, "CH": CH, "H": H, "foot": foot, "P": P, "J": J, "cx": cx, "cy": cy, "hw": hw, "hh": hh, "gap": gap,
+            "edge": edge, "links": links, "big": shape == "tall", "f": 30 if shape == "tall" else 22,
+            "num": ring["numbers"], "word": word, "title": dom["title"], "at": m["at"]}
 
 
 def ortho(x1, y1, x2, y2, c=26, cls=""):
-    """A routed trace: straight, then a 45-degree corner, then straight."""
+    """A routed line: straight, then a 45-degree corner, then straight."""
     k = f' class="{cls}"' if cls else ""
     if x1 == x2 or y1 == y2:
         return f'<line{k} x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>'
     sx, sy = (1 if x2 > x1 else -1), (1 if y2 > y1 else -1)
     c = min(c, abs(x2 - x1), abs(y2 - y1))
     return f'<polyline{k} points="{x1},{y1} {x1},{y2 - sy * c} {x1 + sx * c},{y2} {x2},{y2}"/>'
+
+
+def bow(p, q, bend):
+    """A quadratic curve from p to q, bowed to one side by `bend`."""
+    (x1, y1), (x2, y2) = p, q
+    mx, my = (x1 + x2) / 2 - (y2 - y1) * bend, (y1 + y2) / 2 + (x2 - x1) * bend
+    return f"M {x1} {y1} Q {mx:.0f} {my:.0f} {x2} {y2}"
+
+
+def curve(p, q, bend, cls=""):
+    k = f' class="{cls}"' if cls else ""
+    return f'<path{k} d="{bow(p, q, bend)}"/>'
 
 
 def perimeter(g, inset, step):
@@ -808,221 +847,390 @@ def perimeter(g, inset, step):
     return [(round(x), round(y)) for x, y in pts]
 
 
-def brain_label(g, text, cls="lab"):
-    return f'<text class="{cls}" x="{g["cx"] - g["hw"]:.0f}" y="{g["cy"] - g["hh"] - 16:.0f}">{esc(text)}</text>'
+def box(g, grow=0):
+    return g["cx"] - g["hw"] - grow, g["cy"] - g["hh"] - grow, 2 * g["hw"] + 2 * grow, 2 * g["hh"] + 2 * grow
 
 
-def draw_circuit(m, g):
-    at, P, CW, H = m["at"], g["P"], g["CW"], g["H"]
-    f = 30 if g["big"] else 22
-    t = svg_open(g, 'path,line,polyline,rect,circle,polygon{fill:none;stroke:#93a9bf;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}'
-                 '.cu{stroke:#c2703d;stroke-width:3.5}.pad{fill:#f7f9fb;stroke:#6f8aa6}.via{fill:#93a9bf;stroke:none}.cuv{fill:#c2703d;stroke:none}'
-                 '.chip{fill:#f7f9fb;stroke:#6f8aa6}.edge{stroke:#b7c7d8;stroke-dasharray:14 10}.ink{stroke:#6f8aa6}'
-                 f'text{{font:600 {f}px ui-monospace,Menlo,Consolas,monospace;fill:#7a8ea3;letter-spacing:.06em}}.dg{{fill:#a4b5c7;font-size:{f - 4}px}}'
-                 f'.lab{{fill:#c2703d;font-size:{f}px}}.tb{{font-size:{f - 2}px}}.tbh{{font-size:{f + 4}px;fill:#4a5d72}}')
-    e = 30
-    t.append(f'<rect class="edge" x="{e}" y="{e}" width="{CW - 2 * e}" height="{g["CH"] - 2 * e}" rx="24"/>')
+def rect(g, grow, cls, rx=0):
+    x, y, w, h = box(g, grow)
+    return f'<rect class="{cls}" x="{x:.0f}" y="{y:.0f}" width="{w:.0f}" height="{h:.0f}" rx="{rx}"/>'
+
+
+def css(g, ink, muted, accent, accent2, font, more=""):
+    f = g["f"]
+    return (f'path,line,polyline,rect,circle,ellipse,polygon{{fill:none;stroke:{muted};stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}}'
+            f'.ink{{stroke:{ink}}}.hot{{stroke:{accent};stroke-width:3.5}}.fill{{fill:{muted};stroke:none}}.fa{{fill:{accent};stroke:none}}'
+            f'.fi{{fill:{ink};stroke:none}}.f2{{fill:{accent2};stroke:none}}.s2{{stroke:{accent2}}}.thin{{stroke-width:1.5}}.faint{{opacity:.45}}'
+            f'text{{font:600 {f}px {font};fill:{ink};letter-spacing:.03em}}.n{{font-size:{f - 4}px;fill:{accent};font-weight:700}}'
+            f'.w{{font-size:{f}px}}.lab{{font-size:{f}px;fill:{accent};font-weight:700;letter-spacing:.06em}}.sm{{font-size:{f - 6}px;fill:{muted}}}' + more)
+
+
+def label(g, a, x, y, drop):
+    """An element's number and its word in the domain, under it."""
+    w = g["word"](a)
+    t = f'<text class="n" x="{x}" y="{y + drop}" text-anchor="middle">{esc(g["num"][a])}</text>'
+    return t + (f'<text class="w" x="{x}" y="{y + drop + g["f"] + 4}" text-anchor="middle">{esc(w)}</text>' if w else "")
+
+
+def marks(g, base_at=None):
+    """The words every theme writes: the brain, the interface ring, the junctions, the base. On a
+    wide window they stand by what they name; on a phone, where the title covers the middle,
+    they stand together as a legend at the top left."""
+    x, y, w, h = box(g)
+    if g["big"]:
+        rows = [("lab", f'{g["num"]["c"]} BRAIN'), ("sm", "WHAT YOU BRING"), ("sm", g["title"].upper()),
+                ("sm", f'{g["num"]["triangle"]} GAP / INTERFACE'), ("sm", f'{g["num"]["forest"]} {g["word"]("forest").upper()}')]
+        t = [f'<text class="{c}" x="44" y="{150 + k * 32}">{esc(s)}</text>' for k, (c, s) in enumerate(rows)]
+    else:
+        bx, by = base_at or (round(g["cx"] + 330), g["P"]["r"][1] - 4)
+        t = [f'<text class="lab" x="{x:.0f}" y="{y - g["gap"] - 14:.0f}">{esc(g["num"]["c"])}  {esc(g["title"].upper())} · BRAIN: WHAT YOU BRING</text>',
+             f'<text class="sm" x="{x + w:.0f}" y="{y - g["gap"] - 14:.0f}" text-anchor="end">{esc(g["num"]["triangle"])} GAP / INTERFACE</text>',
+             f'<text class="n" x="{bx}" y="{by}" text-anchor="middle">{esc(g["num"]["forest"])}</text>',
+             f'<text class="w" x="{bx}" y="{by + g["f"] + 4}" text-anchor="middle">{esc(g["word"]("forest"))}</text>']
+    for n, (jx, jy) in g["J"].items():
+        t.append(f'<text class="sm" x="{jx}" y="{jy - 22}" text-anchor="middle">{esc(n)}</text>')
+    return t
+
+
+# ---- the skins: each draws the same card in one domain's own shape ------------------------
+
+def skin_circuit(g):
+    CW, H, P = g["CW"], g["H"], g["P"]
+    t = [css(g, "#4a5d72", "#93a9bf", "#c2703d", "#6f8aa6", "ui-monospace,Menlo,Consolas,monospace",
+             ".pad{fill:#f7f9fb;stroke:#6f8aa6}.chip{fill:#f7f9fb;stroke:#6f8aa6}.edge{stroke:#b7c7d8;stroke-dasharray:14 10}")]
+    t.append(f'<rect class="edge" x="30" y="30" width="{CW - 60}" height="{g["CH"] - 60}" rx="24"/>')
     for hx, hy in ((90, 90), (CW - 90, 90), (90, H - 90), (CW - 90, H - 90)):
         t.append(f'<circle class="ink" cx="{hx}" cy="{hy}" r="26"/><circle cx="{hx}" cy="{hy}" r="14"/>')
-    for fx, fy in ((170, 90), (CW - 170, 90), (170, H - 90)):
-        t.append(f'<circle cx="{fx}" cy="{fy}" r="16"/><circle class="via" cx="{fx}" cy="{fy}" r="6"/>')
-    # the forest: a ground ring round the whole board, stitched with vias
-    t.append(f'<rect x="140" y="140" width="{CW - 280}" height="{H - 280}" rx="30"/>')
-    t += [f'<circle class="via" cx="{x}" cy="{y}" r="5"/>' for x, y in perimeter(g, 140, 120)]
-    # C: the bus ring round the brain
-    cx, cy, hw, hh = g["cx"], g["cy"], g["hw"], g["hh"]
-    t.append(f'<rect x="{cx - hw - 34:.0f}" y="{cy - hh - 34:.0f}" width="{2 * hw + 68:.0f}" height="{2 * hh + 68:.0f}" rx="22"/>')
-    t.append(f'<rect class="cu" x="{cx - hw - 46:.0f}" y="{cy - hh - 46:.0f}" width="{2 * hw + 92:.0f}" height="{2 * hh + 92:.0f}" rx="28"/>')
-    # the brain: a large chip footprint, pins all round
-    t.append(f'<rect class="chip" x="{cx - hw:.0f}" y="{cy - hh:.0f}" width="{2 * hw:.0f}" height="{2 * hh:.0f}" rx="10"/>')
-    for k in range(int(2 * hw // 40)):
-        x = cx - hw + 20 + k * 40
-        t.append(f'<line x1="{x:.0f}" y1="{cy - hh:.0f}" x2="{x:.0f}" y2="{cy - hh - 16:.0f}"/><line x1="{x:.0f}" y1="{cy + hh:.0f}" x2="{x:.0f}" y2="{cy + hh + 16:.0f}"/>')
-    for k in range(int(2 * hh // 40)):
-        y = cy - hh + 20 + k * 40
-        t.append(f'<line x1="{cx - hw:.0f}" y1="{y:.0f}" x2="{cx - hw - 16:.0f}" y2="{y:.0f}"/><line x1="{cx + hw:.0f}" y1="{y:.0f}" x2="{cx + hw + 16:.0f}" y2="{y:.0f}"/>')
-    t.append(brain_label(g, "U0  BRAIN: WHAT YOU BRING"))
-    # every element wired in to the brain; the entry and the run in copper
-    for a, (x, y) in P.items():
-        ex, ey = g["edge"](x, y, 46)
-        t.append(ortho(x, y, ex, ey, cls="cu" if a in ("triangle", "r") else ""))
-        t.append(f'<circle class="{"cuv" if a in ("triangle", "r") else "via"}" cx="{ex}" cy="{ey}" r="7"/>')
-    # the entry reaches out through the top, the run through the bottom
-    x, y = P["triangle"]
-    for dx in (-36, 0, 36):
-        t.append(ortho(x + dx, y - 40, x + dx * 5, 0, cls="cu" if dx == 0 else ""))
-    x, y = P["r"]
-    t.append(f'<line class="cu" x1="{x}" y1="{y}" x2="{x}" y2="{g["CH"]}"/>')
+    t.append(f'<rect x="140" y="140" width="{CW - 280}" height="{H - 280}" rx="30"/>')       # C.14: the ground ring
+    t += [f'<circle class="fill" cx="{x}" cy="{y}" r="5"/>' for x, y in perimeter(g, 140, 120)]
+    for (p, q), hot in g["links"]:
+        t.append(ortho(*p, *q, cls="hot" if hot else ""))
+        t.append(f'<circle class="{"fa" if hot else "fill"}" cx="{q[0]}" cy="{q[1]}" r="7"/>')
+    t += [rect(g, 34, "", 22), rect(g, 46, "hot", 28), rect(g, 0, "chip", 10)]
+    x, y, w, h = box(g)
+    for k in range(int(w // 40)):
+        px = x + 20 + k * 40
+        t.append(f'<line x1="{px:.0f}" y1="{y:.0f}" x2="{px:.0f}" y2="{y - 16:.0f}"/><line x1="{px:.0f}" y1="{y + h:.0f}" x2="{px:.0f}" y2="{y + h + 16:.0f}"/>')
+    for jx, jy in g["J"].values():
+        t.append(f'<circle class="pad" cx="{jx}" cy="{jy}" r="14"/><circle class="fill" cx="{jx}" cy="{jy}" r="6"/>')
     for a, (x, y) in P.items():
         if a in CONTROLS:
             side = -1 if x < CW / 2 else 1
-            w, h = (170, 118) if g["big"] else (150, 104)
-            t.append(f'<rect class="chip" x="{x - w / 2}" y="{y - h / 2}" width="{w}" height="{h}" rx="6"/>')
+            cw, ch = (120, 84) if g["big"] else (150, 104)
+            t.append(f'<rect class="chip" x="{x - cw / 2}" y="{y - ch / 2}" width="{cw}" height="{ch}" rx="6"/>')
             for k in range(4):
-                py = y - h / 2 + 18 + k * (h - 36) / 3
-                edge_x = x + side * w / 2
-                t.append(f'<line x1="{edge_x}" y1="{py:.0f}" x2="{edge_x + side * 14}" y2="{py:.0f}"/>')
-                t.append(ortho(edge_x + side * 14, round(py), 0 if side < 0 else CW, round(py + (k - 1.5) * 50), 26))
-            t.append(f'<text x="{x}" y="{y + 9}" text-anchor="middle">{esc(at[a]["code"])}</text>')
-            t.append(f'<text class="dg" x="{x - w / 2}" y="{y - h / 2 - 12}">{COVER_PARTS[a]}</text>')
+                py = round(y - ch / 2 + 18 + k * (ch - 36) / 3)
+                ex = x + side * cw / 2
+                t.append(f'<line x1="{ex}" y1="{py}" x2="{ex + side * 14}" y2="{py}"/>' + ortho(ex + side * 14, py, 0 if side < 0 else CW, round(py + (k - 1.5) * 50)))
+            t.append(f'<text class="sm" x="{x}" y="{y + 9}" text-anchor="middle">IC</text>' + label(g, a, x, y, ch / 2 + 30))
         else:
-            r = 34 if a == "triangle" else 24
-            if a == "triangle":
-                t.append(f'<polygon class="cu" points="{x - 70},{y - 32} {x + 70},{y - 32} {x},{y + 46}"/>')
-            t.append(f'<circle class="pad" cx="{x}" cy="{y}" r="{r}"/><circle class="{"cuv" if a in ("triangle", "r") else "via"}" cx="{x}" cy="{y}" r="{r * .34:.0f}"/>')
-            t.append(f'<text x="{x + r + 12}" y="{y - 6}">{esc(at[a]["code"])}</text><text class="dg" x="{x + r + 12}" y="{y + f}">{COVER_PARTS[a]}</text>')
-    # the title block
-    bw, bh = (520, 165) if g["big"] else (470, 150)
-    bx, by = (CW / 2 - bw / 2, H - 70 - bh) if g["big"] else (CW - 150 - bw, H - 70 - bh)
-    t.append(f'<rect class="chip" x="{bx:.0f}" y="{by}" width="{bw}" height="{bh}"/><line x1="{bx:.0f}" y1="{by + bh / 3:.0f}" x2="{bx + bw:.0f}" y2="{by + bh / 3:.0f}"/>'
-             f'<line x1="{bx:.0f}" y1="{by + 2 * bh / 3:.0f}" x2="{bx + bw:.0f}" y2="{by + 2 * bh / 3:.0f}"/><line x1="{bx + bw / 2:.0f}" y1="{by + bh / 3:.0f}" x2="{bx + bw / 2:.0f}" y2="{by + bh}"/>'
-             f'<text class="tbh" x="{bx + 18:.0f}" y="{by + bh / 3 - 16:.0f}">THE MISSING LAYER</text>'
-             f'<text class="tb" x="{bx + 18:.0f}" y="{by + 2 * bh / 3 - 16:.0f}">BOARD COVER</text><text class="tb" x="{bx + bw / 2 + 18:.0f}" y="{by + 2 * bh / 3 - 16:.0f}">REV 02</text>'
-             f'<text class="tb" x="{bx + 18:.0f}" y="{by + bh - 16:.0f}">GRAMMAR ONLY</text><text class="tb" x="{bx + bw / 2 + 18:.0f}" y="{by + bh - 16:.0f}">SHEET 1 OF 1</text>')
-    return t
+            hot = a in ("tree", "r")
+            t.append(f'<circle class="pad" cx="{x}" cy="{y}" r="24"/><circle class="{"fa" if hot else "fill"}" cx="{x}" cy="{y}" r="9"/>' + label(g, a, x, y, 52))
+            if a == "tree":
+                t += [ortho(x + dx, y - 26, x + dx * 6, 0, cls="hot" if dx == 0 else "") for dx in (-30, 0, 30)]
+    if g["big"]:   # on a phone the legend names the board; there is no room for a title block
+        return t, None
+    bw, bh = 470, 110
+    bx, by = CW - 150 - bw, H - 60 - bh
+    t.append(f'<rect class="chip" x="{bx:.0f}" y="{by}" width="{bw}" height="{bh}"/><line x1="{bx:.0f}" y1="{by + bh / 2:.0f}" x2="{bx + bw:.0f}" y2="{by + bh / 2:.0f}"/>'
+             f'<text x="{bx + 16:.0f}" y="{by + bh / 2 - 16:.0f}">{esc(g["title"].upper())}</text><text class="sm" x="{bx + 16:.0f}" y="{by + bh - 18:.0f}">BOARD COVER · REV 03 · SHEET 1 OF 1</text>')
+    return t, None
 
 
-def draw_processor(m, g):
-    at, P, CW, H = m["at"], g["P"], g["CW"], g["H"]
-    f = 30 if g["big"] else 22
-    t = svg_open(g, 'line,polyline,rect,circle{fill:none;stroke:#7d8b9b;stroke-width:2.5;stroke-linejoin:round}'
-                 '.die{stroke:#5b6b7c;stroke-width:4}.seal{stroke:#a9b4c0;stroke-dasharray:10 8}.blk{fill:#eef2f6;stroke:#5b6b7c}'
-                 '.core{fill:#ece8f6;stroke:#6b4fbb;stroke-width:3.5}.cell{stroke:#cfc6ea;stroke-width:1.5}.bus{stroke:#9aa6b4;stroke-width:3}'
-                 '.hot{stroke:#6b4fbb;stroke-width:3.5}.pad{fill:#dfe5ec;stroke:#7d8b9b;stroke-width:2}'
-                 f'text{{font:700 {f}px ui-monospace,Menlo,Consolas,monospace;fill:#3e4c5b;letter-spacing:.05em}}'
-                 f'.w{{font-weight:500;font-size:{f - 6}px;fill:#7d8b9b}}.lab{{fill:#6b4fbb}}')
+def skin_processor(g):
+    CW, H, P, f = g["CW"], g["H"], g["P"], g["f"]
+    t = [css(g, "#3e4c5b", "#7d8b9b", "#6b4fbb", "#9aa6b4", "ui-monospace,Menlo,Consolas,monospace",
+             ".die{stroke:#5b6b7c;stroke-width:4}.seal{stroke:#a9b4c0;stroke-dasharray:10 8}.blk{fill:#eef2f6;stroke:#5b6b7c}"
+             ".core{fill:#ece8f6;stroke:#6b4fbb;stroke-width:3.5}.cell{stroke:#cfc6ea;stroke-width:1.5}.pad{fill:#dfe5ec;stroke:#7d8b9b;stroke-width:2}")]
     t.append(f'<rect class="die" x="30" y="30" width="{CW - 60}" height="{H - 60}"/><rect class="seal" x="58" y="58" width="{CW - 116}" height="{H - 116}"/>')
-    # the forest: the pad ring, a bond pad every so often all round the die
-    for x, y in perimeter(g, 100, 84):
-        t.append(f'<rect class="pad" x="{x - 13}" y="{y - 13}" width="26" height="26"/>')
-    cx, cy, hw, hh = g["cx"], g["cy"], g["hw"], g["hh"]
-    # C: the interconnect, two rings round the core
-    for grow in (40, 60):
-        t.append(f'<rect class="bus" x="{cx - hw - grow:.0f}" y="{cy - hh - grow:.0f}" width="{2 * hw + 2 * grow:.0f}" height="{2 * hh + 2 * grow:.0f}"/>')
-    # the brain: the core, an array of cells
-    t.append(f'<rect class="core" x="{cx - hw:.0f}" y="{cy - hh:.0f}" width="{2 * hw:.0f}" height="{2 * hh:.0f}"/>')
-    for k in range(1, int(2 * hw // 64)):
-        t.append(f'<line class="cell" x1="{cx - hw + k * 64:.0f}" y1="{cy - hh:.0f}" x2="{cx - hw + k * 64:.0f}" y2="{cy + hh:.0f}"/>')
-    for k in range(1, int(2 * hh // 64)):
-        t.append(f'<line class="cell" x1="{cx - hw:.0f}" y1="{cy - hh + k * 64:.0f}" x2="{cx + hw:.0f}" y2="{cy - hh + k * 64:.0f}"/>')
-    t.append(brain_label(g, "CORE  BRAIN: WHAT YOU BRING"))
-    for a, (x, y) in P.items():
-        ex, ey = g["edge"](x, y, 60)
-        hot = "hot" if a in ("triangle", "r") else "bus"
-        for k in (-10, 0, 10):
-            if abs(ex - x) > abs(ey - y):
-                t.append(ortho(x, y + k, ex, ey + k, 20, hot))
+    t += [f'<rect class="pad" x="{x - 13}" y="{y - 13}" width="26" height="26"/>' for x, y in perimeter(g, 100, 84)]   # C.14: the pad ring
+    for (p, q), hot in g["links"]:
+        for k in (-9, 0, 9):
+            if abs(q[0] - p[0]) > abs(q[1] - p[1]):
+                t.append(ortho(p[0], p[1] + k, q[0], q[1] + k, 20, "hot" if hot else ""))
             else:
-                t.append(ortho(x + k, y, ex + k, ey, 20, hot))
+                t.append(ortho(p[0] + k, p[1], q[0] + k, q[1], 20, "hot" if hot else ""))
+    t += [rect(g, 40, ""), rect(g, 58, ""), rect(g, 0, "core")]
+    x, y, w, h = box(g)
+    t += [f'<line class="cell" x1="{x + k * 64:.0f}" y1="{y:.0f}" x2="{x + k * 64:.0f}" y2="{y + h:.0f}"/>' for k in range(1, int(w // 64))]
+    t += [f'<line class="cell" x1="{x:.0f}" y1="{y + k * 64:.0f}" x2="{x + w:.0f}" y2="{y + k * 64:.0f}"/>' for k in range(1, int(h // 64))]
+    for jx, jy in g["J"].values():
+        t.append(f'<rect class="blk" x="{jx - 16}" y="{jy - 16}" width="32" height="32"/>')
     for a, (x, y) in P.items():
-        w, h = (250, 118) if a in CONTROLS else (200, 92)
-        if g["big"]:
-            h += 20
-        t.append(f'<rect class="blk" x="{x - w / 2}" y="{y - h / 2}" width="{w}" height="{h}"/>')
-        t.append(f'<text x="{x - w / 2 + 14}" y="{y - h / 2 + f + 10}">{esc(at[a]["code"])}</text>')
-        t.append(f'<text class="w" x="{x - w / 2 + 14}" y="{y + h / 2 - 16}">{esc((at[a]["word"] or COVER_PARTS[a]).upper())}</text>')
-    return t
+        bw, bh = (200, 96) if g["big"] else ((250 if a in CONTROLS else 230), 92)
+        small = ' style="font-size:22px"' if g["big"] else ""
+        t.append(f'<rect class="blk" x="{x - bw / 2}" y="{y - bh / 2}" width="{bw}" height="{bh}"/>'
+                 f'<text class="n" x="{x - bw / 2 + 12}" y="{y - bh / 2 + f + 2}">{esc(g["num"][a])}</text>'
+                 f'<text class="w" x="{x - bw / 2 + 12}" y="{y + bh / 2 - 14}"{small}>{esc(g["word"](a) or "TREE")}</text>')
+    return t, None
 
 
-def draw_breadboard(m, g):
-    at, P, CW, H = m["at"], g["P"], g["CW"], g["H"]
-    f = 30 if g["big"] else 22
+def skin_breadboard(g):
+    CW, H, P, f = g["CW"], g["H"], g["P"], g["f"]
     wires = ["#d9534f", "#f0ad4e", "#4cae4c", "#3b73b9", "#8e6bbf", "#5a5a5a"]
-    t = svg_open(g, 'line,path,rect,circle,polygon{fill:none;stroke:#6f6a60;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}'
-                 '.plus{stroke:#d9534f;stroke-width:3}.minus{stroke:#3b73b9;stroke-width:3}.chan{fill:#ebe6db;stroke:none}'
-                 '.ic{fill:#ebe7de;stroke:#4a4740;stroke-width:3}.pin{fill:#b9b3a6;stroke:none}.part{fill:#fbf9f4;stroke:#4a4740}'
-                 '.wire{stroke-width:7;opacity:.85}'
-                 f'text{{font:700 {f}px ui-monospace,Menlo,Consolas,monospace;fill:#5d584f;letter-spacing:.05em}}.lab{{fill:#d9534f}}')
-    # the forest: the power rails along the top and the bottom, feeding everything
-    for y0 in (70, H - 110):
-        t.append(f'<line class="plus" x1="40" y1="{y0}" x2="{CW - 40}" y2="{y0}"/><line class="minus" x1="40" y1="{y0 + 40}" x2="{CW - 40}" y2="{y0 + 40}"/>')
-        t.append(f'<text class="lab" x="16" y="{y0 + 8}">+</text><text x="16" y="{y0 + 48}" style="fill:#3b73b9">-</text>')
-    cx, cy, hw, hh = g["cx"], g["cy"], g["hw"], g["hh"]
-    # the centre channel the brain straddles
-    t.append(f'<rect class="chan" x="0" y="{cy - 16:.0f}" width="{CW}" height="32"/>')
-    # C: the pair of jumper buses either side of the brain
-    t.append(f'<rect x="{cx - hw - 36:.0f}" y="{cy - hh - 36:.0f}" width="{2 * hw + 72:.0f}" height="{2 * hh + 72:.0f}" rx="18" stroke-dasharray="4 12"/>')
-    # the brain: a DIP chip with its notch and two rows of legs
-    t.append(f'<rect class="ic" x="{cx - hw:.0f}" y="{cy - hh:.0f}" width="{2 * hw:.0f}" height="{2 * hh:.0f}" rx="8"/>')
-    t.append(f'<path d="M {cx - hw:.0f} {cy - 30:.0f} a 30 30 0 0 1 0 60"/>')
-    for k in range(int(2 * hw // 48)):
-        x = cx - hw + 24 + k * 48
-        t.append(f'<rect class="pin" x="{x - 9:.0f}" y="{cy - hh - 20:.0f}" width="18" height="20"/><rect class="pin" x="{x - 9:.0f}" y="{cy + hh:.0f}" width="18" height="20"/>')
-    t.append(brain_label(g, "IC1  BRAIN: WHAT YOU BRING"))
-    for i, (a, (x, y)) in enumerate(P.items()):
-        ex, ey = g["edge"](x, y, 20)
-        mx, my = (x + ex) / 2 + (ey - y) * .18, (y + ey) / 2 - (ex - x) * .18
-        t.append(f'<path class="wire" stroke="{wires[i % len(wires)]}" d="M {x} {y} Q {mx:.0f} {my:.0f} {ex} {ey}"/>')
-        t.append(f'<circle class="pin" cx="{ex}" cy="{ey}" r="8"/>')
+    t = [css(g, "#4a4740", "#6f6a60", "#d9534f", "#3b73b9", "ui-monospace,Menlo,Consolas,monospace",
+             ".ic{fill:#ebe7de;stroke:#4a4740;stroke-width:3}.pin{fill:#b9b3a6;stroke:none}.part{fill:#fbf9f4;stroke:#4a4740}.wire{stroke-width:7;opacity:.85}")]
+    for y0 in (70, H - 110):   # C.14: the power rails
+        t.append(f'<line class="hot" x1="40" y1="{y0}" x2="{CW - 40}" y2="{y0}"/><line class="s2" style="stroke-width:3" x1="40" y1="{y0 + 40}" x2="{CW - 40}" y2="{y0 + 40}"/>')
+    t.append(f'<rect style="fill:#ebe6db;stroke:none" x="0" y="{g["cy"] - 16:.0f}" width="{CW}" height="32"/>')
+    for i, ((p, q), hot) in enumerate(g["links"]):
+        t.append(f'<path class="wire" style="stroke:{wires[i % len(wires)]}" d="{bow(p, q, .15)}"/>')
+        t.append(f'<circle class="pin" cx="{q[0]}" cy="{q[1]}" r="8"/>')
+    t += [rect(g, 36, "", 18).replace('class=""', 'style="stroke-dasharray:4 12"'), rect(g, 0, "ic", 8)]
+    x, y, w, h = box(g)
+    t.append(f'<path d="M {x:.0f} {g["cy"] - 30:.0f} a 30 30 0 0 1 0 60"/>')
+    for k in range(int(w // 48)):
+        px = x + 24 + k * 48
+        t.append(f'<rect class="pin" x="{px - 9:.0f}" y="{y - 20:.0f}" width="18" height="20"/><rect class="pin" x="{px - 9:.0f}" y="{y + h:.0f}" width="18" height="20"/>')
+    for jx, jy in g["J"].values():
+        t.append(f'<circle class="fi" cx="{jx}" cy="{jy}" r="10"/>')
     for i, (a, (x, y)) in enumerate(P.items()):
         if a in CONTROLS:
-            s = 84 if g["big"] else 72
-            t.append(f'<rect class="part" x="{x - s / 2}" y="{y - s / 2}" width="{s}" height="{s}" rx="8"/><circle class="part" cx="{x}" cy="{y}" r="{s * .3:.0f}"/>')
-            t.append(f'<text x="{x}" y="{y + s / 2 + f + 6}" text-anchor="middle">{esc(at[a]["code"])}</text>')
-        elif a == "triangle":
-            t.append(f'<line x1="{x - 70}" y1="{y}" x2="{x + 70}" y2="{y}"/><polygon class="part" points="{x - 26},{y - 26} {x - 26},{y + 26} {x + 22},{y}"/>'
-                     f'<line x1="{x + 24}" y1="{y - 26}" x2="{x + 24}" y2="{y + 26}"/><text x="{x}" y="{y - 40}" text-anchor="middle">{esc(at[a]["code"])}</text>')
-        elif a == "r":
-            t.append(f'<line x1="{x - 60}" y1="{y}" x2="{x - 14}" y2="{y}"/><line x1="{x - 14}" y1="{y - 30}" x2="{x - 14}" y2="{y + 30}"/>'
-                     f'<line x1="{x + 14}" y1="{y - 30}" x2="{x + 14}" y2="{y + 30}"/><line x1="{x + 14}" y1="{y}" x2="{x + 60}" y2="{y}"/>'
-                     f'<text x="{x}" y="{y + 30 + f + 6}" text-anchor="middle">{esc(at[a]["code"])}</text>')
+            s = 80
+            t.append(f'<rect class="part" x="{x - s / 2}" y="{y - s / 2}" width="{s}" height="{s}" rx="8"/><circle class="part" cx="{x}" cy="{y}" r="24"/>' + label(g, a, x, y, 70))
         else:
             led = wires[i % len(wires)]
-            t.append(f'<line x1="{x - 8}" y1="{y + 20}" x2="{x - 8}" y2="{y + 52}"/><line x1="{x + 8}" y1="{y + 20}" x2="{x + 8}" y2="{y + 44}"/>'
-                     f'<path class="part" style="stroke:{led}" d="M {x - 22} {y + 20} L {x - 22} {y - 4} A 22 22 0 0 1 {x + 22} {y - 4} L {x + 22} {y + 20} Z"/>'
-                     f'<text x="{x + 34}" y="{y + 8}">{esc(at[a]["code"])}</text>')
-    return t
+            t.append(f'<line x1="{x - 8}" y1="{y + 20}" x2="{x - 8}" y2="{y + 50}"/><line x1="{x + 8}" y1="{y + 20}" x2="{x + 8}" y2="{y + 42}"/>'
+                     f'<path class="part" style="stroke:{led}" d="M {x - 22} {y + 20} L {x - 22} {y - 4} A 22 22 0 0 1 {x + 22} {y - 4} L {x + 22} {y + 20} Z"/>' + label(g, a, x, y, 80))
+    return t, None
 
 
-def draw_neural(m, g):
-    at, P, CW, H = m["at"], g["P"], g["CW"], g["H"]
-    f = 30 if g["big"] else 22
-    t = svg_open(g, 'path,line,circle,ellipse{fill:none;stroke:#7d8a99;stroke-width:2.5;stroke-linecap:round}'
-                 '.soma{fill:#fdf5f2;stroke:#e07a5f;stroke-width:3.5}.mem{stroke:#f0c4b6;stroke-dasharray:3 10;stroke-width:3}'
-                 '.axon{stroke:#e07a5f;stroke-width:3.5}.node{fill:#ffffff;stroke:#5c6b7a;stroke-width:3}.hot{stroke:#e07a5f}'
-                 '.syn{fill:#9aa7b5;stroke:none}.net{stroke:#d5dbe2;stroke-width:2}'
-                 f'text{{font:600 {f}px ui-monospace,Menlo,Consolas,monospace;fill:#5c6b7a;letter-spacing:.05em}}.lab{{fill:#e07a5f}}')
-    # the forest: a loose network of many small cells round the edge
-    pts = perimeter(g, 110, 150)
+def skin_neural(g):
+    CW, H, P = g["CW"], g["H"], g["P"]
+    t = [css(g, "#5c6b7a", "#7d8a99", "#e07a5f", "#9aa7b5", "ui-monospace,Menlo,Consolas,monospace",
+             ".soma{fill:#fdf5f2;stroke:#e07a5f;stroke-width:3.5}.mem{stroke:#f0c4b6;stroke-dasharray:3 10;stroke-width:3}.node{fill:#fff;stroke:#5c6b7a;stroke-width:3}.net{stroke:#d5dbe2;stroke-width:2}")]
+    pts = perimeter(g, 110, 150)   # C.14: a network of small cells round the edge
     for i, (x, y) in enumerate(pts):
-        nx, ny = pts[(i + 1) % len(pts)]
-        t.append(f'<path class="net" d="M {x} {y} Q {(x + nx) / 2 + (17 if i % 2 else -17):.0f} {(y + ny) / 2 + (17 if i % 3 else -17):.0f} {nx} {ny}"/>')
-        t.append(f'<circle class="syn" cx="{x}" cy="{y}" r="{5 + (i * 7) % 4}"/>')
+        t.append(curve((x, y), pts[(i + 1) % len(pts)], .12 if i % 2 else -.12, "net") + f'<circle class="fill" cx="{x}" cy="{y}" r="{5 + i % 4}"/>')
+    for i, ((p, q), hot) in enumerate(g["links"]):
+        t.append(curve(q, p, .2 if i % 2 else -.2, "hot" if hot else ""))
+    cx, cy = g["cx"], g["cy"]
+    t.append(f'<ellipse class="mem" cx="{cx}" cy="{cy}" rx="{g["hw"] + 46:.0f}" ry="{g["hh"] + 46:.0f}"/><ellipse class="soma" cx="{cx}" cy="{cy}" rx="{g["hw"]:.0f}" ry="{g["hh"]:.0f}"/>')
+    for jx, jy in g["J"].values():
+        t.append(f'<circle class="fill" cx="{jx}" cy="{jy}" r="9"/><circle class="fill" cx="{jx + 14}" cy="{jy + 8}" r="5"/><circle class="fill" cx="{jx - 12}" cy="{jy + 10}" r="4"/>')
+    for a, (x, y) in P.items():
+        r = 30 if a in CONTROLS else 22
+        t.append(f'<path d="M {x} {y} q 26 -30 52 -26"/><path d="M {x} {y} q -26 -30 -52 -22"/>'
+                 f'<circle class="node{" hot" if a in ("tree", "r") else ""}" cx="{x}" cy="{y}" r="{r}"/><circle class="fill" cx="{x}" cy="{y}" r="7"/>' + label(g, a, x, y, r + 30))
+    return t, None
+
+
+def skin_raga(g):
+    """Indian classical: the taal cycle round the drone, tabla heads, meend glides, an audience."""
+    CW, H, P = g["CW"], g["H"], g["P"]
     cx, cy, hw, hh = g["cx"], g["cy"], g["hw"], g["hh"]
-    # C: the membrane round the cell; the brain: the cell body
-    t.append(f'<ellipse class="mem" cx="{cx}" cy="{cy}" rx="{hw + 46:.0f}" ry="{hh + 46:.0f}"/>')
-    t.append(f'<ellipse class="soma" cx="{cx}" cy="{cy}" rx="{hw:.0f}" ry="{hh:.0f}"/>')
-    t.append(brain_label(g, "SOMA  BRAIN: WHAT YOU BRING"))
+    t = [css(g, "#5b3a2e", "#9c7a62", "#d9822b", "#9b2d3a", "Georgia,'Times New Roman',serif",
+             ".skin{fill:#fffaf2;stroke:#5b3a2e;stroke-width:3}.str{stroke:#c9ab8f;stroke-width:1.5}.rug{fill:#fbefe0;stroke:#9b2d3a}")]
+    for k, dx in enumerate((-90, -30, 30, 90)):   # tanpura strings, top to bottom
+        t.append(f'<line class="str" x1="{cx + dx * .4:.0f}" y1="0" x2="{cx + dx * 4:.0f}" y2="{H}"/>')
+    for row in range(3):   # C.14: the audience, in rows round the stage
+        n = 22 + row * 6
+        for i in range(n):
+            a = 3.14159 * (.12 + .76 * i / (n - 1))
+            t.append(f'<circle class="fill" cx="{cx - (CW * .46 + row * 40) * math.cos(a):.0f}" cy="{H + 260 - (330 + row * 40) * math.sin(a):.0f}" r="{6 - row}"/>')
+    for i, ((p, q), hot) in enumerate(g["links"]):
+        t.append(curve(p, q, .25 if i % 2 else -.25, "hot" if hot else "ink thin"))   # meend: the glide
+    rx, ry = hw + g["gap"], hh + g["gap"]
+    t.append(f'<ellipse class="ink" cx="{cx}" cy="{cy}" rx="{rx:.0f}" ry="{ry:.0f}"/><ellipse cx="{cx}" cy="{cy}" rx="{hw:.0f}" ry="{hh:.0f}" style="fill:#fdf3e6;stroke:#c9ab8f"/>')
+    for k in range(16):   # C.1: the taal, sixteen beats; sam on one, khali on nine
+        a = -math.pi / 2 + k * math.pi / 8
+        x, y = cx + rx * math.cos(a), cy + ry * math.sin(a)
+        x2, y2 = cx + (rx + 22) * math.cos(a), cy + (ry + 22) * math.sin(a)
+        t.append(f'<line class="ink" x1="{x:.0f}" y1="{y:.0f}" x2="{x2:.0f}" y2="{y2:.0f}"/>')
+        mark = {0: "×", 8: "○", 4: "2", 12: "3"}.get(k)
+        if mark:
+            t.append(f'<text class="lab" x="{cx + (rx + 50) * math.cos(a):.0f}" y="{cy + (ry + 50) * math.sin(a) + 9:.0f}" text-anchor="middle">{mark}</text>')
+    for jx, jy in g["J"].values():
+        t.append(f'<circle class="f2" cx="{jx}" cy="{jy}" r="10"/>')
+    for a, (x, y) in P.items():
+        if a in CONTROLS:
+            t.append(f'<rect class="rug" x="{x - 64}" y="{y - 40}" width="128" height="80" rx="6"/><polygon class="s2" points="{x},{y - 28} {x + 44},{y} {x},{y + 28} {x - 44},{y}"/>' + label(g, a, x, y, 72))
+        elif a == "r":
+            t.append(f'<rect class="skin" x="{x - 60}" y="{y - 38}" width="120" height="76" rx="4"/>' + "".join(f'<line class="ink thin" x1="{x - 44}" y1="{y - 18 + k * 18}" x2="{x + 44}" y2="{y - 18 + k * 18}"/>' for k in range(3)) + label(g, a, x, y, 68))
+        else:   # a tabla head: the skin, its ring, the syahi
+            t.append(f'<circle class="skin" cx="{x}" cy="{y}" r="28"/><circle class="ink thin" cx="{x}" cy="{y}" r="20"/><circle class="{"fa" if a == "tree" else "fi"}" cx="{x}" cy="{y}" r="9"/>' + label(g, a, x, y, 58))
+    return t, (g["cx"], H - 60)
+
+
+def skin_blues(g):
+    """Blues: a guitar neck across the board, the sound hole as the brain, notes, a 12-bar strip."""
+    CW, H, P, f = g["CW"], g["H"], g["P"], g["f"]
+    cx, cy, hw, hh = g["cx"], g["cy"], g["hw"], g["hh"]
+    t = [css(g, "#2b3a55", "#7d8aa3", "#2f5da8", "#b04a3b", "Georgia,'Times New Roman',serif",
+             ".neck{stroke:#c4ccd9}.knob{fill:#fff;stroke:#2b3a55;stroke-width:3}.cell{fill:#fff;stroke:#7d8aa3}")]
+    for k in range(6):   # the strings, the full width
+        y = cy - hh * .75 + k * hh * .3
+        t.append(f'<line class="neck" style="stroke-width:{1.2 + k * .5:.1f}" x1="0" y1="{y:.0f}" x2="{CW}" y2="{y:.0f}"/>')
+    for side in (-1, 1):   # frets closing in towards the sound hole, with inlays
+        x = cx + side * (hw + g["gap"] + 30)
+        step = 150
+        for k in range(12):
+            if not 0 < x < CW:
+                break
+            t.append(f'<line class="neck" x1="{x:.0f}" y1="{cy - hh * .8:.0f}" x2="{x:.0f}" y2="{cy + hh * .8:.0f}"/>')
+            if k in (2, 4, 6, 8):
+                t.append(f'<circle class="fill faint" cx="{x + side * step / 2:.0f}" cy="{cy:.0f}" r="9"/>')
+            x += side * step
+            step *= .94
+    bars = "I I I I IV IV I I V IV I V".split()   # C.14: the twelve bars along the floor
+    cw = (CW - 120) / 12
+    for k, b in enumerate(bars):
+        x = 60 + k * cw
+        t.append(f'<rect class="cell" x="{x:.0f}" y="{H - 96}" width="{cw:.0f}" height="60"/><text class="sm" x="{x + cw / 2:.0f}" y="{H - 56}" text-anchor="middle">{b}</text>')
+    for i, ((p, q), hot) in enumerate(g["links"]):
+        t.append(curve(p, q, .22 if i % 2 else -.22, "hot" if hot else "ink thin"))   # slurs
+    for grow in (g["gap"], g["gap"] - 10, g["gap"] - 22):   # C.1: the rosette round the sound hole
+        t.append(f'<ellipse class="ink thin" cx="{cx}" cy="{cy}" rx="{hw + grow:.0f}" ry="{hh + grow:.0f}"/>')
+    t.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{hw:.0f}" ry="{hh:.0f}" style="fill:#e9ecf2;stroke:#2b3a55;stroke-width:3"/>')
+    for jx, jy in g["J"].values():
+        t.append(f'<ellipse class="fi" cx="{jx}" cy="{jy}" rx="14" ry="10" transform="rotate(-20 {jx} {jy})"/>')
+    for a, (x, y) in P.items():
+        if a in CONTROLS:   # an amp knob
+            t.append(f'<circle class="knob" cx="{x}" cy="{y}" r="34"/><line class="ink" x1="{x}" y1="{y}" x2="{x + 18}" y2="{y - 24}"/>'
+                     + "".join(f'<line class="thin" x1="{x + 44 * math.cos(a2):.0f}" y1="{y + 44 * math.sin(a2):.0f}" x2="{x + 52 * math.cos(a2):.0f}" y2="{y + 52 * math.sin(a2):.0f}"/>' for a2 in [2.4 + k * .75 for k in range(7)]) + label(g, a, x, y, 80))
+        elif a == "r":   # a record
+            t.append(f'<circle class="fi" cx="{x}" cy="{y}" r="40"/><circle style="stroke:#7d8aa3" cx="{x}" cy="{y}" r="30"/><circle style="stroke:#7d8aa3" cx="{x}" cy="{y}" r="20"/><circle class="f2" cx="{x}" cy="{y}" r="9"/>' + label(g, a, x, y, 70))
+        elif a == "tree":   # the headstock and its six pegs
+            t.append(f'<rect class="knob" x="{x - 34}" y="{y - 56}" width="68" height="112" rx="14"/>' + "".join(f'<circle class="fi" cx="{x + s * 48}" cy="{y - 34 + k * 34}" r="9"/>' for s in (-1, 1) for k in range(3)) + label(g, a, x, y, 84))
+        else:   # a note
+            t.append(f'<ellipse class="{"fa" if a in ("alerts",) else "fi"}" cx="{x}" cy="{y}" rx="20" ry="14" transform="rotate(-20 {x} {y})"/>'
+                     f'<line class="ink" style="stroke-width:3" x1="{x + 18}" y1="{y - 4}" x2="{x + 18}" y2="{y - 62}"/><path class="ink" style="stroke-width:3" d="M {x + 18} {y - 62} q 22 14 14 38"/>' + label(g, a, x, y, 48))
+    return t, None
+
+
+def skin_pipeline(g):
+    """Production: stages as boxes, pipes flowing in, a manifold round the plant, a distribution fan."""
+    CW, H, P, f = g["CW"], g["H"], g["P"], g["f"]
+    t = [css(g, "#33433c", "#7b8a83", "#2e8b57", "#c9772b", "system-ui,-apple-system,'Segoe UI',sans-serif",
+             ".pipe{stroke:#7b8a83;stroke-width:12}.bore{stroke:#f4f6f4;stroke-width:6}.stage{fill:#fff;stroke:#33433c;stroke-width:2.5}.hotp{stroke:#2e8b57;stroke-width:12}")]
+    rx, ry = P["r"]
+    ends = max(8, CW // 230)
+    for k in range(ends):   # C.14: the distribution field, a fan out to many ends
+        ex = round(CW * (k + .5) / ends)
+        t.append(f'<line class="thin" x1="{rx}" y1="{ry + 40}" x2="{ex}" y2="{H - 70}"/><rect class="stage" x="{ex - 22}" y="{H - 70}" width="44" height="30" rx="4"/>')
+    for (p, q), hot in g["links"]:
+        t.append(ortho(*p, *q, 30, "hotp" if hot else "pipe") + ortho(*p, *q, 30, "bore"))
+        t.append(f'<circle class="{"fa" if hot else "fill"}" cx="{q[0]}" cy="{q[1]}" r="9"/>')
+    t += [rect(g, 46, "ink", 18), rect(g, 0, "", 10).replace('class=""', 'style="fill:#eef3ef;stroke:#33433c;stroke-dasharray:12 8"')]
+    x, y, w, h = box(g, 46)
+    for k in range(1, int(w // 120)):
+        px = x + k * 120
+        t.append(f'<polyline class="hot" points="{px - 8:.0f},{y - 8:.0f} {px + 4:.0f},{y:.0f} {px - 8:.0f},{y + 8:.0f}"/><polyline class="hot" points="{px + 8:.0f},{y + h - 8:.0f} {px - 4:.0f},{y + h:.0f} {px + 8:.0f},{y + h + 8:.0f}"/>')
+    for jx, jy in g["J"].values():   # a valve
+        t.append(f'<polygon class="stage" points="{jx - 18},{jy - 12} {jx},{jy} {jx - 18},{jy + 12}"/><polygon class="stage" points="{jx + 18},{jy - 12} {jx},{jy} {jx + 18},{jy + 12}"/>')
+    for a, (x, y) in P.items():
+        if a in CONTROLS:
+            t.append(f'<polygon class="stage" points="{x - 40},{y - 26} {x},{y} {x - 40},{y + 26}"/><polygon class="stage" points="{x + 40},{y - 26} {x},{y} {x + 40},{y + 26}"/><line class="ink" x1="{x}" y1="{y}" x2="{x}" y2="{y - 40}"/><line class="ink" x1="{x - 16}" y1="{y - 40}" x2="{x + 16}" y2="{y - 40}"/>' + label(g, a, x, y, 60))
+        elif a == "tree":   # the source tank
+            t.append(f'<path class="stage" d="M {x - 50} {y - 30} v 60 a 50 14 0 0 0 100 0 v -60"/><ellipse class="stage" cx="{x}" cy="{y - 30}" rx="50" ry="14"/>' + label(g, a, x, y, 70))
+        else:
+            bw, bh = 200, 72
+            edge = ' style="stroke:#c9772b;stroke-width:3.5"' if a == "r" else ""
+            t.append(f'<rect class="stage" x="{x - bw / 2}" y="{y - bh / 2}" width="{bw}" height="{bh}" rx="10"{edge}/>'
+                     f'<text class="n" x="{x - bw / 2 + 12}" y="{y - bh / 2 + f}">{esc(g["num"][a])}</text><text class="w" x="{x}" y="{y + bh / 2 - 12}" text-anchor="middle">{esc(g["word"](a))}</text>')
+    return t, None
+
+
+def skin_flight(g):
+    """Flight deck: round gauges, the attitude indicator as the brain, a heading bezel, the recorder's tape."""
+    CW, H, P, f = g["CW"], g["H"], g["P"], g["f"]
+    cx, cy = g["cx"], g["cy"]
+    t = [css(g, "#2a3744", "#7a8794", "#d98a00", "#c0392b", "ui-monospace,Menlo,Consolas,monospace",
+             ".gauge{fill:#fff;stroke:#2a3744;stroke-width:3}.tape{fill:#fff;stroke:#7a8794}.wave{stroke:#d98a00;stroke-width:2.5}")]
+    for hx, hy in ((60, 60), (CW - 60, 60), (60, H - 150), (CW - 60, H - 150)):   # panel screws
+        t.append(f'<circle cx="{hx}" cy="{hy}" r="14"/><line x1="{hx - 8}" y1="{hy - 8}" x2="{hx + 8}" y2="{hy + 8}"/>')
+    t.append(f'<rect class="tape" x="40" y="{H - 110}" width="{CW - 80}" height="72" rx="6"/>')   # C.14: the recorder's tape
+    t += [f'<line class="thin" x1="{x}" y1="{H - 110}" x2="{x}" y2="{H - 96 if x % 100 else H - 88}"/>' for x in range(60, CW - 40, 20)]
+    t.append('<polyline class="wave" points="' + " ".join(f"{x},{H - 64 + 16 * math.sin(x / 37) * math.cos(x / 151):.0f}" for x in range(60, CW - 40, 12)) + '"/>')
+    for (p, q), hot in g["links"]:
+        t.append(ortho(*p, *q, 20, "hot" if hot else "thin"))
+    x, y, w, h = box(g, g["gap"])
+    t.append(rect(g, g["gap"], "ink", 30))
+    for k in range(int(w // 30)):   # C.1: the heading bezel
+        px = x + 15 + k * 30
+        t.append(f'<line class="thin" x1="{px:.0f}" y1="{y:.0f}" x2="{px:.0f}" y2="{y + (16 if k % 3 else 26):.0f}"/>')
+    t.append(rect(g, 0, "", 20).replace('class=""', 'style="fill:#eef3f8;stroke:#2a3744;stroke-width:3"'))
+    t.append(f'<line class="hot" x1="{cx - g["hw"]:.0f}" y1="{cy:.0f}" x2="{cx + g["hw"]:.0f}" y2="{cy:.0f}"/>')   # the horizon
+    t += [f'<line class="thin" x1="{cx - 60 + (k % 2) * 30:.0f}" y1="{cy + k * 40:.0f}" x2="{cx + 60 - (k % 2) * 30:.0f}" y2="{cy + k * 40:.0f}"/>' for k in (-3, -2, -1, 1, 2, 3)]
+    for jx, jy in g["J"].values():
+        t.append(f'<circle class="gauge" cx="{jx}" cy="{jy}" r="12"/><circle class="fa" cx="{jx}" cy="{jy}" r="4"/>')
     for i, (a, (x, y)) in enumerate(P.items()):
-        # each element joined to the cell by a curving dendrite, with two twigs by the element
-        dx, dy = x - cx, y - cy
-        n = (dx * dx / (hw * hw) + dy * dy / (hh * hh)) ** .5
-        ex, ey = round(cx + dx / n), round(cy + dy / n)
-        bend = .22 if i % 2 else -.22
-        mx, my = (x + ex) / 2 - (ey - y) * bend, (y + ey) / 2 + (ex - x) * bend
-        hot = "axon" if a in ("triangle", "r") else ""
-        t.append(f'<path class="{hot}" d="M {ex} {ey} Q {mx:.0f} {my:.0f} {x} {y}"/>')
-        for s in (-1, 1):
-            t.append(f'<path d="M {x} {y} q {s * 30 + (x - mx) * .15:.0f} {-24 + (y - my) * .15:.0f} {s * 52 + (x - mx) * .25:.0f} {-8 + (y - my) * .25:.0f}"/>')
-        r = 22 if a not in CONTROLS else 30
-        t.append(f'<circle class="node{" hot" if hot else ""}" cx="{x}" cy="{y}" r="{r}"/><circle class="syn" cx="{x}" cy="{y}" r="7"/>')
-        t.append(f'<text x="{x + r + 12}" y="{y + 8}">{esc(at[a]["code"])}</text>')
-    return t
+        if a in CONTROLS:   # a toggle switch
+            t.append(f'<rect class="gauge" x="{x - 30}" y="{y - 46}" width="60" height="92" rx="12"/><line class="ink" style="stroke-width:6" x1="{x}" y1="{y + 10}" x2="{x + 14}" y2="{y - 30}"/><circle class="fa" cx="{x + 14}" cy="{y - 30}" r="9"/>' + label(g, a, x, y, 76))
+        elif a == "tree":   # the beacon
+            t.append(f'<line class="ink" x1="{x}" y1="{y + 30}" x2="{x}" y2="{y - 30}"/><circle class="fa" cx="{x}" cy="{y - 30}" r="8"/>'
+                     f'<path class="hot" d="M {x - 26} {y - 52} a 36 36 0 0 1 52 0"/><path class="hot" d="M {x - 42} {y - 66} a 58 58 0 0 1 84 0"/>' + label(g, a, x, y, 60))
+        else:   # a round gauge with its ticks and needle
+            r = 34
+            t.append(f'<circle class="gauge" cx="{x}" cy="{y}" r="{r}"/>')
+            for k in range(9):
+                a2 = math.radians(135 + k * 33.75)
+                t.append(f'<line class="thin" x1="{x + (r - 4) * math.cos(a2):.0f}" y1="{y + (r - 4) * math.sin(a2):.0f}" x2="{x + (r - 12) * math.cos(a2):.0f}" y2="{y + (r - 12) * math.sin(a2):.0f}"/>')
+            a2 = math.radians(160 + (i * 47) % 200)
+            t.append(f'<line class="{"s2" if a == "alerts" else "hot"}" x1="{x}" y1="{y}" x2="{x + (r - 10) * math.cos(a2):.0f}" y2="{y + (r - 10) * math.sin(a2):.0f}"/><circle class="fi" cx="{x}" cy="{y}" r="5"/>' + label(g, a, x, y, r + 30))
+    return t, None
 
 
-COVER_DRAW = {"circuit": draw_circuit, "processor": draw_processor, "breadboard": draw_breadboard, "neural": draw_neural}
+SKINS = {"circuit": skin_circuit, "processor": skin_processor, "breadboard": skin_breadboard, "neural": skin_neural,
+         "raga": skin_raga, "blues": skin_blues, "pipeline": skin_pipeline, "flight": skin_flight}
 
 
 def write_covers(m, folder):
     """Every cover: each theme, for a wide window and for a tall one."""
     out = []
-    for theme in COVER_THEMES:
+    for theme, th in cover_themes(m).items():
         for shape in COVER_SHAPES:
-            g = cover_geometry(m, shape)
+            g = cover_geometry(m, shape, theme)
+            body, base_at = SKINS[th["draw"]](g)
+            style, body = body[0], body[1:]
+            svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {g["CW"]} {g["CH"]}" preserveAspectRatio="xMidYMid slice"><style>{style}</style>'
+                   + "".join(body) + "".join(marks(g, base_at)) + "</svg>\n")
             path = os.path.join(folder, f"cover-{theme}-{shape}.svg")
             with open(path, "w", encoding="utf-8") as fh:
-                fh.write("".join(COVER_DRAW[theme](m, g)) + "</svg>\n")
+                fh.write(svg)
             out.append(path)
+    return out
+
+
+# The cover's paper and grid for each theme, and the select that picks one: written into
+# cover.css and into the four copies of the page, from map/domains.json.
+COVER_PAPER = {"circuit": ("#f7f9fb", "#e6edf4", "24px", "transparent"), "processor": ("#f3f5f8", "#e8ecf1", "16px", "transparent"),
+               "breadboard": ("#f6f3ec", "transparent", "20px", "#d8d1c2"), "neural": ("#fbfaf7", "transparent", "24px", "transparent"),
+               "raga": ("#fbf6ee", "transparent", "24px", "transparent"), "blues": ("#f4f2ee", "transparent", "24px", "transparent"),
+               "pipeline": ("#f4f6f4", "#e7ece8", "32px", "transparent"), "flight": ("#f3f5f7", "#e5eaef", "20px", "transparent")}
+PAGES = ("index.html", "explore.html", "serialize.html", "deserialize.html")
+
+
+def cover_css(m):
+    rules = ["/* Written by generator.py from map/domains.json: each cover theme's drawing, paper and grid. */"]
+    for k, th in cover_themes(m).items():
+        paper, line, cell, dot = COVER_PAPER[th["draw"]]
+        rules.append(f'.cover:has(option[value="{k}"]:checked) {{ --wide: url("cover-{k}-wide.svg"); --tall: url("cover-{k}-tall.svg"); '
+                     f'--paper: {paper}; --line: {line}; --cell: {cell}; --dot: {dot}; }}')
+    return "\n".join(rules) + "\n"
+
+
+def cover_select(m):
+    themes, groups = cover_themes(m), {}
+    first = next(iter(themes))
+    for k, th in themes.items():
+        groups.setdefault(th["group"], []).append(f'<option value="{k}"{" selected" if k == first else ""}>{esc(th["name"])}</option>')
+    return '<select name="cover" aria-label="Cover theme">' + "".join(f'<optgroup label="{esc(gname)}">{"".join(opts)}</optgroup>' for gname, opts in groups.items()) + '</select>'
+
+
+def write_cover_page(m, folder):
+    """cover.css, and the select in the four copies of the page, from map/domains.json."""
+    with open(os.path.join(folder, "cover.css"), "w", encoding="utf-8") as fh:
+        fh.write(cover_css(m))
+    page = open(os.path.join(folder, "index.html"), encoding="utf-8").read()
+    page = re.sub(r'<select name="cover".*?</select>', lambda _: cover_select(m), page, count=1, flags=re.S)
+    if '<link rel="stylesheet" href="cover.css">' not in page:
+        page = page.replace('<link rel="stylesheet" href="board.css">', '<link rel="stylesheet" href="board.css"><link rel="stylesheet" href="cover.css">')
+    out = [os.path.join(folder, "cover.css")]
+    for name in PAGES:
+        with open(os.path.join(folder, name), "w", encoding="utf-8") as fh:
+            fh.write(page)
+        out.append(os.path.join(folder, name))
     return out
 
 
@@ -1106,6 +1314,7 @@ a:focus-visible polygon {{ stroke: var(--seen); stroke-width: 4; }}
 if __name__ == "__main__":
     if sys.argv[1:2] == ["map"]:
         print(write_map())
-        print(*write_covers(map_sheets(os.path.join(HERE, "map")), HERE), sep="\n")
+        m = map_sheets(os.path.join(HERE, "map"))
+        print(*write_covers(m, HERE), *write_cover_page(m, HERE), sep="\n")
     else:
         main()

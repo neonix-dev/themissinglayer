@@ -46,4 +46,4 @@
   HELD    portrait: an element nothing stands on says missing (health, alerts)
   HELD    portrait: every connection between elements is drawn (20 lines for 27 connections)
   HELD    portrait: overlay None and the hand-drawn card again give back the page as it opened
-  HELD    the map JSONs in all 120 orders write the same /map page and the same cover drawings, and they are the ones shipped
+  HELD    the map JSONs in all 720 orders write the same /map page, the same 16 cover drawings, cover.css and theme select, and they are the ones shipped

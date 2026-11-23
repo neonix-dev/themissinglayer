@@ -1,10 +1,15 @@
 {
   "id": "map.ring",
-  "says": "The card laid out around its brain, for the cover. The tree is the brain: whatever the reader brings. It stands in the middle, and the title sits on it. C is the bus ring around the brain, the Random Forest is the outer ring, and every other element stands around them, each wired straight in to the brain. A place is a fraction of the window's width and height, given once for a window wider than tall and once for a phone held upright. It names no device and no colour; a theme draws it.",
-  "center": "tree",
-  "bus": "c",
+  "says": "The card laid out round its brain, for the cover, with the card's own numbers. C.0, the pair, is the brain: whatever the reader brings. It stands in the middle and the title sits on it. C.1, the gap or interface, is the ring round the brain. C.4, the one tree, stands above. C.5 and C.9 are the junctions where the branches meet before they go in. C.14, the field, is the base. A place is a fraction of the window's width and height, given once for a window wider than tall and once for a phone held upright. It names no device and no colour; a theme draws it.",
+  "center": "c",
+  "bus": "triangle",
   "base": "forest",
-  "brain": { "wide": [0.5, 0.42], "tall": [0.94, 0.4] },
-  "wide": { "triangle": [0.5, 0.115], "ask": [0.355, 0.15], "thoughts": [0.645, 0.15], "l1": [0.1, 0.16], "r1": [0.9, 0.16], "achievements": [0.11, 0.37], "workflows": [0.17, 0.52], "compatibility": [0.11, 0.67], "heartbeat": [0.89, 0.37], "health": [0.83, 0.52], "alerts": [0.89, 0.67], "r": [0.5, 0.885], "l2": [0.1, 0.84], "r2": [0.9, 0.8] },
-  "tall": { "triangle": [0.5, 0.065], "l1": [0.14, 0.145], "ask": [0.34, 0.15], "thoughts": [0.66, 0.15], "r1": [0.86, 0.145], "achievements": [0.14, 0.235], "workflows": [0.37, 0.235], "health": [0.63, 0.235], "heartbeat": [0.86, 0.235], "compatibility": [0.16, 0.775], "r": [0.5, 0.785], "alerts": [0.84, 0.775], "l2": [0.16, 0.875], "r2": [0.84, 0.875] }
+  "numbers": { "c": "C.0", "triangle": "C.1", "ask": "C.2", "thoughts": "C.3", "tree": "C.4", "achievements": "C.6", "workflows": "C.7", "compatibility": "C.8", "heartbeat": "C.10", "health": "C.11", "alerts": "C.12", "r": "C.13", "forest": "C.14", "l1": "L1", "r1": "R1", "l2": "L2", "r2": "R2" },
+  "brain": { "wide": [0.5, 0.42], "tall": [0.92, 0.38] },
+  "junctions": {
+    "C.5": { "joins": ["achievements", "workflows", "compatibility"], "wide": [0.205, 0.5], "tall": [0.25, 0.735] },
+    "C.9": { "joins": ["heartbeat", "health", "alerts"], "wide": [0.795, 0.5], "tall": [0.75, 0.735] }
+  },
+  "wide": { "tree": [0.5, 0.085], "ask": [0.36, 0.17], "thoughts": [0.64, 0.17], "l1": [0.09, 0.14], "r1": [0.91, 0.14], "achievements": [0.075, 0.37], "workflows": [0.165, 0.29], "compatibility": [0.08, 0.64], "heartbeat": [0.835, 0.29], "health": [0.925, 0.37], "alerts": [0.92, 0.64], "r": [0.5, 0.855], "l2": [0.09, 0.85], "r2": [0.91, 0.8] },
+  "tall": { "tree": [0.44, 0.15], "l1": [0.11, 0.22], "ask": [0.37, 0.22], "thoughts": [0.63, 0.22], "r1": [0.89, 0.22], "achievements": [0.12, 0.785], "workflows": [0.37, 0.785], "heartbeat": [0.63, 0.785], "health": [0.88, 0.785], "l2": [0.1, 0.87], "compatibility": [0.29, 0.87], "r": [0.5, 0.87], "alerts": [0.71, 0.87], "r2": [0.9, 0.87] }
 }

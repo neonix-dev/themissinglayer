@@ -181,10 +181,15 @@ with tempfile.TemporaryDirectory() as tmp:
         for i, path in enumerate(order):
             shutil.copy(path, os.path.join(folder, f"{i}.json"))
         page = open(generator.write_map(folder, os.path.join(folder, "out.html")), encoding="utf-8").read()
-        art = tuple(open(p, encoding="utf-8").read() for p in generator.write_covers(generator.map_sheets(folder), folder))
-        made.add((page, *art))
-shipped = (open(os.path.join(ROOT, "map.html"), encoding="utf-8").read(), *(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in generator.COVERS))
-claim(f"the map JSONs in all {len(list(itertools.permutations(names)))} orders write the same /map page and the same cover drawings, and they are the ones shipped", made == {shipped})
+        sheet = generator.map_sheets(folder)
+        art = tuple(open(p, encoding="utf-8").read() for p in generator.write_covers(sheet, folder))
+        made.add((page, *art, generator.cover_css(sheet), generator.cover_select(sheet)))
+sheet = generator.map_sheets(os.path.join(ROOT, "map"))
+read = lambda n: open(os.path.join(ROOT, n), encoding="utf-8").read()
+select = generator.cover_select(sheet)
+shipped = (read("map.html"), *(read(n) for n in generator.cover_files(sheet)), read("cover.css"), select)
+pages = all(select in read(n) for n in generator.PAGES) and len({read(n) for n in generator.PAGES}) == 1
+claim(f"the map JSONs in all {len(list(itertools.permutations(names)))} orders write the same /map page, the same {len(generator.cover_files(sheet))} cover drawings, cover.css and theme select, and they are the ones shipped", made == {shipped} and pages)
 
 if shots:
     try:
