@@ -798,5 +798,17 @@
     }
     cover.hidden = true;
     document.body.append(field);
+  } else if ((address === "" || address === "index") && contract && Array.isArray(contract.examples)) {
+    // Shipped examples on the cover: each is a name, a line and a list of shapes. Touching one
+    // hands its shapes to the one way in, as Shape would, and opens the page they make.
+    const examples = el("nav", null, { class: "examples", "aria-label": "Shipped examples" });
+    for (const x of contract.examples) {
+      if (!x || typeof x.name !== "string" || !Array.isArray(x.shapes)) continue;
+      const b = el("button", null, { type: "button" });
+      b.append(el("b", x.name), el("span", typeof x.says === "string" ? x.says : ""));
+      b.onclick = async () => { await give(x.shapes); if (loaded.size) page(); };
+      examples.append(b);
+    }
+    if (examples.children.length) (cover.querySelector(".plate") || cover).append(examples);
   }
 })();

@@ -179,10 +179,10 @@ with tempfile.TemporaryDirectory() as tmp:
         for i, path in enumerate(order):
             shutil.copy(path, os.path.join(folder, f"{i}.json"))
         page = open(generator.write_map(folder, os.path.join(folder, "out.html")), encoding="utf-8").read()
-        art = open(generator.write_cover(generator.map_sheets(folder), os.path.join(folder, "cover.svg")), encoding="utf-8").read()
-        made.add((page, art))
-shipped = (open(os.path.join(ROOT, "map.html"), encoding="utf-8").read(), open(os.path.join(ROOT, "cover.svg"), encoding="utf-8").read())
-claim(f"the map JSONs in all {len(list(itertools.permutations(names)))} orders write the same /map page and the same cover drawing, and they are the ones shipped", made == {shipped})
+        art = tuple(open(p, encoding="utf-8").read() for p in generator.write_covers(generator.map_sheets(folder), folder))
+        made.add((page, *art))
+shipped = (open(os.path.join(ROOT, "map.html"), encoding="utf-8").read(), *(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in generator.COVERS))
+claim(f"the map JSONs in all {len(list(itertools.permutations(names)))} orders write the same /map page and the same cover drawings, and they are the ones shipped", made == {shipped})
 
 if shots:
     try:

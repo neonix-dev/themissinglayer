@@ -1,0 +1,6 @@
+{
+  "id": "notes.wire",
+  "says": "What exists in a notebook: a note, with a title and its text, and one box that holds notes. It says nothing of what can be done.",
+  "kinds": { "note": ["title", "text"] },
+  "boxes": { "notes": "note" }
+}

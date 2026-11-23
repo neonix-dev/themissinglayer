@@ -1,6 +1,6 @@
 /* One screen, like a dashboard: every size is in rem and the rem follows the window,
    so the whole board is always visible and there is never anything to scroll to. */
-html { font-size: min(1.25vw, 2vh); height: 100%; }
+html { font-size: min(1.25vw, 2vh); height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { height: 100%; margin: 0; font: 1rem/1.25 system-ui, sans-serif; overflow: hidden; }
 .board {
   box-sizing: border-box; height: 100vh; height: 100dvh; padding: .6rem; overflow: hidden;
@@ -33,40 +33,56 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .ran button { font-family: ui-monospace, monospace; font-size: .75rem; min-height: 1.8rem; }
 .box > * { margin: 0; flex: none; }
 .code { display: block; flex: none; height: 3.6em; overflow: hidden; font-size: .75rem; overflow-wrap: anywhere; border-top: 1px solid GrayText; padding-top: .3rem; }
-/* The cover is line art, drawn like a circuit board from the card (cover.svg, made by
-   generator.py from map/card.json): pads at the card's holes, traces along its joins, chips
-   for the controls, traces running out to every edge. A fine grid lies under it. The cover
-   keeps to its light board in any scheme. Nothing moves. */
+/* The cover is line art, drawn like a circuit board from the card (cover-wide.svg and
+   cover-tall.svg, made by generator.py from map/card.json): each fills the whole window of its
+   shape, with pads at the card's holes, the brain's path in copper, chips for the controls,
+   traces out to every edge, and the board's own marks. A fine grid lies under it. The cover
+   keeps to its light board in any scheme, clears an iPhone's notch and home bar, and nothing
+   moves. */
 .cover {
   position: relative; overflow: hidden; box-sizing: border-box; height: 100vh; height: 100dvh;
-  padding: 24px 24px 72px; display: grid; place-content: center; justify-items: center; gap: 16px; text-align: center;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) calc(84px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: grid; place-content: center; justify-items: center; gap: 16px; text-align: center;
   color: #1d2b3a; color-scheme: light; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
   background-color: #f7f9fb;
-  background-image: url("cover.svg"), linear-gradient(#e6edf4 1px, transparent 1px), linear-gradient(90deg, #e6edf4 1px, transparent 1px);
+  background-image: url("cover-wide.svg"), linear-gradient(#e6edf4 1px, transparent 1px), linear-gradient(90deg, #e6edf4 1px, transparent 1px);
   background-size: cover, 24px 24px, 24px 24px; background-position: center, center, center; background-repeat: no-repeat, repeat, repeat;
+}
+@media (orientation: portrait) {
+  .cover { background-image: url("cover-tall.svg"), linear-gradient(#e6edf4 1px, transparent 1px), linear-gradient(90deg, #e6edf4 1px, transparent 1px); }
 }
 .cover[hidden] { display: none; }
 .cover .plate {
-  max-width: min(600px, 88vw); padding: clamp(18px, 3vw, 30px) clamp(20px, 4vw, 44px);
-  background: rgba(255, 255, 255, .94); border: 1px solid #c9d6e3; border-radius: 4px;
+  box-sizing: border-box; width: min(660px, 100%); padding: clamp(16px, 3vw, 28px) clamp(16px, 4vw, 40px);
+  background: rgba(255, 255, 255, .95); border: 1px solid #c9d6e3; border-radius: 4px;
 }
-.cover h1 { margin: 0 0 8px; font-size: clamp(30px, 5vw, 56px); line-height: 1.1; letter-spacing: -.01em; }
+.cover h1 { margin: 0 0 6px; font-size: clamp(28px, 5vw, 54px); line-height: 1.1; letter-spacing: -.01em; }
 .cover h1 button {
-  border: 0; background: none; color: #1d2b3a; font: inherit; font-weight: 650; min-height: 0; padding: 0;
+  border: 0; background: none; color: #1d2b3a; font: inherit; font-weight: 650; min-height: 44px; padding: 0 4px;
   cursor: pointer; white-space: normal; overflow: visible;
 }
-.cover h1 button:focus-visible { outline: 2px solid #2f6fae; outline-offset: 6px; border-radius: 2px; }
+.cover h1 button:focus-visible, .cover .examples button:focus-visible { outline: 2px solid #2f6fae; outline-offset: 4px; border-radius: 2px; }
 .cover p { margin: 0; font-size: clamp(14px, 1.5vw, 17px); color: #4a5d72; }
 .cover a { color: #2f6fae; font-weight: 600; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .cover a:hover, .cover a:focus-visible { color: #c2703d; }
+.cover .examples { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.cover .examples button {
+  display: grid; gap: 2px; align-content: center; text-align: left; min-height: 64px; padding: 10px 12px; margin: 0;
+  background: #f7f9fb; color: #1d2b3a; border: 1px solid #c9d6e3; border-left: 3px solid #c2703d; border-radius: 4px;
+  font: 13px/1.35 system-ui, -apple-system, sans-serif; white-space: normal; overflow: visible; cursor: pointer; touch-action: manipulation;
+}
+.cover .examples button:hover { background: #fff; border-color: #93a9bf; border-left-color: #c2703d; }
+.cover .examples b { font: 700 13px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #2f6fae; }
+.cover .examples span { color: #4a5d72; }
 .cover footer {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 12px clamp(16px, 4vw, 40px);
-  background: rgba(255, 255, 255, .9); border-top: 1px solid #d5dfe9; color: #4a5d72;
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(255, 255, 255, .92); border-top: 1px solid #d5dfe9; color: #4a5d72;
   font: clamp(11px, 1.1vw, 13px)/1.5 ui-monospace, Menlo, Consolas, monospace; text-align: center;
 }
 .cover footer span { font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-right: .8em; color: #2f6fae; }
 .cover .act { grid-template-columns: 1fr 1fr; width: min(420px, 88vw); }
-.cover .act button { font: 14px system-ui, sans-serif; min-height: 38px; background: #fff; color: #1d2b3a; border-color: #c9d6e3; }
+.cover .act button { font: 14px system-ui, sans-serif; min-height: 44px; background: #fff; color: #1d2b3a; border-color: #c9d6e3; }
 /* The field is for reading: it fills the screen in columns when the screen is wide, and
    runs down the page and scrolls when it is not. */
 .field { box-sizing: border-box; height: 100vh; height: 100dvh; padding: .6rem; overflow: hidden auto; font-size: max(.66rem, 10px); line-height: 1.22; }
@@ -106,4 +122,10 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
   .field h1 { font-size: 1.4em; }
   .field h2 { font-size: 1.1em; }
   .field header button { font-size: 1em; min-height: 2.2em; }
+}
+/* On a touch screen a text field is at least 16px, so an iPhone does not zoom the page when
+   one is touched, and every button is a finger's size. */
+@media (pointer: coarse) {
+  input, textarea { font-size: max(16px, 1rem); }
+  .made button { min-height: 44px; }
 }

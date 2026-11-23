@@ -1,6 +1,6 @@
 # The Missing Layer
 
-The site is one page. On load it shows the card drawn as light line art, like a circuit board, reaching every edge of the window, with a title and one line centred on it and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
+The site is one page. On load it shows the card drawn as light line art, like a circuit board, filling the whole window, with a title, one line and two shipped examples centred on it and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
 
 ## The way in
 
@@ -19,7 +19,7 @@ The cover says only that a bot should explore, and the word explore links to `/e
 |---|---|
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
-| `index.html`, `board.css`, `cover.svg` | The cover and the layout. `cover.svg` is the cover's line art: pads at the card's holes, traces along its joins, chips for the four controls, traces running out to every edge, over a fine grid. `python3 generator.py map` draws it from `map/card.json`, so it never copies the hand-drawn art. |
+| `index.html`, `board.css`, `cover-wide.svg`, `cover-tall.svg` | The cover and the layout. The two SVGs are the cover's line art, one for a window wider than tall and one for a phone held upright, each laid out to fill its shape. They show pads at the card's holes, the brain's path in copper, chips for the four controls, traces out to every edge, and a board's own marks (edge, mounting holes, fiducials, part designators, title block), over a fine grid. `python3 generator.py map` draws them from `map/card.json`, so they never copy the hand-drawn art. |
 | `email/*.json` | Sheets: JSONs that say what exists and what moves, and name no device. |
 | `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
@@ -96,6 +96,28 @@ The email, step by step, on either:
 
 A reload forgets what was loaded. What the boxes hold stays.
 
+## Shipped examples: where building begins
+
+The cover offers two shipped examples, as buttons under the line. Touching one hands its shapes to the generator, as Shape would, and opens the page they make. From there the board is one touch away (Board), with every step that ran listed under Ran.
+
+| Example | Loads | What it does |
+|---|---|---|
+| Mail | `email.wire`, `email.touch`, `email.stub` | Send a mail; ten seconds later the stub answers it. |
+| Notes | `notes.wire`, `notes.touch` | Write a note and read it back. |
+
+The examples are data: `examples` in `contract.json` is a list of a name, a line and the shapes to hand in. `notes/wire.json` and `notes/touch.json` are sheets like the email's, and name no device.
+
+The acceptance check for the cover on phones and desktops is `instrument/cover.py`. It runs three iPhones, emulated in Chromium with their window, density, touch and user agent: a 15 upright with Safari's bars showing, an SE upright, and a 15 on its side. It also runs Chrome at 1280×720 and 1440×900. On each it checks that:
+
+- the cover shows in full and nothing scrolls;
+- the line art fills the whole window, drawn for its shape;
+- every button is at least 44px tall, and every text field is at least 16px so an iPhone does not zoom;
+- tapping Mail writes and sends a mail, and the stub answers;
+- tapping Notes writes a note that the notebook holds;
+- the board fits from there.
+
+Safari itself is not run. With `--shots <folder>` the check saves what it saw; `instrument/evidence/cover/` holds the last run.
+
 ## /map: the card as the surface
 
 The whole site is a contract, and the card is that contract drawn. `/map` shows the card as paper over the whole page, with no scroll.
@@ -119,7 +141,7 @@ The page runs no script. Its policy refuses any, and the stylesheet shows what t
 | `map/on.json` | `map.on` | Which component stands at which element; what the card has and the build does not; where the two disagree. |
 | `map/themes.json` | `map.themes` | The themes. Each says who drew it, whether it is the art or its own drawing, its symbols (glyph, code, letter or word), its line (solid, dashed or double), and its palette and font. It never says where anything is. |
 
-`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`, and the cover's line art `cover.svg` from the same card. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
+`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`, and the cover's line art (`cover-wide.svg`, `cover-tall.svg`) from the same card. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
 
 The acceptance check for `/map` is `instrument/map.py`. It opens the page in landscape (1280×800) and portrait (390×844) and picks every theme, with the overlay off and on, using the keyboard. It then measures every hole and every symbol and prints HELD or FAILED per claim:
 
@@ -128,7 +150,7 @@ The acceptance check for `/map` is `instrument/map.py`. It opens the page in lan
 - in every drawn theme every hole stands where the hand-drawn card has it;
 - the overlay lies on every theme with every symbol in the same place;
 - every live component stands at exactly one element, and every connection is drawn;
-- the same page and the same cover drawing come from the JSONs in every load order, and they are the ones shipped.
+- the same page and the same cover drawings come from the JSONs in every load order, and they are the ones shipped.
 
 With `--shots <folder>` it also saves what it saw; `instrument/evidence/map/` holds the last run.
 

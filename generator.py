@@ -739,67 +739,113 @@ def own_drawing(m, k, th, ox, uid):
     return "".join(t)
 
 
-def write_cover(m, out):
-    """The cover's line art, drawn like a circuit board from the card: a pad at each hole, a
-    trace along each join, a chip for each control, and traces fanning out to every edge so the
-    drawing reaches as far as the window does. Thin lines only; the page draws the grid."""
-    at, W, H = m["at"], m["art"]["width"], m["art"]["height"]
-    ox, oy = 1100, 900                    # the card stands in the middle of a square canvas
-    CW, CH = W + 2 * ox, H + 2 * oy
-    X = lambda a: ox + at[a]["x"]
-    Y = lambda a: oy + at[a]["y"]
-    t = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {CW} {CH}" preserveAspectRatio="xMidYMid slice">',
-         '<style>path,line,polyline,rect,circle{fill:none;stroke:#93a9bf;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}'
-         '.pad{fill:#f7f9fb;stroke:#6f8aa6}.via{fill:#93a9bf;stroke:none}.chip{fill:#f7f9fb;stroke:#6f8aa6}'
-         '.entry{stroke:#c2703d}text{font:600 22px ui-monospace,Menlo,Consolas,monospace;fill:#7a8ea3;letter-spacing:.06em}</style>']
+COVER_PARTS = {"tree": "U1", "triangle": "J1", "ask": "J2", "thoughts": "J3", "c": "U2", "achievements": "TP1", "workflows": "TP2",
+               "compatibility": "TP3", "heartbeat": "TP4", "health": "TP5", "alerts": "TP6", "r": "U3",
+               "l1": "SW1", "r1": "SW2", "l2": "SW3", "r2": "SW4"}
+COVER_SPINE = {("tree", "triangle"), ("triangle", "c"), ("c", "r"), ("r", "forest")}
 
-    def trace(x1, y1, x2, y2, c=24):
-        """An orthogonal trace with a 45-degree corner, the way boards are routed."""
+
+def write_cover(m, out, CW, CH, foot):
+    """The cover's line art, drawn like a circuit board from the card and laid out to fill a
+    canvas of the window's shape: the card's places spread to the canvas, a pad at each hole, a
+    trace along each join (the brain's path in copper), a chip for each control, traces fanning
+    out to every edge, and a board's own marks: its edge, mounting holes, fiducials, part
+    designators and a title block. Thin lines only; the page draws the grid under it."""
+    at, W, H = m["at"], m["art"]["width"], m["art"]["height"]
+    sx, sy = CW * .8 / W, (CH - foot) * .84 / H
+    P = {a: (round(CW / 2 + (p["x"] - W / 2) * sx), round((CH - foot) / 2 + (p["y"] - H / 2) * sy)) for a, p in at.items()}
+    t = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {CW} {CH}" preserveAspectRatio="xMidYMid slice">',
+         '<style>path,line,polyline,rect,circle,polygon{fill:none;stroke:#93a9bf;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}'
+         '.cu{stroke:#c2703d;stroke-width:3.5}.pad{fill:#f7f9fb;stroke:#6f8aa6}.via{fill:#93a9bf;stroke:none}.cuv{fill:#c2703d;stroke:none}'
+         '.chip{fill:#f7f9fb;stroke:#6f8aa6}.edge{stroke:#b7c7d8;stroke-dasharray:14 10}.ink{stroke:#6f8aa6}'
+         'text{font:600 22px ui-monospace,Menlo,Consolas,monospace;fill:#7a8ea3;letter-spacing:.06em}.dg{fill:#a4b5c7;font-size:18px}'
+         '.tb{font-size:20px}.tbh{font-size:26px;fill:#4a5d72}</style>']
+
+    def trace(x1, y1, x2, y2, c=26, cls=""):
+        k = f' class="{cls}"' if cls else ""
         if x1 == x2 or y1 == y2:
-            return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>'
-        sx, sy = (1 if x2 > x1 else -1), (1 if y2 > y1 else -1)
-        return f'<polyline points="{x1},{y1} {x1},{y2 - sy * c} {x1 + sx * c},{y2} {x2},{y2}"/>'
+            return f'<line{k} x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>'
+        sx_, sy_ = (1 if x2 > x1 else -1), (1 if y2 > y1 else -1)
+        c = min(c, abs(x2 - x1), abs(y2 - y1))
+        return f'<polyline{k} points="{x1},{y1} {x1},{y2 - sy_ * c} {x1 + sx_ * c},{y2} {x2},{y2}"/>'
+    # the board: its edge, four mounting holes, three fiducials
+    e = 30
+    t.append(f'<rect class="edge" x="{e}" y="{e}" width="{CW - 2 * e}" height="{CH - 2 * e}" rx="24"/>')
+    for hx, hy in ((90, 90), (CW - 90, 90), (90, CH - foot - 90), (CW - 90, CH - foot - 90)):
+        t.append(f'<circle class="ink" cx="{hx}" cy="{hy}" r="26"/><circle cx="{hx}" cy="{hy}" r="14"/>')
+    for fx, fy in ((170, 90), (CW - 170, 90), (170, CH - foot - 90)):
+        t.append(f'<circle cx="{fx}" cy="{fy}" r="16"/><circle class="via" cx="{fx}" cy="{fy}" r="6"/>')
+    # traces along the card's joins; the brain's path is copper
     for a, b in m["joins"]:
-        if a == "r" and b == "forest":
-            t.append(f'<line x1="{X(a)}" y1="{Y(a)}" x2="{X(a)}" y2="{Y(b)}"/>')
-        else:
-            t.append(trace(X(a), Y(a), X(b), Y(b)))
-    tri = at["triangle"]
-    x, y = ox + tri["x"], oy + tri["y"]
-    t.append(f'<polygon class="entry" points="{x - 160},{y - 65} {x + 160},{y - 65} {x},{y + 105}" fill="none"/>')
+        (x1, y1), (x2, y2) = P[a], P[b]
+        cu = "cu" if (a, b) in COVER_SPINE else ""
+        t.append(f'<line class="cu" x1="{x1}" y1="{y1}" x2="{x1}" y2="{y2}"/>' if cu and x1 == x2 else trace(x1, y1, x2, y2, cls=cu))
+    x, y = P["triangle"]
+    t.append(f'<polygon class="cu" points="{x - 150},{y - 60} {x + 150},{y - 60} {x},{y + 95}"/>')
     # the tree reaches up and out through the top edge
-    for i, dx in enumerate((-40, 0, 40)):
-        t.append(trace(X("tree") + dx, Y("tree") - at["tree"]["r"] * .55, X("tree") + dx * (6 + i), 0))
+    tx, ty = P["tree"]
+    for i, dx in enumerate((-36, 0, 36)):
+        t.append(trace(tx + dx, ty - 30, tx + dx * (5 + 3 * i), 0, cls="cu" if dx == 0 else ""))
+    # each branch pad sends a trace out to its own side
+    for a in ("achievements", "workflows", "compatibility", "heartbeat", "health", "alerts"):
+        px, py = P[a]
+        side = -1 if px < CW / 2 else 1
+        far = 0 if side < 0 else CW
+        t.append(trace(px, py, far, py + 40, 22) + f'<circle class="via" cx="{(px + far) / 2:.0f}" cy="{py + 40}" r="6"/>')
     # the forest is a bus across the whole board, with drops to the bottom edge
-    fy = Y("forest")
+    fy = P["forest"][1]
     for k in range(4):
-        t.append(f'<line x1="0" y1="{fy + k * 26}" x2="{CW}" y2="{fy + k * 26}"/>')
-    for k in range(9):
-        xx = ox + W / 2 + (k - 4) * 260
-        t.append(f'<circle class="via" cx="{xx}" cy="{fy + (k % 4) * 26}" r="6"/><line x1="{xx}" y1="{fy + (k % 4) * 26}" x2="{xx}" y2="{CH}"/>')
+        t.append(f'<line class="{"cu" if k == 0 else ""}" x1="0" y1="{fy + k * 24}" x2="{CW}" y2="{fy + k * 24}"/>')
+    n = max(5, CW // 260)
+    for k in range(n):
+        xx = round(CW * (k + .5) / n)
+        t.append(f'<circle class="via" cx="{xx}" cy="{fy + (k % 4) * 24}" r="6"/><line x1="{xx}" y1="{fy + (k % 4) * 24}" x2="{xx}" y2="{CH}"/>')
     # each control is a chip whose pins fan out to the side edge
     for a in ("l1", "r1", "l2", "r2"):
-        cx, cy, side = X(a), Y(a), (-1 if at[a]["x"] < W / 2 else 1)
+        cx, cy = P[a]
+        side = -1 if cx < CW / 2 else 1
         w, h = 150, 104
         t.append(f'<rect class="chip" x="{cx - w / 2}" y="{cy - h / 2}" width="{w}" height="{h}" rx="6"/>')
+        t.append(f'<circle class="via" cx="{cx - side * (w / 2 - 16)}" cy="{cy - h / 2 + 16}" r="5"/>')
         for k in range(4):
             py = cy - h / 2 + 18 + k * 23
             edge = cx + side * w / 2
-            t.append(f'<line x1="{edge}" y1="{py}" x2="{edge + side * 14}" y2="{py}"/>')
-            far = 0 if side < 0 else CW
-            t.append(trace(edge + side * 14, py, far, py + (k - 1.5) * 60 + side * 0, 30))
+            t.append(f'<line x1="{edge}" y1="{py}" x2="{edge + side * 14}" y2="{py}"/><line x1="{cx - side * w / 2}" y1="{py}" x2="{cx - side * (w / 2 + 10)}" y2="{py}"/>')
+            t.append(trace(edge + side * 14, py, 0 if side < 0 else CW, py + (k - 1.5) * 56, 28))
         t.append(f'<text x="{cx}" y="{cy + 8}" text-anchor="middle">{esc(at[a]["code"])}</text>')
-    # a pad at every other hole, with its code beside it
+        t.append(f'<text class="dg" x="{cx - w / 2}" y="{cy - h / 2 - 12}">{COVER_PARTS[a]}</text>')
+    # a pad at every other hole, its code beside it and its designator above
     for a, p in at.items():
         if not p["r"] or a in ("l1", "r1", "l2", "r2"):
             continue
-        r = max(16, p["r"] * .5)
-        t.append(f'<circle class="pad" cx="{X(a)}" cy="{Y(a)}" r="{r:.0f}"/><circle class="via" cx="{X(a)}" cy="{Y(a)}" r="{r * .3:.0f}"/>')
-        t.append(f'<text x="{X(a) + r + 10:.0f}" y="{Y(a) - r * .6:.0f}">{esc(p["code"])}</text>')
+        px, py = P[a]
+        r = max(16, p["r"] * .45)
+        ring = "cuv" if a in ("tree", "triangle", "c", "r") else "via"
+        t.append(f'<circle class="pad" cx="{px}" cy="{py}" r="{r:.0f}"/><circle class="{ring}" cx="{px}" cy="{py}" r="{r * .32:.0f}"/>')
+        t.append(f'<text x="{px + r + 10:.0f}" y="{py - r * .45:.0f}">{esc(p["code"])}</text>')
+        t.append(f'<text class="dg" x="{px + r + 10:.0f}" y="{py + r * .55 + 10:.0f}">{COVER_PARTS[a]}</text>')
+    # the title block, bottom right, above the footer
+    bw, bh = 470, 150
+    bx, by = CW - 150 - bw, CH - foot - e - 40 - bh       # left of the bottom-right mounting hole
+    t.append(f'<rect class="chip" x="{bx}" y="{by}" width="{bw}" height="{bh}"/>'
+             f'<line x1="{bx}" y1="{by + 50}" x2="{bx + bw}" y2="{by + 50}"/><line x1="{bx}" y1="{by + 100}" x2="{bx + bw}" y2="{by + 100}"/>'
+             f'<line x1="{bx + 235}" y1="{by + 50}" x2="{bx + 235}" y2="{by + bh}"/>'
+             f'<text class="tbh" x="{bx + 18}" y="{by + 35}">THE MISSING LAYER</text>'
+             f'<text class="tb" x="{bx + 18}" y="{by + 83}">BOARD COVER</text><text class="tb" x="{bx + 253}" y="{by + 83}">REV 01</text>'
+             f'<text class="tb" x="{bx + 18}" y="{by + 133}">GRAMMAR ONLY</text><text class="tb" x="{bx + 253}" y="{by + 133}">SHEET 1 OF 1</text>')
     t.append('</svg>\n')
     with open(out, "w", encoding="utf-8") as f:
         f.write("".join(t))
     return out
+
+
+# The cover is drawn twice from the same card: once for a window wider than tall, once for a
+# phone held upright. Each fills its own shape; the stylesheet picks by orientation.
+COVERS = {"cover-wide.svg": (2560, 1600, 150), "cover-tall.svg": (1180, 2560, 260)}
+
+
+def write_covers(m, folder):
+    return [write_cover(m, os.path.join(folder, name), *size) for name, size in COVERS.items()]
 
 
 def write_map(folder=None, out=None):
@@ -882,6 +928,6 @@ a:focus-visible polygon {{ stroke: var(--seen); stroke-width: 4; }}
 if __name__ == "__main__":
     if sys.argv[1:2] == ["map"]:
         print(write_map())
-        print(write_cover(map_sheets(os.path.join(HERE, "map")), os.path.join(HERE, "cover.svg")))
+        print(*write_covers(map_sheets(os.path.join(HERE, "map")), HERE), sep="\n")
     else:
         main()
