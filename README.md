@@ -24,7 +24,7 @@ The cover says only that a bot should explore, and the word explore links to `/e
 | `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
 | `proof.json` | How each claim in the contract is played and checked. |
-| `instrument/` | The checker: it opens the page in a browser, plays it with real clicks and typing, and prints HELD or FAILED per claim. |
+| `instrument/` | The checker: it opens the page in a browser, plays it with real clicks and typing, and prints HELD or FAILED per claim. `map.py` is the same for `/map`. |
 
 ## The two doors
 
@@ -96,6 +96,42 @@ The email, step by step, on either:
 
 A reload forgets what was loaded. What the boxes hold stays.
 
+## /map: the card as the surface
+
+The whole site is a contract, and the card is that contract drawn. `/map` shows the card as paper over the whole page, with no scroll.
+
+The tree above the triangle is the brain: whatever is plugged in. It enters through the triangle; everything below is the static engine.
+
+The card is a stencil. Each element (the tree, the triangle, Ask, Thoughts, C, the six branches, R, the four controls) is a hole at a fixed place. Two selects choose what goes where:
+
+- **Theme** is what goes into the holes.
+  - **Handwriting**, the first and the default, is neonix's own hand-drawn card, and it is the only theme that shows it.
+  - Every other theme (Paper, Blueprint, Ink, Night, Forest) draws with its own hand: its own holes, symbols, lines and type, at the places the card gives. None of them shows or traces the drawing.
+  - Font and colour palettes can change freely.
+- **Overlay** lies on top of whatever theme is chosen. **None** shows the theme alone. **Live components** puts each live component on its element, draws the connections, and lists the inventory in the margins.
+
+The page runs no script. Its policy refuses any, and the stylesheet shows what the two selects say. In landscape the card stands in the middle, with the inventory in the margins. In portrait the overlay stands on the card alone.
+
+| File | Id | What it says |
+|---|---|---|
+| `map/card.json` | `map.card` | Where each hole is on the card, in the art's own pixels, with its symbol, its code and its word; the title; the lines that join the holes. It is the one map file that names a place, so it is the browser's skin and not a sheet. |
+| `map/live.json` | `map.live` | The components and their connections, and how each was seen: through a connector, by the brain writing the snapshot, or only in a repository. |
+| `map/on.json` | `map.on` | Which component stands at which element; what the card has and the build does not; where the two disagree. |
+| `map/themes.json` | `map.themes` | The themes. Each says who drew it, whether it is the art or its own drawing, its symbols (glyph, code, letter or word), its line (solid, dashed or double), and its palette and font. It never says where anything is. |
+
+`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
+
+The acceptance check for `/map` is `instrument/map.py`. It opens the page in landscape (1280×800) and portrait (390×844) and picks every theme, with the overlay off and on, using the keyboard. It then measures every hole and every symbol and prints HELD or FAILED per claim:
+
+- it opens on the hand-drawn card with no overlay: paper over the whole surface, nothing to scroll, no script;
+- each drawn theme shows its own drawing and none of the art, on the same surface;
+- in every drawn theme every hole stands where the hand-drawn card has it;
+- the overlay lies on every theme with every symbol in the same place;
+- every live component stands at exactly one element, and every connection is drawn;
+- the same page comes from the JSONs in every load order.
+
+With `--shots <folder>` it also saves what it saw; `instrument/evidence/map/` holds the last run.
+
 ## Floppies: keeping the board and rebuilding it
 
 What the board is and what its stores hold can be written out as plain JSON and read back.
@@ -138,6 +174,8 @@ cd instrument && python3 observe.py http://127.0.0.1:8000/
 ```
 
 Every claim must print HELD. Chrome works in place of Chromium; `BROWSER=<port>` names another debugging port.
+
+For `/map`, from `instrument/`: `python3 map.py http://127.0.0.1:8000/ --shots evidence/map`. Every claim must print HELD.
 
 3. **claude.extn**, to demonstrate: open the site, read `contract.json`, operate the knobs, then hand the lines under Ran back through Shape.
 

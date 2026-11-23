@@ -1,0 +1,246 @@
+{
+  "id": "map.card",
+  "says": "The card as a stencil: each element is a hole at a place on the card, in the art's own pixels. The hand-drawn art is neonix's own theme; every other theme draws its own shapes into the same holes and never copies the art. This is the one map file that names a place. What stands in each hole is said in map/on.json.",
+  "art": {
+    "file": "map/card.jpg",
+    "width": 1086,
+    "height": 1448
+  },
+  "at": {
+    "tree": {
+      "x": 542,
+      "y": 200,
+      "r": 82,
+      "card": "the tree above the triangle",
+      "is": "the brain: whatever is plugged in",
+      "label": "right",
+      "glyph": "♣",
+      "code": "TREE",
+      "word": ""
+    },
+    "triangle": {
+      "x": 545,
+      "y": 362,
+      "r": 58,
+      "card": "the inverted triangle",
+      "is": "the entry: where the brain plugs in",
+      "label": "right",
+      "glyph": "▼",
+      "code": "IN",
+      "word": ""
+    },
+    "ask": {
+      "x": 433,
+      "y": 440,
+      "r": 38,
+      "card": "Ask",
+      "is": "input: what is asked",
+      "glyph": "✉",
+      "code": "ASK",
+      "word": "Ask"
+    },
+    "thoughts": {
+      "x": 642,
+      "y": 440,
+      "r": 38,
+      "card": "Thoughts",
+      "is": "input: what is kept as thought",
+      "glyph": "✦",
+      "code": "THT",
+      "word": "Thoughts"
+    },
+    "c": {
+      "x": 541,
+      "y": 690,
+      "r": 78,
+      "card": "C, the pair",
+      "is": "the pair: seats joined",
+      "label": "below",
+      "glyph": "C",
+      "code": "C",
+      "word": ""
+    },
+    "achievements": {
+      "x": 170,
+      "y": 612,
+      "r": 46,
+      "card": "Achievements",
+      "is": "what is done and kept",
+      "glyph": "★",
+      "code": "ACH",
+      "word": "Achievements"
+    },
+    "workflows": {
+      "x": 348,
+      "y": 622,
+      "r": 46,
+      "card": "Workflows",
+      "is": "the verbs that cross",
+      "label": "below",
+      "glyph": "✓",
+      "code": "WKF",
+      "word": "Workflows"
+    },
+    "compatibility": {
+      "x": 264,
+      "y": 748,
+      "r": 46,
+      "card": "Compatibility",
+      "is": "the same thing on every device",
+      "label": "left",
+      "glyph": "←",
+      "code": "CMP",
+      "word": "Compatibility"
+    },
+    "heartbeat": {
+      "x": 744,
+      "y": 622,
+      "r": 46,
+      "card": "Heartbeat",
+      "is": "says it is alive",
+      "glyph": "♥",
+      "code": "HB",
+      "word": "Heartbeat"
+    },
+    "health": {
+      "x": 918,
+      "y": 622,
+      "r": 46,
+      "card": "Health",
+      "is": "says how it is",
+      "glyph": "✚",
+      "code": "HLT",
+      "word": "Health"
+    },
+    "alerts": {
+      "x": 820,
+      "y": 754,
+      "r": 46,
+      "card": "Alerts",
+      "is": "says when it is not well",
+      "glyph": "⚠",
+      "code": "ALR",
+      "word": "Alerts"
+    },
+    "r": {
+      "x": 542,
+      "y": 1020,
+      "r": 58,
+      "card": "R, on the mountain",
+      "is": "run",
+      "label": "right",
+      "glyph": "▶",
+      "code": "R",
+      "word": ""
+    },
+    "forest": {
+      "x": 542,
+      "y": 1340,
+      "r": 0,
+      "card": "Random Forest",
+      "is": "the base: many below",
+      "label": "row",
+      "glyph": "",
+      "code": "FOREST",
+      "word": "Random Forest",
+      "w": 960
+    },
+    "l1": {
+      "x": 200,
+      "y": 290,
+      "r": 70,
+      "card": "L1 Control",
+      "is": "a control",
+      "glyph": "❄",
+      "code": "L1",
+      "word": "L1 Control"
+    },
+    "r1": {
+      "x": 890,
+      "y": 290,
+      "r": 70,
+      "card": "R1 Control",
+      "is": "a control",
+      "glyph": "❅",
+      "code": "R1",
+      "word": "R1 Control"
+    },
+    "l2": {
+      "x": 200,
+      "y": 990,
+      "r": 70,
+      "card": "L2 Control",
+      "is": "a control",
+      "label": "below",
+      "glyph": "❆",
+      "code": "L2",
+      "word": "L2 Control"
+    },
+    "r2": {
+      "x": 890,
+      "y": 990,
+      "r": 70,
+      "card": "R2 Control",
+      "is": "a control",
+      "label": "below",
+      "glyph": "✻",
+      "code": "R2",
+      "word": "R2 Control"
+    }
+  },
+  "title": {
+    "text": "The Missing Layer",
+    "x": 543,
+    "y": 82
+  },
+  "joins": [
+    [
+      "tree",
+      "triangle"
+    ],
+    [
+      "triangle",
+      "ask"
+    ],
+    [
+      "triangle",
+      "thoughts"
+    ],
+    [
+      "triangle",
+      "c"
+    ],
+    [
+      "c",
+      "achievements"
+    ],
+    [
+      "c",
+      "workflows"
+    ],
+    [
+      "c",
+      "compatibility"
+    ],
+    [
+      "c",
+      "heartbeat"
+    ],
+    [
+      "c",
+      "health"
+    ],
+    [
+      "c",
+      "alerts"
+    ],
+    [
+      "c",
+      "r"
+    ],
+    [
+      "r",
+      "forest"
+    ]
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "map.themes",
+  "says": "What goes into the card's holes. The first theme, Handwriting, is neonix's own hand-drawn card and is the only one that shows it. Every other theme draws with its own hand: its own holes, symbols, lines and type, at the places map.card gives, and never shows or traces the art. A theme never says where anything is, so every hole and every overlay symbol stands in the same place whatever theme is chosen. Font and colour palettes can change freely. symbols: art (the drawing's own), glyph, code, letter or word. line: solid, dashed or double.",
+  "themes": {
+    "handwriting": {
+      "name": "Handwriting", "by": "neonix", "draw": "art", "symbols": "art", "line": "solid", "grid": false, "stroke": 3,
+      "page": "#f6e9d3", "hole": "none", "veil": "#f6e9d3", "veil_opacity": 0.8,
+      "ink": "#2b2118", "muted": "#5a4a3a", "wire": "#3b2a1c", "wire_opacity": 0.5, "tag": "#fbf3e6", "tag_line": "#8a6a4a",
+      "seen": "#2f5d2a", "repo": "#5a3f26", "gone": "#b4472f", "conflict": "#7a3f8a", "font": "Georgia, 'Times New Roman', serif"
+    },
+    "paper": {
+      "name": "Paper", "by": "claude.remote", "draw": "own", "symbols": "glyph", "line": "solid", "grid": false, "stroke": 2.5,
+      "page": "#f4ecdf", "hole": "#fffaf2", "veil": "#f4ecdf", "veil_opacity": 0.35,
+      "ink": "#3a2e22", "muted": "#6b5a48", "wire": "#7a4b2a", "wire_opacity": 0.6, "tag": "#fffaf2", "tag_line": "#a08060",
+      "seen": "#2f6a35", "repo": "#6b4a2b", "gone": "#b4472f", "conflict": "#7a3f8a", "font": "Georgia, 'Times New Roman', serif"
+    },
+    "blueprint": {
+      "name": "Blueprint", "by": "claude.remote", "draw": "own", "symbols": "code", "line": "dashed", "grid": true, "stroke": 2,
+      "page": "#123a63", "hole": "#0d2c4d", "veil": "#123a63", "veil_opacity": 0.35,
+      "ink": "#eaf3ff", "muted": "#a9c4e4", "wire": "#ffd27a", "wire_opacity": 0.75, "tag": "#0d2c4d", "tag_line": "#7fb0e6",
+      "seen": "#8fe3a6", "repo": "#cfe3ff", "gone": "#ff9a85", "conflict": "#e0b3ff", "font": "ui-monospace, 'DejaVu Sans Mono', monospace"
+    },
+    "ink": {
+      "name": "Ink", "by": "claude.remote", "draw": "own", "symbols": "letter", "line": "solid", "grid": false, "stroke": 4,
+      "page": "#ffffff", "hole": "#ffffff", "veil": "#ffffff", "veil_opacity": 0.3,
+      "ink": "#000000", "muted": "#444444", "wire": "#555555", "wire_opacity": 0.8, "tag": "#ffffff", "tag_line": "#000000",
+      "seen": "#000000", "repo": "#444444", "gone": "#000000", "conflict": "#000000", "font": "'Helvetica Neue', Arial, sans-serif"
+    },
+    "night": {
+      "name": "Night", "by": "claude.remote", "draw": "own", "symbols": "glyph", "line": "double", "grid": false, "stroke": 3,
+      "page": "#17140f", "hole": "#231e16", "veil": "#17140f", "veil_opacity": 0.35,
+      "ink": "#f3e3c3", "muted": "#bfae8e", "wire": "#f0b45a", "wire_opacity": 0.7, "tag": "#2a241b", "tag_line": "#a0855a",
+      "seen": "#9ad48a", "repo": "#f0c98a", "gone": "#ff8a70", "conflict": "#d8a8ff", "font": "Georgia, 'Times New Roman', serif"
+    },
+    "forest": {
+      "name": "Forest", "by": "claude.remote", "draw": "own", "symbols": "word", "line": "solid", "grid": false, "stroke": 2.5,
+      "page": "#eef2e4", "hole": "#f7faef", "veil": "#eef2e4", "veil_opacity": 0.35,
+      "ink": "#1f3318", "muted": "#4d5f42", "wire": "#8a5a2b", "wire_opacity": 0.65, "tag": "#f7faef", "tag_line": "#6f8f5a",
+      "seen": "#2c6e1f", "repo": "#6b5a2e", "gone": "#a63a24", "conflict": "#6a3f8a", "font": "'Trebuchet MS', 'DejaVu Sans', sans-serif"
+    }
+  }
+}
