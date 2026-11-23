@@ -739,6 +739,69 @@ def own_drawing(m, k, th, ox, uid):
     return "".join(t)
 
 
+def write_cover(m, out):
+    """The cover's line art, drawn like a circuit board from the card: a pad at each hole, a
+    trace along each join, a chip for each control, and traces fanning out to every edge so the
+    drawing reaches as far as the window does. Thin lines only; the page draws the grid."""
+    at, W, H = m["at"], m["art"]["width"], m["art"]["height"]
+    ox, oy = 1100, 900                    # the card stands in the middle of a square canvas
+    CW, CH = W + 2 * ox, H + 2 * oy
+    X = lambda a: ox + at[a]["x"]
+    Y = lambda a: oy + at[a]["y"]
+    t = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {CW} {CH}" preserveAspectRatio="xMidYMid slice">',
+         '<style>path,line,polyline,rect,circle{fill:none;stroke:#93a9bf;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}'
+         '.pad{fill:#f7f9fb;stroke:#6f8aa6}.via{fill:#93a9bf;stroke:none}.chip{fill:#f7f9fb;stroke:#6f8aa6}'
+         '.entry{stroke:#c2703d}text{font:600 22px ui-monospace,Menlo,Consolas,monospace;fill:#7a8ea3;letter-spacing:.06em}</style>']
+
+    def trace(x1, y1, x2, y2, c=24):
+        """An orthogonal trace with a 45-degree corner, the way boards are routed."""
+        if x1 == x2 or y1 == y2:
+            return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>'
+        sx, sy = (1 if x2 > x1 else -1), (1 if y2 > y1 else -1)
+        return f'<polyline points="{x1},{y1} {x1},{y2 - sy * c} {x1 + sx * c},{y2} {x2},{y2}"/>'
+    for a, b in m["joins"]:
+        if a == "r" and b == "forest":
+            t.append(f'<line x1="{X(a)}" y1="{Y(a)}" x2="{X(a)}" y2="{Y(b)}"/>')
+        else:
+            t.append(trace(X(a), Y(a), X(b), Y(b)))
+    tri = at["triangle"]
+    x, y = ox + tri["x"], oy + tri["y"]
+    t.append(f'<polygon class="entry" points="{x - 160},{y - 65} {x + 160},{y - 65} {x},{y + 105}" fill="none"/>')
+    # the tree reaches up and out through the top edge
+    for i, dx in enumerate((-40, 0, 40)):
+        t.append(trace(X("tree") + dx, Y("tree") - at["tree"]["r"] * .55, X("tree") + dx * (6 + i), 0))
+    # the forest is a bus across the whole board, with drops to the bottom edge
+    fy = Y("forest")
+    for k in range(4):
+        t.append(f'<line x1="0" y1="{fy + k * 26}" x2="{CW}" y2="{fy + k * 26}"/>')
+    for k in range(9):
+        xx = ox + W / 2 + (k - 4) * 260
+        t.append(f'<circle class="via" cx="{xx}" cy="{fy + (k % 4) * 26}" r="6"/><line x1="{xx}" y1="{fy + (k % 4) * 26}" x2="{xx}" y2="{CH}"/>')
+    # each control is a chip whose pins fan out to the side edge
+    for a in ("l1", "r1", "l2", "r2"):
+        cx, cy, side = X(a), Y(a), (-1 if at[a]["x"] < W / 2 else 1)
+        w, h = 150, 104
+        t.append(f'<rect class="chip" x="{cx - w / 2}" y="{cy - h / 2}" width="{w}" height="{h}" rx="6"/>')
+        for k in range(4):
+            py = cy - h / 2 + 18 + k * 23
+            edge = cx + side * w / 2
+            t.append(f'<line x1="{edge}" y1="{py}" x2="{edge + side * 14}" y2="{py}"/>')
+            far = 0 if side < 0 else CW
+            t.append(trace(edge + side * 14, py, far, py + (k - 1.5) * 60 + side * 0, 30))
+        t.append(f'<text x="{cx}" y="{cy + 8}" text-anchor="middle">{esc(at[a]["code"])}</text>')
+    # a pad at every other hole, with its code beside it
+    for a, p in at.items():
+        if not p["r"] or a in ("l1", "r1", "l2", "r2"):
+            continue
+        r = max(16, p["r"] * .5)
+        t.append(f'<circle class="pad" cx="{X(a)}" cy="{Y(a)}" r="{r:.0f}"/><circle class="via" cx="{X(a)}" cy="{Y(a)}" r="{r * .3:.0f}"/>')
+        t.append(f'<text x="{X(a) + r + 10:.0f}" y="{Y(a) - r * .6:.0f}">{esc(p["code"])}</text>')
+    t.append('</svg>\n')
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("".join(t))
+    return out
+
+
 def write_map(folder=None, out=None):
     m = map_sheets(folder or os.path.join(HERE, "map"))
     art, tri, themes = m["art"], m["at"]["triangle"], m["themes"]
@@ -819,5 +882,6 @@ a:focus-visible polygon {{ stroke: var(--seen); stroke-width: 4; }}
 if __name__ == "__main__":
     if sys.argv[1:2] == ["map"]:
         print(write_map())
+        print(write_cover(map_sheets(os.path.join(HERE, "map")), os.path.join(HERE, "cover.svg")))
     else:
         main()

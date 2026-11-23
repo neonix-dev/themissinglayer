@@ -1,6 +1,6 @@
 # The Missing Layer
 
-The site is one page. On load it shows neonix's card spread over the whole window, not stretched but brushed out to every edge, with a title and one line centred on it and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
+The site is one page. On load it shows the card drawn as light line art, like a circuit board, reaching every edge of the window, with a title and one line centred on it and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
 
 ## The way in
 
@@ -19,7 +19,7 @@ The cover says only that a bot should explore, and the word explore links to `/e
 |---|---|
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
-| `index.html`, `board.css` | The cover and the layout. The cover's artwork is `map/card.jpg`: a blurred copy fills the window, and the card itself stands in the middle at its own proportions, its edges feathered into the fill. |
+| `index.html`, `board.css`, `cover.svg` | The cover and the layout. `cover.svg` is the cover's line art: pads at the card's holes, traces along its joins, chips for the four controls, traces running out to every edge, over a fine grid. `python3 generator.py map` draws it from `map/card.json`, so it never copies the hand-drawn art. |
 | `email/*.json` | Sheets: JSONs that say what exists and what moves, and name no device. |
 | `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
@@ -119,7 +119,7 @@ The page runs no script. Its policy refuses any, and the stylesheet shows what t
 | `map/on.json` | `map.on` | Which component stands at which element; what the card has and the build does not; where the two disagree. |
 | `map/themes.json` | `map.themes` | The themes. Each says who drew it, whether it is the art or its own drawing, its symbols (glyph, code, letter or word), its line (solid, dashed or double), and its palette and font. It never says where anything is. |
 
-`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
+`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`, and the cover's line art `cover.svg` from the same card. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
 
 The acceptance check for `/map` is `instrument/map.py`. It opens the page in landscape (1280×800) and portrait (390×844) and picks every theme, with the overlay off and on, using the keyboard. It then measures every hole and every symbol and prints HELD or FAILED per claim:
 
@@ -128,7 +128,7 @@ The acceptance check for `/map` is `instrument/map.py`. It opens the page in lan
 - in every drawn theme every hole stands where the hand-drawn card has it;
 - the overlay lies on every theme with every symbol in the same place;
 - every live component stands at exactly one element, and every connection is drawn;
-- the same page comes from the JSONs in every load order.
+- the same page and the same cover drawing come from the JSONs in every load order, and they are the ones shipped.
 
 With `--shots <folder>` it also saves what it saw; `instrument/evidence/map/` holds the last run.
 

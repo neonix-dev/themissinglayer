@@ -1,0 +1,49 @@
+  HELD    landscape: /map opens as paper over the whole surface, with nothing to scroll
+  HELD    landscape: it opens on neonix's hand-drawn card with no overlay: two selects, theme and overlay
+  HELD    landscape: the page carries no script, and its policy refuses any
+  HELD    landscape: the card stands in the middle of a landscape surface
+  HELD    landscape: the triangle is the entry and leads to /explore
+  HELD    landscape: theme handwriting fills the holes on the same surface, as the hand-drawn card
+  HELD    landscape: the overlay lies on theme handwriting
+  HELD    landscape: theme paper fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    landscape: the overlay lies on theme paper
+  HELD    landscape: theme blueprint fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    landscape: the overlay lies on theme blueprint
+  HELD    landscape: theme ink fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    landscape: the overlay lies on theme ink
+  HELD    landscape: theme night fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    landscape: the overlay lies on theme night
+  HELD    landscape: theme forest fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    landscape: the overlay lies on theme forest
+  HELD    landscape: in all 5 drawn themes every one of the 16 holes stands where the hand-drawn card has it
+  HELD    landscape: every overlay symbol keeps its place on all 6 themes (78 symbols each)
+  HELD    landscape: every element's mark in the overlay stands on its hole
+  HELD    landscape: each of the 24 live components stands at exactly one element, the one map.on gives it
+  HELD    landscape: an element nothing stands on says missing (health, alerts)
+  HELD    landscape: every connection between elements is drawn (20 lines for 27 connections)
+  HELD    landscape: overlay None and the hand-drawn card again give back the page as it opened
+  HELD    portrait: /map opens as paper over the whole surface, with nothing to scroll
+  HELD    portrait: it opens on neonix's hand-drawn card with no overlay: two selects, theme and overlay
+  HELD    portrait: the page carries no script, and its policy refuses any
+  HELD    portrait: the card alone fills the width
+  HELD    portrait: the triangle is the entry and leads to /explore
+  HELD    portrait: theme handwriting fills the holes on the same surface, as the hand-drawn card
+  HELD    portrait: the overlay lies on theme handwriting
+  HELD    portrait: theme paper fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    portrait: the overlay lies on theme paper
+  HELD    portrait: theme blueprint fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    portrait: the overlay lies on theme blueprint
+  HELD    portrait: theme ink fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    portrait: the overlay lies on theme ink
+  HELD    portrait: theme night fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    portrait: the overlay lies on theme night
+  HELD    portrait: theme forest fills the holes on the same surface, drawn with its own hand and showing none of the art
+  HELD    portrait: the overlay lies on theme forest
+  HELD    portrait: in all 5 drawn themes every one of the 16 holes stands where the hand-drawn card has it
+  HELD    portrait: every overlay symbol keeps its place on all 6 themes (78 symbols each)
+  HELD    portrait: every element's mark in the overlay stands on its hole
+  HELD    portrait: each of the 24 live components stands at exactly one element, the one map.on gives it
+  HELD    portrait: an element nothing stands on says missing (health, alerts)
+  HELD    portrait: every connection between elements is drawn (20 lines for 27 connections)
+  HELD    portrait: overlay None and the hand-drawn card again give back the page as it opened
+  HELD    the map JSONs in all 24 orders write the same /map page and the same cover drawing, and they are the ones shipped
