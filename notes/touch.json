@@ -1,0 +1,8 @@
+{
+  "id": "notes.touch",
+  "says": "What whoever is at the device can do with the notebook: write a note into it, read one back.",
+  "moves": {
+    "write": { "to": "notes.wire.notes" },
+    "read": { "from": "notes.wire.notes" }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "map.domains",
+  "says": "Domains: the same card in another field's own words. Each names its title and a word for every numbered element; the shape stays the card's. Themes: what the cover's select offers. Each draws one domain in a shape that resembles it, with one of the drawings the generator knows; group is where it stands in the select. The words are the domain's; the drawings are the generator's own and copy no hand-drawn art.",
+  "domains": {
+    "missinglayer": { "title": "The Missing Layer", "words": { "ask": "Ask", "thoughts": "Thoughts", "achievements": "Achievements", "workflows": "Workflows", "compatibility": "Compatibility", "heartbeat": "Heartbeat", "health": "Health", "alerts": "Alerts", "r": "Records", "forest": "Random Forest", "controls": "Control" } },
+    "ekalavya": { "title": "Ekalavya Studio", "words": { "ask": "Bandish", "thoughts": "Improvisation", "achievements": "Technique", "workflows": "Riyaz", "compatibility": "Blend", "heartbeat": "Taal", "health": "Tuning", "alerts": "Sam", "r": "Score", "forest": "Audience Field", "controls": "Seat" } },
+    "blues": { "title": "Blues Room", "words": { "ask": "Call", "thoughts": "Response", "achievements": "Licks", "workflows": "Twelve Bars", "compatibility": "Turnaround", "heartbeat": "Shuffle", "health": "Tone", "alerts": "Blue Note", "r": "Session", "forest": "Juke Joint", "controls": "Player" } },
+    "pipeline": { "title": "Production Pipeline", "words": { "ask": "Brief", "thoughts": "Concept", "achievements": "Assets", "workflows": "Workflow", "compatibility": "Fit", "heartbeat": "Audience", "health": "Quality", "alerts": "Risk", "r": "Release", "forest": "Distribution Field", "controls": "Control" } },
+    "flight": { "title": "Flight Deck / Ops", "words": { "ask": "Signal", "thoughts": "Plan", "achievements": "Checklist", "workflows": "Procedure", "compatibility": "Rollback", "heartbeat": "Telemetry", "health": "Health", "alerts": "Alarm", "r": "Recorder", "forest": "Field Logs", "controls": "Control" } }
+  },
+  "themes": {
+    "circuit": { "name": "Circuit board", "group": "Engineering", "domain": "missinglayer", "draw": "circuit" },
+    "processor": { "name": "Processor", "group": "Engineering", "domain": "missinglayer", "draw": "processor" },
+    "breadboard": { "name": "Breadboard", "group": "Engineering", "domain": "missinglayer", "draw": "breadboard" },
+    "neural": { "name": "Neural", "group": "Engineering", "domain": "missinglayer", "draw": "neural" },
+    "raga": { "name": "Indian classical", "group": "Music", "domain": "ekalavya", "draw": "raga" },
+    "blues": { "name": "Blues", "group": "Music", "domain": "blues", "draw": "blues" },
+    "pipeline": { "name": "Production pipeline", "group": "Work", "domain": "pipeline", "draw": "pipeline" },
+    "flight": { "name": "Flight deck", "group": "Work", "domain": "flight", "draw": "flight" }
+  }
+}

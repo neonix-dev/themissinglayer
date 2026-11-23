@@ -1,0 +1,36 @@
+  HELD    the whole board is on one screen
+  HELD    every store is a knob and shows its own verbs
+  HELD    local storage keeps a thing across a reload
+  HELD    session storage keeps a thing across a reload
+  HELD    the database keeps a thing across a reload
+  HELD    a cookie is kept across a reload
+  HELD    the cache keeps a thing across a reload
+  HELD    a thing made in the page is real, and is gone after a reload
+  HELD    get reads a thing back and remove takes it away
+  HELD    what was done can be undone
+  HELD    clear empties a store and undo brings it back
+  HELD    history moves the address and loads nothing
+  HELD    what ran is shown as the shape it was and the code it stood for
+  HELD    a shape handed to the generator does what the knobs do
+  HELD    the round trip gives the same result
+  HELD    everything that ran can be handed back at once
+  HELD    bare steps run, and a step the generator does not know is refused
+  HELD    markup cannot be handed in
+  HELD    script text handed in does not run
+  HELD    a contract handed in generates a different board
+  HELD    what the board holds can be kept as plain JSON and rebuilt from it
+  HELD    a thing made in the page comes back from a floppy as the same thing
+  HELD    a set of floppies rebuilds the board, and keeping it again gives the same
+  HELD    the page opens on a title and one line, and the board is behind it
+  HELD    the address /serialize keeps the board
+  HELD    the address /deserialize asks before it wipes
+  HELD    the address /explore shows the whole field of interaction
+  HELD    the word explore on the cover leads to /explore
+  HELD    the cover says what the site is for, and nothing scrolls
+  HELD    the wireframe alone shows what exists, each under its address, and nothing to do
+  HELD    with the interaction loaded, a mail is sent and a row opens
+  HELD    the stub answers a sent mail after ten seconds
+  HELD    with the stub unloaded nothing answers, and a reader answers through Shape
+  HELD    one floppy carries the sheets and what their boxes hold
+  HELD    the interaction alone says what it waits for and does nothing
+  HELD    a sheet that says anything of a device is refused

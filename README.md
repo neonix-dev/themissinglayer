@@ -1,6 +1,6 @@
 # The Missing Layer
 
-The site is one page. On load it shows a title and one line, centred, and nothing else. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
+The site is one page. On load it shows the card drawn as light line art round a brain in the middle (C.0, whatever the reader brings), filling the whole window in a domain picked at the top right (engineering, music or work, each in its own words and in a shape that resembles it), with a title, one line and two shipped examples on the brain and a footer that says what the site is for: the framework provides stubs, a working prototype from which any bot can spawn a DOM empire, as long as the browser can hold it. Behind that is a busy board for the browser, on one screen, with no scroll and no navigation.
 
 ## The way in
 
@@ -19,7 +19,7 @@ The cover says only that a bot should explore, and the word explore links to `/e
 |---|---|
 | `contract.json` | The whole board as data: every store, every verb, and each verb written as a list of steps. Also the grammar of a step, and the claims the board must prove. |
 | `generator.js` | The one script. It takes shapes in as JSON and turns the ones it knows into running code in the tab. It knows the grammar of a step, how to draw a board, and how to keep one on floppies; it knows nothing about any store or verb. |
-| `index.html`, `board.css` | The cover and the layout. |
+| `index.html`, `board.css`, `cover.css`, `cover-*.svg` | The cover and the layout. The cover draws the card round its brain with the card's own numbers (`map/ring.json`): C.0, the pair, is the brain, in the middle under the title; C.1, the gap or interface, rings it; C.4, the one tree, stands above; the branches meet at C.5 and C.9 before they go in; C.13 the records and C.14 the field are the base. A **domain** (`map/domains.json`) is the same card in another field's words; a **theme** draws one domain in a shape that resembles it. Engineering, in The Missing Layer's own words: Circuit board, Processor, Breadboard, Neural. Music: Indian classical (Ekalavya Studio: a taal cycle round the drone, tabla heads, meend glides, an audience) and Blues (Blues Room: a guitar neck, notes, the sound hole, a twelve-bar strip). Work: Production pipeline (stages, pipes, a distribution fan) and Flight deck (gauges, the attitude indicator, the recorder's tape). The select at the top right picks one; the window's shape picks wide or tall. `python3 generator.py map` writes every `cover-<theme>-<wide|tall>.svg`, `cover.css` and the select in the four copies of the page from `map/card.json`, `map/ring.json` and `map/domains.json`, so a new domain is data. None of the drawings copies hand-drawn art. |
 | `email/*.json` | Sheets: JSONs that say what exists and what moves, and name no device. |
 | `generator.py` | The generator for a terminal. It takes the same sheets and the same floppies. |
 | `serialize.html`, `deserialize.html`, `explore.html` | The same page at the addresses `/serialize`, `/deserialize` and `/explore`. |
@@ -96,6 +96,29 @@ The email, step by step, on either:
 
 A reload forgets what was loaded. What the boxes hold stays.
 
+## Shipped examples: where building begins
+
+The cover offers two shipped examples, as buttons under the line. Touching one hands its shapes to the generator, as Shape would, and opens the page they make. From there the board is one touch away (Board), with every step that ran listed under Ran.
+
+| Example | Loads | What it does |
+|---|---|---|
+| Mail | `email.wire`, `email.touch`, `email.stub` | Send a mail; ten seconds later the stub answers it. |
+| Notes | `notes.wire`, `notes.touch` | Write a note and read it back. |
+
+The examples are data: `examples` in `contract.json` is a list of a name, a line and the shapes to hand in. `notes/wire.json` and `notes/touch.json` are sheets like the email's, and name no device.
+
+The acceptance check for the cover on phones and desktops is `instrument/cover.py`. It runs three iPhones, emulated in Chromium with their window, density, touch and user agent: a 15 upright with Safari's bars showing, an SE upright, and a 15 on its side. It also runs Chrome at 1280×720 and 1440×900. On each it checks that:
+
+- the cover shows in full and nothing scrolls;
+- the line art fills the whole window, drawn for its shape;
+- the select at the top right picks each of the eight themes, and each fills the window with its own drawing;
+- every button and the select are at least 44px tall, and every text field is at least 16px so an iPhone does not zoom;
+- tapping Mail writes and sends a mail, and the stub answers;
+- tapping Notes writes a note that the notebook holds;
+- the board fits from there.
+
+Safari itself is not run. With `--shots <folder>` the check saves what it saw; `instrument/evidence/cover/` holds the last run.
+
 ## /map: the card as the surface
 
 The whole site is a contract, and the card is that contract drawn. `/map` shows the card as paper over the whole page, with no scroll.
@@ -117,9 +140,11 @@ The page runs no script. Its policy refuses any, and the stylesheet shows what t
 | `map/card.json` | `map.card` | Where each hole is on the card, in the art's own pixels, with its symbol, its code and its word; the title; the lines that join the holes. It is the one map file that names a place, so it is the browser's skin and not a sheet. |
 | `map/live.json` | `map.live` | The components and their connections, and how each was seen: through a connector, by the brain writing the snapshot, or only in a repository. |
 | `map/on.json` | `map.on` | Which component stands at which element; what the card has and the build does not; where the two disagree. |
+| `map/ring.json` | `map.ring` | The card laid out round its brain for the cover, with the card's numbers (C.0 to C.14): where each element and each junction stands, as fractions of a wide window and of a tall one, and how big the brain is. |
+| `map/domains.json` | `map.domains` | Domains (a title and a word for every numbered element) and the cover's themes (a name, a group in the select, a domain, and which of the generator's drawings draws it). |
 | `map/themes.json` | `map.themes` | The themes. Each says who drew it, whether it is the art or its own drawing, its symbols (glyph, code, letter or word), its line (solid, dashed or double), and its palette and font. It never says where anything is. |
 
-`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
+`python3 generator.py map` reads every `map/*.json` in any order and writes `map.html`, and the cover's line art (`cover-<theme>-<wide|tall>.svg`) from the same card. Each file owns its own keys, and a key said twice is refused. A component must stand at one element, and an element may hold several. Only the first theme may show the art. The site fetches nothing, so the overlay is a snapshot dated by `asof`: edit `map/live.json` and run the generator again. Names are generic: no addresses, ports, ids or keys.
 
 The acceptance check for `/map` is `instrument/map.py`. It opens the page in landscape (1280×800) and portrait (390×844) and picks every theme, with the overlay off and on, using the keyboard. It then measures every hole and every symbol and prints HELD or FAILED per claim:
 
@@ -128,7 +153,7 @@ The acceptance check for `/map` is `instrument/map.py`. It opens the page in lan
 - in every drawn theme every hole stands where the hand-drawn card has it;
 - the overlay lies on every theme with every symbol in the same place;
 - every live component stands at exactly one element, and every connection is drawn;
-- the same page comes from the JSONs in every load order.
+- the same page, the same cover drawings, `cover.css` and theme select come from the JSONs in every load order, and they are the ones shipped.
 
 With `--shots <folder>` it also saves what it saw; `instrument/evidence/map/` holds the last run.
 
