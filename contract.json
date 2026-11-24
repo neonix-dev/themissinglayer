@@ -13,7 +13,8 @@
     "shape": "Type or paste JSON into Shape and touch Generate. A shape is one of: a run {\"store\", \"verb\", \"Name\", \"Value\"}; bare steps {\"steps\": [...]}; a list of shapes; or a whole contract like this file, which rebuilds the board.",
     "round trip": "Everything that runs is listed under Ran as the shape it was, with the code it stood for. Touch a line to put it back in Shape, or touch Hand back for all of it in order, then Generate.",
     "floppy": "Save downloads what the board is and holds as plain JSON; Load takes the files back and rebuilds it. The same through Shape: {\"keep\": true} writes the floppies into Shape, {\"keep\": {\"size\": 4000}} makes each at most that many bytes, and Generate takes them back, in any order. A floppy holds records: the board, each store, each thing held. It never holds code; the generator rebuilds from the records. From a script: board.serialize(size) and board.deserialize(floppies). By address: /serialize downloads the floppies; /deserialize asks whether to download a copy first, then takes the files. Rebuilding wipes everything first: the site goes back to the board it shipped with, every kept store empty, and is then rebuilt from the floppies.",
-    "matrix": "The site ships sheets beside the board; \"ships\" names them. A sheet is a JSON that says what exists and what moves, and names no device; \"sheet\" is everything one can say. Through Shape: {\"load\": \"email.wire\"} loads one from the site, a sheet pasted whole loads itself, {\"unload\": \"email.wire\"} takes one out. Nothing happens because a sheet was loaded: each time the loaded set changes, the page is made again from all of it in the order of the addresses, so any order of loading gives the same page. Every kind, box and move gets a place under its address, like email.wire.inbox. What needs something that is not loaded says what it waits for and does nothing. A move is done by touching what the page made for it, or through Shape: {\"do\": \"email.touch.send\", \"with\": {\"subject\": \"hi\", \"body\": \"there\"}} or {\"do\": \"email.touch.read\", \"pick\": 1}. A move can also be handed in whole and goes once: {\"from\": \"email.wire.sent\"} answers what the box holds, and {\"to\": \"email.wire.inbox\", \"with\": {\"subject\": \"hi\", \"body\": \"there\"}} puts a thing in. That is the door for a reader outside the page; raw storage is not a door. Page shows what the loaded sheets make; Board comes back. A reload forgets what was loaded; what the boxes hold stays. A floppy carries the loaded sheets and what their boxes hold. The same sheets and the same floppy work in the generator for a terminal, /generator.py."
+    "tabs": "Every tab of this site in one browser is the same layer. What they share: the loaded JSONs, what the common boxes hold, and the local, indexed, cookie and cache stores. What each tab has alone: boxes listed under here, the session store, things made in the page, the Ran list, and a wait that is running (an answer due in ten seconds is owed by the tab where the mail arrived, and is lost if that tab closes first). A change in one tab shows in the others in a few thousandths of a second, with no reload. To find the others: load meet.room, arrive with your name and what you do, and read meet.room.seats; \"ships\" says how. To work together: a person in one tab and readers in others work on one email; one sends, another sees the page change, or is told by board.wait(\"email.wire.sent\"), and answers with {\"to\": \"email.wire.inbox\", \"with\": {...}}. A reader that cannot call board (an extension's script often cannot) does all of it through the Shape box on the board, which takes the same shapes. Tabs in different browsers, or on different machines, share nothing but the files this site ships; between those, a floppy carries it.",
+    "matrix": "The site ships sheets beside the board; \"ships\" names them. A sheet is a JSON that says what exists and what moves, and names no device unless it says on, which only lets a device leave it be; \"sheet\" is everything one can say. Through Shape: {\"load\": \"email.wire\"} loads one from the site, a sheet pasted whole loads itself, {\"unload\": \"email.wire\"} takes one out. Nothing happens because a sheet was loaded: each time the loaded set changes, the page is made again from all of it in the order of the addresses, so any order of loading gives the same page. Every kind, box and move gets a place under its address, like email.wire.inbox. What needs something that is not loaded says what it waits for and does nothing. A move is done by touching what the page made for it, or through Shape: {\"do\": \"email.touch.send\", \"with\": {\"subject\": \"hi\", \"body\": \"there\"}} or {\"do\": \"email.touch.read\", \"pick\": 1}. A move can also be handed in whole and goes once: {\"from\": \"email.wire.sent\"} answers what the box holds, and {\"to\": \"email.wire.inbox\", \"with\": {\"subject\": \"hi\", \"body\": \"there\"}} puts a thing in. That is the door for a reader outside the page; raw storage is not a door. Page shows what the loaded sheets make; Board comes back. What is loaded and what the boxes hold are both kept in this browser: a reload, or another tab of this site, opens with the same, and tabs tell each other when either changes. A sheet is forgotten only by {\"unload\"}, or when a floppy is loaded over everything. A floppy carries the loaded sheets and what their boxes hold. The same sheets and the same floppy work in the generator for a terminal, /generator.py."
   },
   "addresses": {
     "/": "The cover: a title and one line, whose word explore leads to /explore. The board is behind it.",
@@ -26,6 +27,9 @@
     "/generator.py": "The generator for a terminal: python3 generator.py. The same sheets, moves and floppies as here, picked by number; it has no board."
   },
   "ships": {
+    "meet.room": "Where readers in one browser find each other. Load it in your tab. Arrive once: {\"do\": \"meet.room.arrive\", \"with\": {\"name\": \"who you are\", \"does\": \"what you do here\"}}. See who else has: {\"from\": \"meet.room.seats\"}. Leave a line for another: {\"do\": \"meet.room.say\", \"with\": {\"says\": \"...\", \"from\": \"you\", \"to\": \"them\"}}. Read the lines: {\"from\": \"meet.room.lines\"}. Both boxes are common, so every tab of this site in the browser has the same room, and board.wait(\"meet.room.lines\") tells you when a line arrives.",
+    "email.draft": "A place for mail not sent yet, held by this tab: save puts a mail in email.draft.drafts, open reads one. Two tabs each have their own drafts and the same inbox. It is kept apart, not kept secret: anything in the same browser profile can reach it.",
+    "email.look": "How the email looks: warm paper, a rust accent, a serif face, roomy. Load it and the page changes its look and nothing else; unload it and the plain look is back.",
     "email.wire": "What exists in an email: the kind mail (subject, body) and two boxes of mails, email.wire.inbox and email.wire.sent. Alone: what exists is shown and nothing can be done.",
     "email.touch": "What whoever is at the device can do: send, read, look. With email.wire: fields and a button to send, and the rows of both boxes open.",
     "email.stub": "A stub on the other end: ten seconds after a mail arrives in sent it puts an answer in the inbox. Unloaded, nothing answers, and a reader answers through Shape: {\"to\": \"email.wire.inbox\", \"with\": {\"subject\": the subject, \"body\": the answer}}.",
@@ -37,7 +41,7 @@
     { "name": "Notes", "says": "Write a note and read it back.", "shapes": [{ "load": "notes.wire" }, { "load": "notes.touch" }] }
   ],
   "sheet": {
-    "id": "Two levels, like email.wire. Every kind, box and move in the sheet has the address id.name, three levels. No two sheets share an id. The dot is the folder: email.wire is the file email/wire.json.",
+    "id": "Two levels, like email.wire. Every kind, box and move in the sheet has the address id.name, three levels. No two sheets share an id: a JSON handed in whole whose id is loaded already is refused unless it is the same one; loading by id brings the site's own, which may be newer. The dot is the folder: email.wire is the file email/wire.json.",
     "says": "Words for a reader. The generator does nothing with them.",
     "kinds": "Each a name and the list of its parts. The first part is what a thing is called by.",
     "boxes": "Each a name and the kind it holds: a name in the same sheet, or an address.",
@@ -47,7 +51,11 @@
     "when": "A box. The move then happens by itself for each thing that arrives there. The generator sees only what arrives through it.",
     "after": "A wait in seconds before the thing goes on.",
     "with": "Parts of the thing and the words they get, whatever they were.",
-    "nothing else": "A sheet cannot name a screen, a key, a button, a layout or where a box is kept; each device's generator answers those its own way. A sheet that says anything else is refused."
+    "here": "Boxes like those under boxes, but held by one sitting alone: in a browser this tab, in a terminal this run. Other tabs never see them and a floppy does not carry them. What is under boxes is common: every tab of this site in the browser has it.",
+    "look": "How the page looks, in seven words and no others. paper, ink, accent: a colour as six digits, like #1a2b3c. face: sans, serif or mono. size: small, medium or large. space: tight, normal or roomy. corner: square, soft or round. Each device reads them its own way: a browser sets colours, type and room; a terminal takes the accent as the nearest of its colours and lets the rest be. A look cannot hide a thing, move it, or put words or an address in the page. Paper and ink count only together, and only when the ink reads on the paper; else both are left out and the device's own are used.",
+    "on": "The devices this JSON is for: one name or a list, like browser, terminal, pi5, pi0. Left out, it is for every device. A device that is not named keeps the JSON loaded, says so, and takes nothing from it.",
+    "order": "Load in any order. The generator reads by kind of JSON, always the same way: first what exists (kinds, boxes, here), then what moves (moves), then how it looks (look); within each, by address, so the order things were written in inside a JSON never matters either. Where two looks set the same word, the later address has it.",
+    "nothing else": "A sheet cannot name a screen, a key, a button or a layout; each device's generator answers those its own way. A sheet that says anything else is refused."
   },
   "script": {
     "board.enter()": "Shows the board.",
@@ -58,6 +66,7 @@
     "board.load(id or JSON)": "Loads a shipped JSON by its id, or a JSON handed whole.",
     "board.unload(id)": "Takes a loaded JSON out.",
     "board.loaded()": "The ids of what is loaded.",
+    "board.wait(box)": "A promise for what the box holds, kept the next time a thing arrives in it, from this tab or another. How a reader in one tab hears of a mail sent in another without looking again and again.",
     "board.page()": "Shows the page the loaded JSONs make.",
     "board.do(move)": "Does a move: {\"do\": address, \"with\" or \"pick\"}, or a move handed whole. Answers what was said."
   },
@@ -1394,6 +1403,12 @@
     "the stub answers a sent mail after ten seconds",
     "with the stub unloaded nothing answers, and a reader answers through Shape",
     "one floppy carries the sheets and what their boxes hold",
+    "what is loaded is still loaded after a reload",
+    "a look changes how the page looks and is held to its few words",
+    "a JSON for another device stays loaded and gives nothing here",
+    "a box under here is held by this tab alone and stays off the floppy",
+    "a JSON whose id is loaded already is refused unless it is the same",
+    "readers in one browser find each other in the room",
     "the interaction alone says what it waits for and does nothing",
     "a sheet that says anything of a device is refused"
   ]

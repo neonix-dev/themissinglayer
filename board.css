@@ -105,22 +105,55 @@ h2 { font-size: .85rem; margin: 0; font-weight: 600; }
 .field p, .field dl, .field dd { margin: 0; }
 .field dt { font-weight: 600; float: left; margin-right: .3em; }
 .field dt::after { content: ":"; }
-/* What the loaded JSONs make. The generator gives every thing a place and its address;
-   how it looks beyond that is no JSON's field yet. This page scrolls. */
-.made { box-sizing: border-box; height: 100vh; height: 100dvh; padding: .6rem; overflow: hidden auto; display: flex; flex-direction: column; gap: .6rem; }
-.made header { align-items: center; flex: none; }
-.made header button { padding: 0 .8rem; }
-.made section { border: 1px solid GrayText; border-radius: .3rem; padding: .5rem; display: flex; flex-wrap: wrap; gap: .4rem; align-items: flex-start; flex: none; }
-.made section h2 { flex-basis: 100%; font-family: ui-monospace, monospace; font-weight: 400; opacity: .7; }
-.made section p { margin: 0; flex-basis: 100%; overflow-wrap: anywhere; }
-.made section div { flex-basis: 100%; display: flex; flex-direction: column; gap: .2rem; }
-.made section div button { text-align: left; padding: 0 .4rem; }
-.made section button { padding: 0 .8rem; }
-.made label { flex-basis: 100%; }
-.made textarea { height: 5rem; }
-.made section dl { flex-basis: 100%; margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .2rem .6rem; }
-.made section dt { opacity: .7; }
-.made section dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* What the loaded JSONs make. The generator gives every thing a place and its address.
+   How it looks is this sheet of styles, steered by the few words a look JSON may say:
+   paper, ink, accent, face, size, space, corner. This page scrolls. */
+.made {
+  --paper: Canvas; --ink: CanvasText; --accent: #2563eb; --on-accent: #ffffff;
+  --face: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --size: 1; --space: 1; --corner: .5em;
+  --line: color-mix(in srgb, var(--ink) 14%, transparent); --soft: color-mix(in srgb, var(--ink) 5%, transparent); --muted: color-mix(in srgb, var(--ink) 62%, transparent);
+  box-sizing: border-box; height: 100vh; height: 100dvh; overflow: hidden auto; background: var(--paper); color: var(--ink);
+  font: calc(16px * var(--size))/1.5 var(--face); padding: calc(1.25em * var(--space)) max(1em, calc(50% - 23em)) 4em;
+  display: flex; flex-direction: column; gap: calc(1em * var(--space)); -webkit-font-smoothing: antialiased;
+}
+.made header { display: flex; flex: none; align-items: center; gap: .9em; padding-bottom: calc(.9em * var(--space)); border-bottom: 1px solid var(--line); }
+.made .says { font-size: .8em; opacity: 1; color: var(--muted); overflow-wrap: anywhere; }
+.made header output { margin-left: auto; text-align: right; color: var(--ink); }
+.made button, .made input, .made textarea {
+  font: inherit; min-height: 2.5em; border-radius: var(--corner); border: 1px solid var(--line); background: transparent; color: inherit;
+  transition: background-color .12s, border-color .12s, box-shadow .12s;
+}
+.made button { padding: 0 1em; cursor: pointer; font-weight: 500; }
+.made button:hover { background: var(--soft); }
+.made :is(button, input, textarea):focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent); }
+.made header button { font-size: .85em; min-height: 2.2em; color: var(--muted); flex: none; overflow: visible; padding: 0 1em; }
+.made header { flex-wrap: wrap; }
+.made section {
+  flex: none; display: flex; flex-direction: column; gap: calc(.6em * var(--space)); padding: calc(1.1em * var(--space)) calc(1.25em * var(--space));
+  border: 1px solid var(--line); border-radius: calc(var(--corner) * 1.5); background: color-mix(in srgb, var(--ink) 2%, var(--paper));
+}
+.made section h2 { display: flex; align-items: baseline; justify-content: space-between; gap: .6em; margin: 0; font: 400 .72em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+.made section h2::before { content: attr(data-name); font: 650 calc(1.1em / .72) var(--face); letter-spacing: -.01em; text-transform: capitalize; color: var(--ink); }
+.made section p { margin: 0; overflow-wrap: anywhere; font-size: .88em; color: var(--muted); }
+/* What only explains (a kind, a move that needs a touch elsewhere or happens by itself) is quiet. */
+.made section:is(.kind, .move.auto, .move.pick) { background: transparent; border-style: dashed; padding-block: calc(.7em * var(--space)); gap: .25em; }
+.made section:is(.kind, .move.auto, .move.pick) h2::before { font-size: calc(.95em / .72); font-weight: 600; color: var(--muted); }
+/* A box is a list; each thing in it is a row to touch. */
+.made section.holds > div { display: flex; flex-direction: column; margin: 0 calc(-.5em * var(--space)); }
+.made section.holds > div > * { margin: 0; padding: .55em calc(.5em * var(--space)); min-height: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; text-align: left; font-size: 1em; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.made section.holds > div > button:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.made section.holds.mine { border-left: 3px solid var(--accent); }
+/* A move made here: its fields and one button. */
+.made label { display: grid; gap: .3em; font-size: .78em; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.made label :is(input, textarea) { font-size: calc(1em / .78); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--paper); padding: .5em .7em; }
+.made textarea { height: 7em; resize: vertical; font-family: inherit; line-height: 1.45; }
+.made section.move.make > button { align-self: flex-start; background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; padding: 0 1.4em; text-transform: capitalize; }
+.made section.move.make > button:hover { background: color-mix(in srgb, var(--accent) 86%, var(--ink)); }
+/* A thing opened: its first part is its name, the rest is read. */
+.made section dl { margin: .3em 0 0; padding: calc(.9em * var(--space)); display: grid; gap: .5em; background: var(--paper); border: 1px solid var(--line); border-radius: var(--corner); }
+.made section dt { font-size: .7em; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.made section dd { margin: -.35em 0 .3em; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.made section dd:first-of-type { font-size: 1.15em; font-weight: 650; }
 .board header button { min-height: 1.6rem; padding: 0 .8rem; }
 [hidden] { display: none !important; }
 @media (max-aspect-ratio: 1/1) {

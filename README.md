@@ -94,7 +94,19 @@ The email, step by step, on either:
 4. Unload `email.stub`. Nothing answers. A reader outside (Claude's extension) reads with `{"from": "email.wire.sent"}` and answers with `{"to": "email.wire.inbox", "with": {"subject": "...", "body": "..."}}`.
 5. Save. The floppy carries the sheets and the mail. It rebuilds in the other generator, and written back from there it is the same bytes.
 
-A reload forgets what was loaded. What the boxes hold stays.
+What is loaded and what the boxes hold are both kept in the browser. A reload opens with them.
+
+### Three more words: `look`, `here`, `on`
+
+- **`look`** says how the page looks, in seven words and no others: `paper`, `ink`, `accent` (colours as six digits), `face` (sans, serif, mono), `size`, `space`, `corner`. Each device reads them its own way. A look cannot hide a thing, move it, or put words in the page. `email.look` is one; load it and only the look changes.
+- **`here`** lists boxes that one sitting holds alone: in a browser this tab, in a terminal this run. `email.draft` keeps drafts that way. A floppy does not carry them.
+- **`on`** names the devices a JSON is for (`browser`, `terminal`, `pi5`, `pi0`). A device that is not named keeps it loaded, says so, and takes nothing from it.
+
+Load in any order; the generator always reads what exists first, then what moves, then how it looks, each by address.
+
+### Tabs
+
+Every tab of the site in one browser is the same layer: the loaded JSONs and the common boxes are shared, and a change in one tab shows in the others at once. Each tab alone has its `here` boxes. So a person in one tab and readers in other tabs of the same browser work on one email; `board.wait(box)` tells a reader when a thing arrives. Tabs in different browsers share nothing but the shipped files.
 
 ## Shipped examples: where building begins
 
@@ -178,7 +190,7 @@ Rebuilding wipes everything first. The site goes back to the board it shipped wi
 
 ## What cannot get in
 
-No text is run as code. The page carries a policy that makes the browser refuse inline script and evaluated text, and the generator refuses any step it does not know, and any step that writes markup.
+No text is run as code. The page carries a policy that makes the browser refuse inline script and evaluated text, and the generator refuses any step it does not know and a short list of calls that write markup. That list is not complete: a board handed in on a floppy can still make elements and set their attributes, so load only floppies you trust. The site's headers stop the page loading or sending anything outside this site.
 
 ## Changing the board
 

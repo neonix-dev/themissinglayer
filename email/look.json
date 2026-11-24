@@ -1,0 +1,13 @@
+{
+  "id": "email.look",
+  "says": "How the email looks. Words every device reads its own way; none of them changes what the email does.",
+  "look": {
+    "paper": "#fbfaf7",
+    "ink": "#1c1b19",
+    "accent": "#b4451f",
+    "face": "serif",
+    "size": "medium",
+    "space": "roomy",
+    "corner": "soft"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "meet.room",
+  "says": "Where the readers of one browser find each other. Every tab of this site has the same room. Arrive once, saying who you are and what you do; who lists everyone who has; say leaves a line for another, and hear reads the lines.",
+  "kinds": {
+    "seat": ["name", "does"],
+    "line": ["says", "from", "to"]
+  },
+  "boxes": {
+    "seats": "seat",
+    "lines": "line"
+  },
+  "moves": {
+    "arrive": { "to": "meet.room.seats" },
+    "who": { "from": "meet.room.seats" },
+    "say": { "to": "meet.room.lines" },
+    "hear": { "from": "meet.room.lines" }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "email.draft",
+  "says": "A place for mail not yet sent. Each tab holds its own; other tabs do not show it.",
+  "here": { "drafts": "email.wire.mail" },
+  "moves": {
+    "save": { "to": "email.draft.drafts" },
+    "open": { "from": "email.draft.drafts" }
+  }
+}
